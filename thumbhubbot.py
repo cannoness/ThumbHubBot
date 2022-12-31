@@ -59,27 +59,29 @@ async def my_art(ctx, username=None, *args):
     if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
         channel = bot.get_channel(int(BOT_TESTING_CHANNEL))
 
-    if not username:
-        await ctx.send("Must specify a user until random is turned on")
-        return
+    user_roles = [role.name for role in ctx.message.author.roles]
+    privileged = not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles))
 
-    offset = args[0] if 'random' not in args and len(args) > 0 else 0
-
-    if 'random' in args:
+    if not username or username == 'random' or isinstance(username, int):
+        await ctx.send("Pulling random images, this may take a moment...")
+        results, users = da_rest.get_random_images(4) if privileged else da_rest.get_random_images(2)
+    elif 'random' in args:
         results = da_rest.fetch_entire_user_gallery(username)
         random.shuffle(results)
     else:
+        offset = args[0] if 'random' not in args and len(args) > 0 else 0
         results = da_rest.fetch_user_gallery(username, offset)
 
     # filter out lit
-    results = list(filter(lambda x: x['category'] != 'Literature', results))
-    if len(results) == 0:
+    results = list(filter(lambda image: image['category'] != 'Literature' and image['category'] != 'Journal', results))
+    if len(results) == 0 and username:
         await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                            f"Use !lit for literature share")
         return
-    user_roles = [role.name for role in ctx.message.author.roles]
     message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
-    if not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles)):
+    if not username:
+        message = f"Displaying random images by {', '.join(users)}!"
+    if privileged:
         embed = []
         for result in results[:4]:
             embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
@@ -111,7 +113,7 @@ async def my_lit(ctx, username=None, *args):
         channel = bot.get_channel(int(BOT_TESTING_CHANNEL))
 
     if not username:
-        await ctx.send("Must specify a user until random is turned on")
+        await ctx.send("You must specify a user to use !lit")
         return
 
     offset = args[0] if 'random' not in args and len(args) > 0 else 0

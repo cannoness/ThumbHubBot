@@ -1,6 +1,7 @@
 import requests
 import sqlalchemy
 import json
+import random
 import os
 from dotenv import load_dotenv
 
@@ -61,3 +62,17 @@ class DARest:
         query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
         self.connection.execute(query)
+
+    def _fetch_da_usernames(self, num):
+        query = f"Select deviant_username from deviant_usernames"
+        query_results = ["".join(name_tuple) for name_tuple in self.connection.execute(query)]
+        random.shuffle(query_results)
+        return query_results[:num]
+
+    def get_random_images(self, num):
+        random_users = self._fetch_da_usernames(num)
+        images = []
+        for user in random_users:
+            images += self.fetch_entire_user_gallery(user)
+        random.shuffle(images)
+        return images[:num], random_users
