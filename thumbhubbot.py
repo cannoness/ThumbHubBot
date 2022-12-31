@@ -63,6 +63,7 @@ async def my_art(ctx, username=None, *args):
 
     if not username:
         await ctx.send("Must specify a user until random is turned on")
+        return
 
     offset = args[0] if 'random' not in args and len(args) > 0 else 0
 
@@ -90,6 +91,53 @@ async def my_art(ctx, username=None, *args):
         embed = []
         for result in results[:2]:
             embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+        await channel.send(embeds=embed)
+
+    if channel.id is not ctx.message.channel.id:
+        await ctx.send(f"{username}'s art has been posted in #art-lit-share!")
+
+
+@bot.command(name='lit')
+@commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
+async def my_lit(ctx, username=None, *args):
+    channel = bot.get_channel(int(ART_LIT_CHANNEL))
+
+    # added so we don't spam lit share during testing
+    if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
+        channel = bot.get_channel(int(BOT_TESTING_CHANNEL))
+
+    if not username:
+        await ctx.send("Must specify a user until random is turned on")
+        return
+
+    offset = args[0] if 'random' not in args and len(args) > 0 else 0
+
+    if 'random' in args:
+        results = da_rest.fetch_entire_user_gallery(username)
+        random.shuffle(results)
+    else:
+        results = da_rest.fetch_user_gallery(username, offset)
+
+    # filter out lit
+    results = list(filter(lambda x: x['category'] == 'Literature', results))
+    if len(results) == 0:
+        await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
+                           f"Use !art for visual art share")
+        return
+    user_roles = [role.name for role in ctx.message.author.roles]
+    message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
+    if not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles)):
+        embed = []
+        for result in results[:2]:
+            embed.append(discord.Embed(url="http://deviantart.com", description=message).add_field(
+                name=result['title'], value=result['text_content']['excerpt'][:1024]))
+        await channel.send(embeds=embed)
+
+    else:
+        embed = []
+        for result in results[:1]:
+            embed.append(discord.Embed(url="http://deviantart.com", description=message).add_field(
+                name=result['title'], value=result['text_content']['excerpt'][:1024]))
         await channel.send(embeds=embed)
 
     if channel.id is not ctx.message.channel.id:
