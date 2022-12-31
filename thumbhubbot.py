@@ -1,4 +1,5 @@
 # bot.py
+from Utilities.DA_rest import DARest
 import ast
 import json
 import random
@@ -11,26 +12,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
-secret = os.getenv("SECRET")
-CHANNEL = os.getenv("ART_LIT_CHANNEL")
+ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
+BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+
 intent = discord.Intents.all()
 
-
-def home():
-    r = requests.get(f"https://www.deviantart.com/oauth2/token?grant_type=client_credentials&client_id=12390&client_secret={secret}")
-    return r.content
-
-
-def gallery(access_token, username, offset):
-    r = requests.get("https://www.deviantart.com/api/v1/oauth2/gallery/all?username="+username+"&limit=24&mature_content=false&access_token="+
-                     access_token+"&offset="+offset)
-    return r.content
-
-
-def dds(access_token):
-    r = requests.get(f"https://www.deviantart.com/api/v1/oauth2/browse/dailydeviations?access_token={access_token}")
-    return r.content
-
+da_rest = DARest()
 
 bot = commands.Bot(command_prefix="!", intents=intent)
 
@@ -43,13 +30,13 @@ async def on_ready():
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, discord.ext.commands.MissingRequiredArgument):
-        await ctx.send("Something went wrong ¯\_(ツ)_/¯")
-        print("{Fore.RED}command didn't work.")
+        await ctx.send(r"Something went wrong ¯\_(ツ)_/¯")
+        print("command didn't work.")
     if isinstance(error, discord.ext.commands.errors.CommandOnCooldown):
         minutes, seconds= divmod(error.retry_after, 60)
         await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, try again after "
                        f"{int(minutes)}m {int(seconds)}s.")
-        print("{Fore.RED}command didn't work.")
+        print("command didn't work.")
 
 
 whitelist = {"Moderators", "The Hub"}
@@ -67,43 +54,42 @@ def custom_cooldown(ctx):
 
 @bot.command(name='art')
 @commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
-async def my_art(ctx, arg1=None, *args):
-    channel = bot.get_channel(int(CHANNEL))
-    if not arg1:
-        await ctx.send("must specify a user until random is turned on")
-    if 'random' in args:
-        arg2 = random.randint(0, 10)
-    elif len(args):
-        arg2 = args[0]
-    else:
-        arg2 = 0
+async def my_art(ctx, username=None, *args):
+    channel = bot.get_channel(int(ART_LIT_CHANNEL))
 
-    test = home()
-    dict_str = test.decode("UTF-8")
-    mydata = ast.literal_eval(dict_str)
-    response = gallery(access_token=mydata['access_token'], username=arg1, offset=str(arg2))
-    dict_str = response.decode("UTF-8")
-    test = json.loads(dict_str)
-    results = test['results']
+    # added so we don't spam lit share during testing
+    if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
+        channel = bot.get_channel(int(BOT_TESTING_CHANNEL))
+
+    if not username:
+        await ctx.send("Must specify a user until random is turned on")
+
+    offset = args[0] if not isinstance(args[0], str) else 0
+
     if 'random' in args:
+        results = da_rest.fetch_entire_user_gallery(username)
         random.shuffle(results)
+    else:
+        results = da_rest.fetch_user_gallery(username, offset)
+
+    # filter out lit
+    results = list(filter(lambda x: x['category'] != 'Literature', results))
     user_roles = [role.name for role in ctx.message.author.roles]
-    message = f"Visit {arg1}'s gallery: http://www.deviantart.com/{arg1}"
+    message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
     if not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles)):
         embed = []
         for result in results[:4]:
-            if result['category'] != 'Literature':
-                embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+            embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
         await channel.send(embeds=embed)
 
     else:
         embed = []
-        for result in test['results'][:2]:
+        for result in results[:2]:
             embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
         await channel.send(embeds=embed)
 
     if channel.id is not ctx.message.channel.id:
-        await ctx.send(f"{arg1}'s art has been posted in #art-lit-share!")
+        await ctx.send(f"{username}'s art has been posted in #art-lit-share!")
 
 
 @commands.cooldown(1, 300, commands.BucketType.user)
@@ -115,27 +101,26 @@ async def roll_dice(ctx):
 @commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
 @bot.command(name='dailies')
 async def get_dds(ctx):
-    channel = bot.get_channel(int(CHANNEL))
-    test = home()
-    dict_str = test.decode("UTF-8")
-    mydata = ast.literal_eval(dict_str)
-    response = dds(access_token=mydata['access_token'])
-    dict_str = response.decode("UTF-8")
-    test = json.loads(dict_str)
-    results = test['results']
+    channel = bot.get_channel(int(ART_LIT_CHANNEL))
+
+    # added so we don't spam lit share during testing
+    if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
+        channel = bot.get_channel(int(BOT_TESTING_CHANNEL))
+
+    results = da_rest.fetch_daily_deviations()
+    results = list(filter(lambda x: x['category'] != 'Literature', results))
     random.shuffle(results)
     user_roles = [role.name for role in ctx.message.author.roles]
     if not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles)):
         embed = []
         for result in results[:4]:
-            if result['category'] != 'Literature':
-                embed.append(discord.Embed(url="http://deviantart.com", description="A Selection from today's Daily Deviations").set_image(
-                    url=result['preview']['src']))
+            embed.append(discord.Embed(url="http://deviantart.com", description="A Selection from today's Daily Deviations").set_image(
+                url=result['preview']['src']))
         await channel.send(embeds=embed)
 
     else:
         embed = []
-        for result in test['results'][:2]:
+        for result in results[:2]:
             embed.append(
                 discord.Embed(url="http://deviantart.com", description="test").set_image(url=result['preview']['src']))
         await channel.send(embeds=embed)
