@@ -74,17 +74,18 @@ async def my_art(ctx, arg1=None, *args):
     if 'random' in args:
         random.shuffle(results)
     user_roles = [role.name for role in ctx.message.author.roles]
+    message = f"Visit {arg1}'s gallery: http://www.deviantart.com/{arg1}"
     if not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles)):
         embed = []
         for result in results[:4]:
             if result['category'] != 'Literature':
-                embed.append(discord.Embed(url="http://deviantart.com", description=f"Visit {arg1}'s gallery: http://www.deviantart.com/{arg1}").set_image(url=result['preview']['src']))
+                embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
         await channel.send(embeds=embed)
 
     else:
         embed = []
         for result in test['results'][:2]:
-            embed.append(discord.Embed(url="http://deviantart.com", description="test").set_image(url=result['preview']['src']))
+            embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
         await channel.send(embeds=embed)
 
     if channel.id is not ctx.message.channel.id:
