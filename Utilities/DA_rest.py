@@ -58,6 +58,6 @@ class DARest:
         return json.loads(decoded_content)
 
     def store_da_name(self, discord_id, username):
-        query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, {username}) " \
+        query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
-        self.connection(query)
+        self.connection.execute(query)

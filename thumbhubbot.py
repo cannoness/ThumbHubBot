@@ -95,6 +95,12 @@ async def my_art(ctx, username=None, *args):
         await ctx.send(f"{username}'s art has been posted in #art-lit-share!")
 
 
+@bot.command(name='store-da-name')
+async def store_name(ctx, discord_id: discord.Member, username):
+    da_rest.store_da_name(discord_id.id, username)
+    await ctx.send(f"Storing or updating DA username {username} for user {discord_id.display_name}")
+
+
 @bot.command(name='lit')
 @commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
 async def my_lit(ctx, username=None, *args):
