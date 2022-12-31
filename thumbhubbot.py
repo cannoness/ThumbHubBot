@@ -64,7 +64,7 @@ async def my_art(ctx, username=None, *args):
     if not username:
         await ctx.send("Must specify a user until random is turned on")
 
-    offset = args[0] if not isinstance(args[0], str) else 0
+    offset = args[0] if 'random' not in args and len(args) > 0 else 0
 
     if 'random' in args:
         results = da_rest.fetch_entire_user_gallery(username)
