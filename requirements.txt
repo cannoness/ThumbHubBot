@@ -1,3 +1,5 @@
 discord
 requests
 python-dotenv
+sqlalchemy
+psycopg2

@@ -1,14 +1,12 @@
 # bot.py
 from Utilities.DA_rest import DARest
-import ast
-import json
 import random
 import discord
 from discord.ext import commands
 import os
 
-import requests
 from dotenv import load_dotenv
+
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
@@ -121,8 +119,8 @@ async def my_lit(ctx, username=None, *args):
     # filter out lit
     results = list(filter(lambda x: x['category'] == 'Literature', results))
     if len(results) == 0:
-        await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
-                           f"Use !art for visual art share")
+        await ctx.message.channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
+                                       f"Use !art for visual art share")
         return
     user_roles = [role.name for role in ctx.message.author.roles]
     message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"

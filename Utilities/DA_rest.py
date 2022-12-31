@@ -1,5 +1,5 @@
 import requests
-import ast
+import sqlalchemy
 import json
 import os
 from dotenv import load_dotenv
@@ -13,6 +13,11 @@ class DARest:
         load_dotenv()
         self.secret = os.getenv("DA_SECRET")
         self.client = os.getenv("DA_CLIENT")
+        self.pg_secret = os.getenv("PG_SECRET")
+
+        engine = sqlalchemy.create_engine(
+            f"postgresql://postgres:{self.pg_secret}@containers-us-west-44.railway.app:5552/railway")
+        self.connection = engine.connect()
         self.access_token = self.acquire_access_token()
 
     def acquire_access_token(self):
@@ -51,3 +56,8 @@ class DARest:
             f"{self.access_token}&offset={offset}")
         decoded_content = response.content.decode("UTF-8")
         return json.loads(decoded_content)
+
+    def store_da_name(self, discord_id, username):
+        query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, {username}) " \
+                f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
+        self.connection(query)
