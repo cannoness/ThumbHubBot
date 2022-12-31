@@ -76,3 +76,30 @@ class DARest:
             images += self.fetch_entire_user_gallery(user)
         random.shuffle(images)
         return images[:num], random_users
+
+    def _fetch_user_faves_folder_id(self, username):
+        response = requests.get(
+            f"{API_URL}collections/folders?username={username}&limit=24&mature_content=false&access_token="
+            f"{self.access_token}")
+        decoded_content = response.content.decode("UTF-8")
+        return json.loads(decoded_content)['results'][0]['folderid']
+
+    def _fetch_all_user_faves_helper(self, username, folder_id, offset=0):
+        response = requests.get(
+            f"{API_URL}collections/{folder_id}?username={username}&limit=24&mature_content=false&access_token="
+            f"{self.access_token}&offset={offset}")
+        decoded_content = response.content.decode("UTF-8")
+        return json.loads(decoded_content)
+
+    def get_user_favs(self, username):
+        # initial fetch
+        folder_id = self._fetch_user_faves_folder_id(username)
+        response = self._fetch_all_user_faves_helper(username, folder_id)
+        results = response['results']
+
+        # build the rest of the gallery
+        while response['has_more'] and response['next_offset'] < 1000:
+            next_offset = response['next_offset']
+            response = self._fetch_all_user_faves_helper(username, folder_id, offset=next_offset)
+            results += response['results']
+        return results

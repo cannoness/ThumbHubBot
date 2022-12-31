@@ -97,6 +97,49 @@ async def my_art(ctx, username=None, *args):
         await ctx.send(f"{username}'s art has been posted in #art-lit-share!")
 
 
+@bot.command(name='favs')
+@commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
+async def my_favs(ctx, username=None):
+    if not username:
+        await ctx.send("This feature requires a username, please try again.")
+        return
+
+    channel = bot.get_channel(int(ART_LIT_CHANNEL))
+
+    # added so we don't spam lit share during testing
+    if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
+        channel = bot.get_channel(int(BOT_TESTING_CHANNEL))
+
+    await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
+    user_roles = [role.name for role in ctx.message.author.roles]
+    privileged = not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles))
+
+    results = da_rest.get_user_favs(username)
+
+    # filter out lit
+    results = list(filter(lambda image: image['category'] != 'Literature' and image['category'] != 'Journal', results))
+    random.shuffle(results)
+
+    if len(results) == 0 and username:
+        await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
+        return
+    message = f"Visit {username}'s favorites: http://www.deviantart.com/{username}/favorites"
+    if privileged:
+        embed = []
+        for result in results[:4]:
+            embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+        await channel.send(embeds=embed)
+
+    else:
+        embed = []
+        for result in results[:2]:
+            embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+        await channel.send(embeds=embed)
+
+    if channel.id is not ctx.message.channel.id:
+        await ctx.send(f"{username}'s favorites have been posted in #art-lit-share!")
+
+
 @bot.command(name='store-da-name')
 async def store_name(ctx, discord_id: discord.Member, username):
     da_rest.store_da_name(discord_id.id, username)
