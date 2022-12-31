@@ -89,7 +89,7 @@ async def my_art(ctx, arg1=None, *args):
         await channel.send(embeds=embed)
 
     if channel.id is not ctx.message.channel.id:
-        await ctx.send("your art has been posted in #art-lit-share!")
+        await ctx.send(f"{arg1}'s art has been posted in #art-lit-share!")
 
 
 @commands.cooldown(1, 300, commands.BucketType.user)
