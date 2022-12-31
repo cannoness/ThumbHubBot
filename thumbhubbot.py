@@ -68,7 +68,7 @@ def custom_cooldown(ctx):
 @bot.command(name='art')
 @commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
 async def my_art(ctx, arg1=None, *args):
-    channel = bot.get_channel(CHANNEL)
+    channel = bot.get_channel(int(CHANNEL))
     if not arg1:
         await ctx.send("must specify a user until random is turned on")
     if 'random' in args:
@@ -115,7 +115,7 @@ async def roll_dice(ctx):
 @commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
 @bot.command(name='dailies')
 async def get_dds(ctx):
-    channel = bot.get_channel(712405430487482389)
+    channel = bot.get_channel(int(CHANNEL))
     test = home()
     dict_str = test.decode("UTF-8")
     mydata = ast.literal_eval(dict_str)
