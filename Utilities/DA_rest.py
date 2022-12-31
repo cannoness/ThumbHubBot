@@ -24,8 +24,7 @@ class DARest:
 
     def fetch_user_gallery(self, username, offset=0):
         response = self._gallery_fetch_helper(username, offset)
-        decoded_content = response.content.decode("UTF-8")
-        results = json.loads(decoded_content)['results']
+        results = response['results']
         return results
 
     def fetch_entire_user_gallery(self, username):
