@@ -74,6 +74,10 @@ async def my_art(ctx, username=None, *args):
 
     # filter out lit
     results = list(filter(lambda x: x['category'] != 'Literature', results))
+    if len(results) == 0:
+        await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
+                           f"Use !lit for literature share")
+        return
     user_roles = [role.name for role in ctx.message.author.roles]
     message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
     if not {'Frequent Thumbers', 'Moderators', 'The Hub'}.isdisjoint(set(user_roles)):
