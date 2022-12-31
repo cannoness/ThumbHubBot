@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 secret = os.getenv("SECRET")
+CHANNEL = os.getenv("ART_LIT_CHANNEL")
 intent = discord.Intents.all()
 
 
@@ -51,10 +52,23 @@ async def on_command_error(ctx, error):
         print("{Fore.RED}command didn't work.")
 
 
+whitelist = {"Moderators", "The Hub"}
+
+
+def custom_cooldown(ctx):
+    roles = {role.name for role in ctx.author.roles}
+    if not whitelist.isdisjoint(roles):
+        return None
+    elif "TheHubVIP" in roles:
+        discord.app_commands.Cooldown(1, 180)
+    else:
+        return discord.app_commands.Cooldown(1, 300)
+
+
 @bot.command(name='art')
-@commands.cooldown(1, 300, commands.BucketType.user)
+@commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
 async def my_art(ctx, arg1=None, *args):
-    channel = bot.get_channel(712405430487482389)
+    channel = bot.get_channel(CHANNEL)
     if not arg1:
         await ctx.send("must specify a user until random is turned on")
     if 'random' in args:
@@ -98,7 +112,7 @@ async def roll_dice(ctx):
     await ctx.send(f"{ctx.message.author.display_name} Rolling 1d20: {random.randint(1, 20)}")
 
 
-@commands.cooldown(1, 300, commands.BucketType.user)
+@commands.dynamic_cooldown(custom_cooldown, type=commands.BucketType.user)
 @bot.command(name='dailies')
 async def get_dds(ctx):
     channel = bot.get_channel(712405430487482389)
