@@ -110,5 +110,5 @@ class DARest:
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
-        if not json.loads(response.content)["status"]:
+        if 'success' not in json.loads(response.content)["status"]:
             self.access_token = self._acquire_access_token()
