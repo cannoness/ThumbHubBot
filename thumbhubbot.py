@@ -94,7 +94,10 @@ async def my_art(ctx, username=None, *args):
         await channel.send(embeds=embed)
 
     if channel.id is not ctx.message.channel.id:
-        await ctx.send(f"{username}'s art has been posted in #art-lit-share!")
+        if username:
+            await ctx.send(f"{username}'s art has been posted in #art-lit-share!")
+        else:
+            await ctx.send("Random art has been posted in #art-lit-share!")
 
 
 @bot.command(name='favs')
@@ -117,7 +120,7 @@ async def my_favs(ctx, username=None):
     results = da_rest.get_user_favs(username)
 
     # filter out lit
-    results = list(filter(lambda image: image['category'] != 'Literature' and image['category'] != 'Journal', results))
+    results = list(filter(lambda image: 'preview' in image.keys(), results))
     random.shuffle(results)
 
     if len(results) == 0 and username:
@@ -168,7 +171,7 @@ async def my_lit(ctx, username=None, *args):
         results = da_rest.fetch_user_gallery(username, offset)
 
     # filter out lit
-    results = list(filter(lambda x: x['category'] == 'Literature', results))
+    results = list(filter(lambda lit: 'preview' not in lit.keys(), results))
     if len(results) == 0:
         await ctx.message.channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
                                        f"Use !art for visual art share")
