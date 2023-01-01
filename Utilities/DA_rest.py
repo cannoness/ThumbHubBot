@@ -19,9 +19,9 @@ class DARest:
         engine = sqlalchemy.create_engine(
             f"postgresql://postgres:{self.pg_secret}@containers-us-west-44.railway.app:5552/railway")
         self.connection = engine.connect()
-        self.access_token = self.acquire_access_token()
+        self.access_token = self._acquire_access_token()
 
-    def acquire_access_token(self):
+    def _acquire_access_token(self):
         response = requests.get(
             f"{AUTH_URL}client_id={self.client}&client_secret={self.secret}")
 
@@ -46,12 +46,14 @@ class DARest:
         return results
 
     def fetch_daily_deviations(self):
+        self._validate_token()
         response = requests.get(f"{API_URL}browse/dailydeviations?access_token={self.access_token}")
         decoded_content = response.content.decode("UTF-8")
         results = json.loads(decoded_content)['results']
         return results
 
     def _gallery_fetch_helper(self, username, offset=0):
+        self._validate_token()
         response = requests.get(
             f"{API_URL}gallery/all?username={username}&limit=24&mature_content=false&access_token="
             f"{self.access_token}&offset={offset}")
@@ -78,6 +80,7 @@ class DARest:
         return images[:num], random_users
 
     def _fetch_user_faves_folder_id(self, username):
+        self._validate_token()
         response = requests.get(
             f"{API_URL}collections/folders?username={username}&limit=24&mature_content=false&access_token="
             f"{self.access_token}")
@@ -85,6 +88,7 @@ class DARest:
         return json.loads(decoded_content)['results'][0]['folderid']
 
     def _fetch_all_user_faves_helper(self, username, folder_id, offset=0):
+        self._validate_token()
         response = requests.get(
             f"{API_URL}collections/{folder_id}?username={username}&limit=24&mature_content=false&access_token="
             f"{self.access_token}&offset={offset}")
@@ -103,3 +107,8 @@ class DARest:
             response = self._fetch_all_user_faves_helper(username, folder_id, offset=next_offset)
             results += response['results']
         return results
+
+    def _validate_token(self):
+        response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
+        if not json.loads(response.content)["status"]:
+            self.access_token = self._acquire_access_token()

@@ -73,7 +73,7 @@ async def my_art(ctx, username=None, *args):
         results = da_rest.fetch_user_gallery(username, offset)
 
     # filter out lit
-    results = list(filter(lambda image: image['category'] != 'Literature' and image['category'] != 'Journal', results))
+    results = list(filter(lambda image: 'preview' not in image.keys(), results))
     if len(results) == 0 and username:
         await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                            f"Use !lit for literature share")
