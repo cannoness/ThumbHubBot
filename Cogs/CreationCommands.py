@@ -70,6 +70,7 @@ class CreationCommands(commands.Cog):
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                                f"Use !lit for literature share")
+            self.my_art.reset_cooldown(ctx)
             return
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
         if not username:
@@ -100,6 +101,7 @@ class CreationCommands(commands.Cog):
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
+            self.my_favs.reset_cooldown(ctx)
             return
         message = f"Visit {username}'s favorites: http://www.deviantart.com/{username}/favorites"
         display_count = self._check_your_privilege(ctx)
@@ -129,6 +131,7 @@ class CreationCommands(commands.Cog):
         if len(results) == 0:
             await ctx.message.channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
                                            f"Use !art for visual art share")
+            self.my_lit.reset_cooldown(ctx)
             return
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
 
