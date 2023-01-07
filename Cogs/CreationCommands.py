@@ -70,6 +70,8 @@ class CreationCommands(commands.Cog):
         display_count = self._check_your_privilege(ctx)
         await ctx.send("Pulling random images, this may take a moment...")
         results, users = self.da_rest.get_random_images(display_count)
+        message = "A collection of random images!"
+        await self._send_art_results(ctx, channel, results, message)
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
@@ -80,7 +82,8 @@ class CreationCommands(commands.Cog):
             return
 
         if not username or username == 'random' or isinstance(username, int):
-            return self.random(ctx)
+            await self.random(ctx)
+            return
         elif 'random' in args:
             results = self.da_rest.fetch_entire_user_gallery(username)
             random.shuffle(results)
