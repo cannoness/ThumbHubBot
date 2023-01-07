@@ -18,11 +18,7 @@ VIP_COOLDOWN = 180
 POST_RATE = 1
 
 
-class CreationCommands(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.da_rest = DARest()
-
+class Private:
     @staticmethod
     def _custom_cooldown(ctx):
         roles = {role.name for role in ctx.author.roles}
@@ -32,6 +28,12 @@ class CreationCommands(commands.Cog):
             discord.app_commands.Cooldown(POST_RATE, VIP_COOLDOWN)
         else:
             return discord.app_commands.Cooldown(POST_RATE, DEFAULT_COOLDOWN)
+
+
+class CreationCommands(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.da_rest = DARest()
 
     @staticmethod
     def _check_your_privilege(ctx):
@@ -61,7 +63,7 @@ class CreationCommands(commands.Cog):
         await channel.send(embeds=embed)
 
     @commands.command(name='random')
-    @commands.dynamic_cooldown(_custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
         channel = self._set_channel(ctx)
 
@@ -72,7 +74,7 @@ class CreationCommands(commands.Cog):
         await self._send_art_results(ctx, channel, results, message)
 
     @commands.command(name='art')
-    @commands.dynamic_cooldown(_custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username=None, *args):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
@@ -92,7 +94,7 @@ class CreationCommands(commands.Cog):
         await self._send_art_results(ctx, channel, results, message, username)
 
     @commands.command(name='favs')
-    @commands.dynamic_cooldown(_custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, username):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
@@ -115,7 +117,7 @@ class CreationCommands(commands.Cog):
         await self._send_art_results(ctx, channel, results, message, username)
 
     @commands.command(name='lit')
-    @commands.dynamic_cooldown(_custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, username, *args):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
@@ -146,7 +148,7 @@ class CreationCommands(commands.Cog):
                 name=result['title'], value=result['text_content']['excerpt'][:1024])
             await channel.send(embed=embed)
 
-    @commands.dynamic_cooldown(_custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx)
