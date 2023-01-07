@@ -42,54 +42,61 @@ class CreationCommands(commands.Cog):
         return PRIV_COUNT if privileged else DEV_COUNT
 
     def _set_channel(self, ctx):
-        channel = self.bot.get_channel(int(ART_LIT_CHANNEL))
-
         # added so we don't spam lit share during testing
         if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
-            channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
-        return channel
+            return self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        return self.bot.get_channel(int(ART_LIT_CHANNEL))
 
-    @commands.command(name='art')
+    async def _send_art_results(self, ctx, channel, results, message, username=None):
+        display_count = self._check_your_privilege(ctx)
+        # filter out lit
+        results = list(filter(lambda image: 'preview' in image.keys(), results))
+        if len(results) == 0 and username:
+            await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
+                               f"Use !lit for literature share")
+            self.art.reset_cooldown(ctx)
+            return
+        embed = []
+        for result in results[:display_count]:
+            embed.append(
+                discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+        await channel.send(embeds=embed)
+
+    @commands.command(name='random')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def my_art(self, ctx, username=None, *args):
+    async def random(self, ctx):
         channel = self._set_channel(ctx)
 
         display_count = self._check_your_privilege(ctx)
+        await ctx.send("Pulling random images, this may take a moment...")
+        results, users = self.da_rest.get_random_images(display_count)
+
+    @commands.command(name='art')
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    async def art(self, ctx, username=None, *args):
+        channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            self.art.reset_cooldown(ctx)
+            return
+
         if not username or username == 'random' or isinstance(username, int):
-            await ctx.send("Pulling random images, this may take a moment...")
-            results, users = self.da_rest.get_random_images(display_count)
+            return self.random(ctx)
         elif 'random' in args:
             results = self.da_rest.fetch_entire_user_gallery(username)
             random.shuffle(results)
         else:
             offset = args[0] if 'random' not in args and len(args) > 0 else 0
             results = self.da_rest.fetch_user_gallery(username, offset)
-
-        # filter out lit
-        results = list(filter(lambda image: 'preview' in image.keys(), results))
-        if len(results) == 0 and username:
-            await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
-                               f"Use !lit for literature share")
-            self.my_art.reset_cooldown(ctx)
-            return
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
-        if not username:
-            message = f"Displaying random images by {', '.join(users)}!"
-        embed = []
-        for result in results[:display_count]:
-            embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
-        await channel.send(embeds=embed)
-
-        if channel.id is not ctx.message.channel.id:
-            if username:
-                await ctx.message.channel.send(f"{username}'s art has been posted in #art-lit-share!")
-            else:
-                await ctx.message.channel.send("Random art has been posted in #art-lit-share!")
+        await self._send_art_results(ctx, channel, results, message, username)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, username):
         channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            self.art.reset_cooldown(ctx)
+            return
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
 
@@ -103,20 +110,16 @@ class CreationCommands(commands.Cog):
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
             self.my_favs.reset_cooldown(ctx)
             return
-        message = f"Visit {username}'s favorites: http://www.deviantart.com/{username}/favorites"
-        display_count = self._check_your_privilege(ctx)
-        embed = []
-        for result in results[:display_count]:
-            embed.append(discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
-        await channel.send(embeds=embed)
-
-        if channel.id is not ctx.message.channel.id:
-            await ctx.send(f"{username}'s favorites have been posted in #art-lit-share!")
+        message = f"Visit {username}'s favorites at http://www.deviantart.com/{username}/favorites/all"
+        await self._send_art_results(ctx, channel, results, message, username)
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, username, *args):
         channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            self.art.reset_cooldown(ctx)
+            return
 
         offset = args[0] if 'random' not in args and len(args) > 0 else 0
 
@@ -142,26 +145,19 @@ class CreationCommands(commands.Cog):
                 name=result['title'], value=result['text_content']['excerpt'][:1024])
             await channel.send(embed=embed)
 
-        if channel.id is not ctx.message.channel.id:
-            await ctx.send(f"{username}'s literature has been posted in #art-lit-share!")
-
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            self.art.reset_cooldown(ctx)
+            return
 
         results = self.da_rest.fetch_daily_deviations()
         results = list(filter(lambda image: 'preview' in image.keys(), results))
         random.shuffle(results)
-        display_count = self._check_your_privilege(ctx)
-        embed = []
-        for result in results[:display_count]:
-            embed.append(discord.Embed(url="http://deviantart.com", description="A Selection from today's Daily Deviations").set_image(
-                url=result['preview']['src']))
-        await channel.send(embeds=embed)
-
-        if channel.id is not ctx.message.channel.id:
-            await ctx.send("dds have been posted in #art-lit-share!")
+        message = "A Selection from today's Daily Deviations"
+        await self._send_art_results(ctx, channel, results, message)
 
 
 async def setup(bot):
