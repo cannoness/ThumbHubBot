@@ -54,7 +54,7 @@ class CreationCommands(commands.Cog):
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                                f"Use !lit for literature share")
-            self.art.reset_cooldown(ctx)
+            self.bot.commands.get_command('art').reset_cooldown(ctx)
             return
         embed = []
         for result in results[:display_count]:
@@ -78,7 +78,7 @@ class CreationCommands(commands.Cog):
     async def art(self, ctx, username=None, *args):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
-            self.art.reset_cooldown(ctx)
+            self.bot.commands.get_command('art').reset_cooldown(ctx)
             return
 
         if not username or username == 'random' or isinstance(username, int):
@@ -98,7 +98,7 @@ class CreationCommands(commands.Cog):
     async def my_favs(self, ctx, username):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
-            self.art.reset_cooldown(ctx)
+            self.bot.commands.get_command('favs').reset_cooldown(ctx)
             return
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
@@ -111,7 +111,7 @@ class CreationCommands(commands.Cog):
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
-            self.my_favs.reset_cooldown(ctx)
+            self.bot.commands.get_command('favs').reset_cooldown(ctx)
             return
         message = f"Visit {username}'s favorites at http://www.deviantart.com/{username}/favorites/all"
         await self._send_art_results(ctx, channel, results, message, username)
@@ -121,7 +121,7 @@ class CreationCommands(commands.Cog):
     async def my_lit(self, ctx, username, *args):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
-            self.art.reset_cooldown(ctx)
+            self.bot.commands.get_command('lit').reset_cooldown(ctx)
             return
 
         offset = args[0] if 'random' not in args and len(args) > 0 else 0
@@ -137,7 +137,7 @@ class CreationCommands(commands.Cog):
         if len(results) == 0:
             await ctx.message.channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
                                            f"Use !art for visual art share")
-            self.my_lit.reset_cooldown(ctx)
+            self.bot.commands.get_command('lit').reset_cooldown(ctx)
             return
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
 
@@ -153,7 +153,7 @@ class CreationCommands(commands.Cog):
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
-            self.art.reset_cooldown(ctx)
+            self.bot.commands.get_command('dailies').reset_cooldown(ctx)
             return
 
         results = self.da_rest.fetch_daily_deviations()
