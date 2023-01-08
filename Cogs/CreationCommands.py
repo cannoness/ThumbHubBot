@@ -66,6 +66,10 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
         channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            self.bot.commands.get_command('random').reset_cooldown(ctx)
+            return
+
 
         display_count = self._check_your_privilege(ctx)
         await ctx.send("Pulling random images, this may take a moment...")
