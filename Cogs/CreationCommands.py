@@ -76,7 +76,7 @@ class CreationCommands(commands.Cog):
         display_count = self._check_your_privilege(ctx)
         urls = self.twitter_rest.get_twitter_media(username, display_count)
         if not urls:
-            await ctx.send(f"We couldn't find any posts for IG user {username}.")
+            await ctx.send(f"We couldn't find any media for twitter user {username}.")
             ctx.command.reset_cooldown(ctx)
             return
         message = f"A collection of images from twitter user {username}!"
