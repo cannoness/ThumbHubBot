@@ -70,6 +70,11 @@ class CreationCommands(commands.Cog):
             self.bot.commands.get_command('myart').reset_cooldown(ctx)
             return
         username = self.da_rest.fetch_da_username(ctx.message.author.roles.id)
+        if not username:
+            ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store using "
+                     f"!store-da-name `@yourself` `username`")
+            self.bot.commands.get_command('myart').reset_cooldown(ctx)
+            return
         await self.art(ctx, username, *args)
 
     @commands.command(name='random')
