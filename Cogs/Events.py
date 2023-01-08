@@ -12,6 +12,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
+            ctx.command.reset_cooldown(ctx)
             await ctx.send(r"Something went wrong ¯\_(ツ)_/¯")
             print("command didn't work.")
         if isinstance(error, commands.errors.CommandOnCooldown):

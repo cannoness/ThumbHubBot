@@ -88,7 +88,7 @@ class CreationCommands(commands.Cog):
         display_count = self._check_your_privilege(ctx)
         await ctx.send("Pulling random images, this may take a moment...")
         results, users = self.da_rest.get_random_images(display_count)
-        message = "A collection of random images!"
+        message = f"A collection of random images from users {users}!"
         await self._send_art_results(ctx, channel, results, message)
 
     @commands.command(name='art')
