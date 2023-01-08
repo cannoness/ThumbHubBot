@@ -1,9 +1,17 @@
 import instaloader
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+LOGIN = os.getenv("IG_LOGIN")
+PW = os.getenv("IG_PASS")
 
 
 class IGRest:
     def __init__(self):
         self.bot = instaloader.Instaloader()
+        self.bot.login(user=LOGIN, passwd=PW)
 
     def get_recent(self, username, num):
         try:
