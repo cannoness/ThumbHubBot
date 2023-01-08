@@ -1,5 +1,6 @@
 from Utilities.DA_rest import DARest
 from Utilities.IG_rest import IGRest
+from Utilities.Twitter_rest import TwitterRest
 from discord.ext import commands
 import discord
 import os
@@ -36,6 +37,7 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.ig_rest = IGRest()
+        self.twitter_rest = TwitterRest()
 
     @staticmethod
     def _check_your_privilege(ctx):
@@ -62,6 +64,26 @@ class CreationCommands(commands.Cog):
         for result in results[:display_count]:
             embed.append(
                 discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+        await channel.send(embeds=embed)
+
+    @commands.command(name='twitterart')
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    async def twitter_art(self, ctx, username, *args):
+        channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            ctx.command.reset_cooldown(ctx)
+            return
+        display_count = self._check_your_privilege(ctx)
+        urls = self.twitter_rest.get_twitter_media(username, display_count)
+        if not urls:
+            await ctx.send(f"We couldn't find any posts for IG user {username}.")
+            ctx.command.reset_cooldown(ctx)
+            return
+        message = f"A collection of images from twitter user {username}!"
+        embed = []
+        for url in urls:
+            embed.append(
+                discord.Embed(url="http://twitter.com", description=message).set_image(url=url))
         await channel.send(embeds=embed)
 
     @commands.command(name='igart')
