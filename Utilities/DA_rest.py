@@ -87,10 +87,10 @@ class DARest:
         random.shuffle(images)
         return_images = images[:num]
         filtered_users = list({image['author']['username'] for image in return_images[:-2]})
-        if len(filtered_users) > 2:
+        if len(filtered_users) > 1:
             string_users = ", ".join(filtered_users[:-2]) + f" and {filtered_users[-1]}"
         else:
-            string_users = filtered_users
+            string_users = filtered_users[0]
         return return_images, string_users
 
     def _fetch_user_faves_folder_id(self, username):
