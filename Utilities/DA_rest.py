@@ -66,8 +66,8 @@ class DARest:
         self.connection.execute(query)
 
     def fetch_da_username(self, discord_id):
-        query = f"Select deviant_username from deviant_usernames where discord_id ={discord_id}"
-        query_results = "".join(self.connection.execute(query))
+        query = f"Select deviant_username from deviant_usernames where discord_id = {discord_id}"
+        query_results = "".join(self.connection.execute(query).fetchone())
         return query_results
 
     def _fetch_da_usernames(self, num):

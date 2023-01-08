@@ -65,11 +65,12 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
+        print('here')
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
             self.bot.commands.get_command('myart').reset_cooldown(ctx)
             return
-        username = self.da_rest.fetch_da_username(ctx.message.author.roles.id)
+        username = self.da_rest.fetch_da_username(ctx.message.author.id)
         if not username:
             ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store using "
                      f"!store-da-name `@yourself` `username`")
