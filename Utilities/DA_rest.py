@@ -86,9 +86,9 @@ class DARest:
             images += self.fetch_entire_user_gallery(user)
         random.shuffle(images)
         return_images = images[:num]
-        filtered_users = ", ".join({image['author']['username'] for image in return_images[:-2]}) + \
-                         f" and {return_images[-1]['author']['username']}"
-        return return_images, filtered_users
+        filtered_users = list({image['author']['username'] for image in return_images[:-2]})
+        string_users = ", ".join(filtered_users[:-2]) + f" and {filtered_users[-1]}"
+        return return_images, string_users
 
     def _fetch_user_faves_folder_id(self, username):
         self._validate_token()
