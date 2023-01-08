@@ -86,7 +86,7 @@ class DARest:
             images += self.fetch_entire_user_gallery(user)
         random.shuffle(images)
         return_images = images[:num]
-        filtered_users = list({image['author']['username'] for image in return_images[:-2]})
+        filtered_users = list({image['author']['username'] for image in return_images})
         if len(filtered_users) == 1:
             string_users = filtered_users[0]
         else:
