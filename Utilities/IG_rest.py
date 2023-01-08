@@ -4,14 +4,17 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-LOGIN = os.getenv("IG_LOGIN")
-PW = os.getenv("IG_PASS")
+SESSION_ID = os.getenv("SESSION_ID")
+SESSION_USER = os.getenv("SESSION_USER")
 
 
 class IGRest:
     def __init__(self):
         self.bot = instaloader.Instaloader()
-        self.bot.login(user=LOGIN, passwd=PW)
+        self.bot.load_session_from_file(username="ThumbHubBot", filename=SESSION_ID)
+        username = self.bot.test_login()
+        if not username:
+            raise SystemExit("Not logged in. Are you logged in successfully in Firefox?")
 
     def get_recent(self, username, num):
         try:
