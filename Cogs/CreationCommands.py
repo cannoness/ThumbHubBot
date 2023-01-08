@@ -62,6 +62,16 @@ class CreationCommands(commands.Cog):
                 discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
         await channel.send(embeds=embed)
 
+    @commands.command(name='myart')
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    async def my_art(self, ctx, *args):
+        channel = self._set_channel(ctx)
+        if channel.id is not ctx.message.channel.id:
+            self.bot.commands.get_command('myart').reset_cooldown(ctx)
+            return
+        username = self.da_rest.fetch_da_username(ctx.message.author.roles.id)
+        await self.art(ctx, username, *args)
+
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
@@ -69,7 +79,6 @@ class CreationCommands(commands.Cog):
         if channel.id is not ctx.message.channel.id:
             self.bot.commands.get_command('random').reset_cooldown(ctx)
             return
-
 
         display_count = self._check_your_privilege(ctx)
         await ctx.send("Pulling random images, this may take a moment...")
