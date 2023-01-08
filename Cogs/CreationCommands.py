@@ -201,12 +201,12 @@ class CreationCommands(commands.Cog):
                                            f"Use !art for visual art share")
             ctx.command.reset_cooldown(ctx)
             return
-        message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
 
         display_count = int(self._check_your_privilege(ctx)/2)
 
         for result in results[:display_count]:
-            embed = discord.Embed(url="http://deviantart.com", description=message).add_field(
+            message = f"Read the rest of {username}'s piece: {result['url']}"
+            embed = discord.Embed(url=result['url'], description=message).add_field(
                 name=result['title'], value=result['text_content']['excerpt'][:1024])
             await channel.send(embed=embed)
 
