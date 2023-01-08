@@ -65,6 +65,11 @@ class DARest:
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
         self.connection.execute(query)
 
+    def fetch_da_username(self, discord_id):
+        query = f"Select deviant_username from deviant_usernames where discord_id ={discord_id}"
+        query_results = "".join(self.connection.execute(query))
+        return query_results
+
     def _fetch_da_usernames(self, num):
         query = f"Select deviant_username from deviant_usernames"
         query_results = ["".join(name_tuple) for name_tuple in self.connection.execute(query)]
