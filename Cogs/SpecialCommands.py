@@ -20,6 +20,7 @@ POST_RATE = 1
 
 class SpecialCommands(commands.Cog):
     def __init__(self, bot):
+        random.seed(42)
         self.bot = bot
         self.da_rest = DARest()
 
