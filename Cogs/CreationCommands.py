@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers', 'Moderators', 'The Hub'}
+PRIVILEGED_ROLES = {'Frequent Thumbers', "TheHubVIP"}
 COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
+MOD_COUNT = 6
 PRIV_COUNT = 4
 DEV_COUNT = 2
 DEFAULT_COOLDOWN = 300
@@ -43,7 +44,8 @@ class CreationCommands(commands.Cog):
     def _check_your_privilege(ctx):
         user_roles = [role.name for role in ctx.message.author.roles]
         privileged = not PRIVILEGED_ROLES.isdisjoint(set(user_roles))
-        return PRIV_COUNT if privileged else DEV_COUNT
+        mod_or_admin = not COOLDOWN_WHITELIST.isdisjoint(set(user_roles))
+        return PRIV_COUNT if privileged else MOD_COUNT if mod_or_admin else DEV_COUNT
 
     def _set_channel(self, ctx):
         # added so we don't spam lit share during testing
