@@ -70,6 +70,11 @@ class CreationCommands(commands.Cog):
                 discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
 
+    @commands.command(name='nomention')
+    async def do_not_mention(self, ctx, user: discord.Member):
+        self.da_rest.do_not_ping_me(user.id)
+        await ctx.channel.send(f"We will no longer mention you {user.display_name}")
+
     @commands.command(name='twitterart')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def twitter_art(self, ctx, username, *args):
