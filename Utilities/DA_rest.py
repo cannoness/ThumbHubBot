@@ -17,7 +17,7 @@ class DARest:
         self.pg_secret = os.getenv("PG_SECRET")
 
         engine = sqlalchemy.create_engine(
-            f"postgresql://postgres:{self.pg_secret}@containers-us-west-44.railway.app:5552/railway")
+            f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")
         self.connection = engine.connect()
         self.access_token = self._acquire_access_token()
 
@@ -65,8 +65,21 @@ class DARest:
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
         self.connection.execute(query)
 
+    def do_not_ping_me(self, discord_id):
+        query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, false) " \
+                f"ON CONFLICT (discord_id) DO UPDATE SET ping_me= excluded.ping_me"
+        self.connection.execute(query)
+
     def fetch_da_username(self, discord_id):
         query = f"Select deviant_username from deviant_usernames where discord_id = {discord_id}"
+        result = self.connection.execute(query).fetchone()
+        if result:
+            query_results = "".join(result)
+            return query_results
+        return None
+
+    def fetch_discord_id(self, username):
+        query = f"Select discord_id, ping_me from deviant_usernames where deviant_username = {username}"
         result = self.connection.execute(query).fetchone()
         if result:
             query_results = "".join(result)
