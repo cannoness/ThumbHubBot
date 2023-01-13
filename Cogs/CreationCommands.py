@@ -56,7 +56,7 @@ class CreationCommands(commands.Cog):
     async def _send_art_results(self, ctx, channel, results, message, username=None):
         display_count = self._check_your_privilege(ctx)
         # filter out lit
-        results = list(filter(lambda image: 'preview' in image.keys(), results))
+        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                                f"Use !lit for literature share")
@@ -177,7 +177,7 @@ class CreationCommands(commands.Cog):
         results = self.da_rest.get_user_favs(username)
 
         # filter out lit
-        results = list(filter(lambda image: 'preview' in image.keys(), results))
+        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
         random.shuffle(results)
 
         if len(results) == 0 and username:
@@ -204,20 +204,20 @@ class CreationCommands(commands.Cog):
             results = self.da_rest.fetch_user_gallery(username, offset)
 
         # filter out lit
-        results = list(filter(lambda lit: 'preview' not in lit.keys(), results))
+        results = list(filter(lambda lit: 'preview' not in lit.keys() and not lit["is_mature"], results))
         if len(results) == 0:
             await ctx.message.channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
                                            f"Use !art for visual art share")
             ctx.command.reset_cooldown(ctx)
             return
 
-        display_count = int(self._check_your_privilege(ctx)/2)
-
+        display_count = int(self._check_your_privilege(ctx))
+        embed = discord.Embed()
         for result in results[:display_count]:
-            message = f"Read the rest of {username}'s piece: {result['url']}"
-            embed = discord.Embed(url=result['url'], description=message).add_field(
-                name=result['title'], value=result['text_content']['excerpt'][:1024])
-            await channel.send(embed=embed)
+            embed.add_field(
+                name=f"{result['title']}: ({result['url']})", value=result['text_content']['excerpt'][:1024],
+                inline=False)
+        await channel.send(embed=embed)
 
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
@@ -228,7 +228,7 @@ class CreationCommands(commands.Cog):
             return
 
         results = self.da_rest.fetch_daily_deviations()
-        results = list(filter(lambda image: 'preview' in image.keys(), results))
+        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
         random.shuffle(results)
         message = "A Selection from today's Daily Deviations"
         await self._send_art_results(ctx, channel, results, message)
