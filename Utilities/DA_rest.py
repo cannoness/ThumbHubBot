@@ -67,7 +67,7 @@ class DARest:
 
     def do_not_ping_me(self, discord_id):
         query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, false) " \
-                f"ON CONFLICT (discord_id) DO UPDATE SET ping_me= excluded.ping_me"
+                f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
         self.connection.execute(query)
 
     def fetch_da_username(self, discord_id):
@@ -79,11 +79,10 @@ class DARest:
         return None
 
     def fetch_discord_id(self, username):
-        query = f"Select discord_id, ping_me from deviant_usernames where deviant_username = {username}"
+        query = f"Select discord_id from deviant_usernames where deviant_username = '{username}' and ping_me = true"
         result = self.connection.execute(query).fetchone()
         if result:
-            query_results = "".join(result)
-            return query_results
+            return result[0]
         return None
 
     def _fetch_da_usernames(self, num):

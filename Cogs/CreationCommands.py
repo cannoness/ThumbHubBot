@@ -62,11 +62,13 @@ class CreationCommands(commands.Cog):
                                f"Use !lit for literature share")
             ctx.command.reset_cooldown(ctx)
             return
+        ping_user = self.da_rest.fetch_discord_id(username) if username else None
+        mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         embed = []
         for result in results[:display_count]:
             embed.append(
                 discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
-        await channel.send(embeds=embed)
+        await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
 
     @commands.command(name='twitterart')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
