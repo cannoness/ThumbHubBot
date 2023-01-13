@@ -79,7 +79,8 @@ class DARest:
         return None
 
     def fetch_discord_id(self, username):
-        query = f"Select discord_id from deviant_usernames where deviant_username = '{username}' and ping_me = true"
+        query = f"Select discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " \
+                f"and ping_me = true"
         result = self.connection.execute(query).fetchone()
         if result:
             return result[0]
