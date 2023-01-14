@@ -15,6 +15,7 @@ class DARest:
         self.secret = os.getenv("DA_SECRET")
         self.client = os.getenv("DA_CLIENT")
         self.pg_secret = os.getenv("PG_SECRET")
+        random.seed(42)
 
         engine = sqlalchemy.create_engine(
             f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")
