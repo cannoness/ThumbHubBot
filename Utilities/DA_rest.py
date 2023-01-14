@@ -70,6 +70,11 @@ class DARest:
                 f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
         self.connection.execute(query)
 
+    def ping_me(self, discord_id):
+        query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, true) " \
+                f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
+        self.connection.execute(query)
+
     def fetch_da_username(self, discord_id):
         query = f"Select deviant_username from deviant_usernames where discord_id = {discord_id}"
         result = self.connection.execute(query).fetchone()
@@ -98,13 +103,15 @@ class DARest:
         for user in random_users:
             images += self.fetch_entire_user_gallery(user)
         random.shuffle(images)
-        return_images = images[:num]
+        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], images))
+        return_images = results[:num]
         filtered_users = list({image['author']['username'] for image in return_images})
+        filtered_links = list({f"[{image['title']}]({image['url']})" for image in return_images})
         if len(filtered_users) == 1:
             string_users = filtered_users[0]
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return return_images, string_users
+        return return_images, string_users, filtered_links
 
     def _fetch_user_faves_folder_id(self, username):
         self._validate_token()

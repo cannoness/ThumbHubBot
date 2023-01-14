@@ -12,9 +12,10 @@ load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+DISCOVERY_CHANNEL = os.getenv("DISCOVERY_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', "TheHubVIP"}
 COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
-MOD_COUNT = 6
+MOD_COUNT = 4
 PRIV_COUNT = 4
 DEV_COUNT = 2
 DEFAULT_COOLDOWN = 300
@@ -48,13 +49,13 @@ class CreationCommands(commands.Cog):
         mod_or_admin = not COOLDOWN_WHITELIST.isdisjoint(set(user_roles))
         return PRIV_COUNT if privileged else MOD_COUNT if mod_or_admin else DEV_COUNT
 
-    def _set_channel(self, ctx):
+    def _set_channel(self, ctx, channel):
         # added so we don't spam share during testing
-        if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
+        if str(ctx.message.channel.id) in channel:
+            return ctx.message.channel
+        elif ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
             return self.bot.get_channel(int(BOT_TESTING_CHANNEL))
-        elif ctx.message.channel.id == int(NSFW_CHANNEL):
-            return self.bot.get_channel(int(NSFW_CHANNEL))
-        return self.bot.get_channel(int(ART_LIT_CHANNEL))
+        return None
 
     @staticmethod
     async def _filter_image_results(ctx, results, channel, username=None):
@@ -102,10 +103,15 @@ class CreationCommands(commands.Cog):
         self.da_rest.do_not_ping_me(user.id)
         await ctx.channel.send(f"We will no longer mention you {user.display_name}")
 
+    @commands.command(name='mention')
+    async def mention(self, ctx, user: discord.Member):
+        self.da_rest.ping_me(user.id)
+        await ctx.channel.send(f"We will now mention you {user.display_name}")
+
     @commands.command(name='twitterart')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def twitter_art(self, ctx, username, *args):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -125,7 +131,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='igart')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def ig_art(self, ctx, username, *args):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -145,7 +151,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -157,24 +163,39 @@ class CreationCommands(commands.Cog):
             return
         await self.art(ctx, username, *args)
 
+    @commands.command(name='mylit')
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    async def my_lit(self, ctx, *args):
+        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
+        if channel.id is not ctx.message.channel.id:
+            ctx.command.reset_cooldown(ctx)
+            return
+        username = self.da_rest.fetch_da_username(ctx.message.author.id)
+        if not username:
+            await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
+                           f"sing !store-da-name `@yourself` `username`")
+            ctx.command.reset_cooldown(ctx)
+            return
+        await self.lit(ctx, username, *args)
+
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
 
         display_count = self._check_your_privilege(ctx)
         await ctx.send("Pulling random images, this may take a moment...")
-        results, users = self.da_rest.get_random_images(display_count)
-        message = f"A collection of random images from user(s) {users}!"
+        results, users, links = self.da_rest.get_random_images(display_count)
+        message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
         await self._send_art_results(ctx, channel, results, message)
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username, *args):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -191,7 +212,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, username):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -212,8 +233,8 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def my_lit(self, ctx, username, *args):
-        channel = self._set_channel(ctx)
+    async def lit(self, ctx, username, *args):
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -243,7 +264,7 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
-        channel = self._set_channel(ctx)
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
