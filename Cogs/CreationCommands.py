@@ -161,7 +161,7 @@ class CreationCommands(commands.Cog):
                            f"sing !store-da-name `@yourself` `username`")
             ctx.command.reset_cooldown(ctx)
             return
-        await self.art(ctx, username, *args)
+        await self.art(ctx, username, channel, *args)
 
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
@@ -176,7 +176,7 @@ class CreationCommands(commands.Cog):
                            f"sing !store-da-name `@yourself` `username`")
             ctx.command.reset_cooldown(ctx)
             return
-        await self.lit(ctx, username, *args)
+        await self.lit(ctx, username, channel, *args)
 
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
@@ -194,8 +194,9 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def art(self, ctx, username, *args):
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+    async def art(self, ctx, username, channel=None, *args):
+        if not channel:
+            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
@@ -233,7 +234,7 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def lit(self, ctx, username, *args):
+    async def lit(self, ctx, username, channel=None, *args):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
