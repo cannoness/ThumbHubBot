@@ -55,7 +55,7 @@ class DARest:
     def _gallery_fetch_helper(self, username, offset=0):
         self._validate_token()
         response = requests.get(
-            f"{API_URL}gallery/all?username={username}&limit=24&mature_content=false&access_token="
+            f"{API_URL}gallery/all?username={username}&limit=24&access_token="
             f"{self.access_token}&offset={offset}")
         decoded_content = response.content.decode("UTF-8")
         return json.loads(decoded_content)

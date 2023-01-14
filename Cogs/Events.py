@@ -13,7 +13,7 @@ class Events(commands.Cog):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.command.reset_cooldown(ctx)
-            await ctx.send(r"Something went wrong ¯\_(ツ)_/¯")
+            await ctx.send(f"{error}")
             print("command didn't work.")
         if isinstance(error, commands.errors.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)

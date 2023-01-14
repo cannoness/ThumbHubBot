@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
+NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', "TheHubVIP"}
 COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
@@ -48,20 +49,46 @@ class CreationCommands(commands.Cog):
         return PRIV_COUNT if privileged else MOD_COUNT if mod_or_admin else DEV_COUNT
 
     def _set_channel(self, ctx):
-        # added so we don't spam lit share during testing
+        # added so we don't spam share during testing
         if ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
             return self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        elif ctx.message.channel.id == int(NSFW_CHANNEL):
+            return self.bot.get_channel(int(NSFW_CHANNEL))
         return self.bot.get_channel(int(ART_LIT_CHANNEL))
 
-    async def _send_art_results(self, ctx, channel, results, message, username=None):
-        display_count = self._check_your_privilege(ctx)
+    @staticmethod
+    async def _filter_image_results(ctx, results, channel, username=None):
         # filter out lit
-        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
+        if channel.name == "nsfw-share":
+            results = list(filter(lambda image: 'preview' in image.keys() and image["is_mature"], results))
+        else:
+            results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
+
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                                f"Use !lit for literature share")
             ctx.command.reset_cooldown(ctx)
             return
+        return results
+
+    @staticmethod
+    async def _filter_lit_results(ctx, results, channel, username=None):
+        # filter out lit
+        if channel.name == "nsfw-share":
+            results = list(filter(lambda lit: 'preview' not in lit.keys() and lit["is_mature"], results))
+        else:
+            results = list(filter(lambda lit: 'preview' not in lit.keys() and not lit["is_mature"], results))
+
+        if len(results) == 0 and username:
+            await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
+                               f"Use !art for visual art share")
+            ctx.command.reset_cooldown(ctx)
+            return
+        return results
+
+    async def _send_art_results(self, ctx, channel, results, message, username=None):
+        display_count = self._check_your_privilege(ctx)
+        results = await self._filter_image_results(ctx, results, channel, username)
         ping_user = self.da_rest.fetch_discord_id(username) if username else None
         mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         embed = []
@@ -146,16 +173,13 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def art(self, ctx, username=None, *args):
+    async def art(self, ctx, username, *args):
         channel = self._set_channel(ctx)
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
 
-        if not username or username == 'random' or isinstance(username, int):
-            await self.random(ctx)
-            return
-        elif 'random' in args:
+        if 'random' in args:
             results = self.da_rest.fetch_entire_user_gallery(username)
             random.shuffle(results)
         else:
@@ -176,8 +200,7 @@ class CreationCommands(commands.Cog):
 
         results = self.da_rest.get_user_favs(username)
 
-        # filter out lit
-        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
+        results = await self._filter_image_results(ctx, results, channel, username)
         random.shuffle(results)
 
         if len(results) == 0 and username:
@@ -204,20 +227,18 @@ class CreationCommands(commands.Cog):
             results = self.da_rest.fetch_user_gallery(username, offset)
 
         # filter out lit
-        results = list(filter(lambda lit: 'preview' not in lit.keys() and not lit["is_mature"], results))
-        if len(results) == 0:
-            await ctx.message.channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
-                                           f"Use !art for visual art share")
-            ctx.command.reset_cooldown(ctx)
-            return
+        results = await self._filter_lit_results(ctx, results, channel, username)
 
         display_count = int(self._check_your_privilege(ctx))
+
+        ping_user = self.da_rest.fetch_discord_id(username) if username else None
+        mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         embed = discord.Embed()
         for result in results[:display_count]:
             embed.add_field(
                 name=f"{result['title']}: ({result['url']})", value=result['text_content']['excerpt'][:1024],
                 inline=False)
-        await channel.send(embed=embed)
+        await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
 
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
@@ -228,7 +249,7 @@ class CreationCommands(commands.Cog):
             return
 
         results = self.da_rest.fetch_daily_deviations()
-        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
+        results = await self._filter_image_results(ctx, results, channel)
         random.shuffle(results)
         message = "A Selection from today's Daily Deviations"
         await self._send_art_results(ctx, channel, results, message)
