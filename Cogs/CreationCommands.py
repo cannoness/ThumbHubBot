@@ -18,8 +18,8 @@ COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
 MOD_COUNT = 4
 PRIV_COUNT = 4
 DEV_COUNT = 2
-DEFAULT_COOLDOWN = 300
-VIP_COOLDOWN = 180
+DEFAULT_COOLDOWN = 600
+VIP_COOLDOWN = 300
 POST_RATE = 1
 
 
@@ -29,7 +29,7 @@ class Private:
         roles = {role.name for role in ctx.author.roles}
         if not COOLDOWN_WHITELIST.isdisjoint(roles):
             return None
-        elif "TheHubVIP" in roles:
+        elif PRIVILEGED_ROLES.isdisjoint(roles):
             discord.app_commands.Cooldown(POST_RATE, VIP_COOLDOWN)
         else:
             return discord.app_commands.Cooldown(POST_RATE, DEFAULT_COOLDOWN)
