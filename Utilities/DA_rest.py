@@ -103,8 +103,7 @@ class DARest:
         for user in random_users:
             images += self.fetch_entire_user_gallery(user)
         random.shuffle(images)
-        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], images))
-        return_images = results[:num]
+        return_images = images[:100]
         filtered_users = list({image['author']['username'] for image in return_images})
         filtered_links = list({f"[{image['title']}]({image['url']})" for image in return_images})
         if len(filtered_users) == 1:
