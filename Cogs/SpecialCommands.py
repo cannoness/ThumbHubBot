@@ -5,6 +5,7 @@ import os
 import random
 
 from dotenv import load_dotenv
+import datetime
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
@@ -20,7 +21,8 @@ POST_RATE = 1
 
 class SpecialCommands(commands.Cog):
     def __init__(self, bot):
-        random.seed(42)
+        seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+        random.seed(seed)
         self.bot = bot
         self.da_rest = DARest()
 

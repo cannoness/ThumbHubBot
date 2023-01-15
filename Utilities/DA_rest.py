@@ -3,7 +3,9 @@ import sqlalchemy
 import json
 import random
 import os
+import datetime
 from dotenv import load_dotenv
+
 
 AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&"
 API_URL = "https://www.deviantart.com/api/v1/oauth2/"
@@ -15,7 +17,8 @@ class DARest:
         self.secret = os.getenv("DA_SECRET")
         self.client = os.getenv("DA_CLIENT")
         self.pg_secret = os.getenv("PG_SECRET")
-        random.seed(42)
+        seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
+        random.seed(seed)
 
         engine = sqlalchemy.create_engine(
             f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")
