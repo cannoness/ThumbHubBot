@@ -6,3 +6,4 @@ psycopg2
 instaloader
 python-twitter-v2
 datetime
+feedparser

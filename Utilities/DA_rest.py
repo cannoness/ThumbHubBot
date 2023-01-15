@@ -5,10 +5,12 @@ import random
 import os
 import datetime
 from dotenv import load_dotenv
+import feedparser
 
 
 AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&"
 API_URL = "https://www.deviantart.com/api/v1/oauth2/"
+RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
 
 
 class DARest:
@@ -105,17 +107,18 @@ class DARest:
         random_users = self._fetch_da_usernames(num)
         images = []
         for user in random_users:
-            images += self.fetch_entire_user_gallery(user)
+            images += feedparser.parse(f"{RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
         random.shuffle(images)
         return_images = images[:10]
-        results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], return_images))
-        filtered_users = list({image['author']['username'] for image in results[:num]})
-        filtered_links = list({f"[{image['title']}]({image['url']})" for image in results[:num]})
+        results = list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
+                              return_images))
+        filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
+        filtered_links = list({f"[{image['title']}]({image['links'][-1]['href']})" for image in results[:num]})
         if len(filtered_users) == 1:
             string_users = filtered_users[0]
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return return_images, string_users, filtered_links
+        return results, string_users, filtered_links
 
     def _fetch_user_faves_folder_id(self, username):
         self._validate_token()

@@ -87,16 +87,26 @@ class CreationCommands(commands.Cog):
             return
         return results
 
-    async def _send_art_results(self, ctx, channel, results, message, username=None):
+    async def _send_art_results(self, ctx, channel, results, message, username=None, usernames=None):
         display_count = self._check_your_privilege(ctx)
-        results = await self._filter_image_results(ctx, results, channel, username)
+        if not usernames:
+            results = await self._filter_image_results(ctx, results, channel, username)
         ping_user = self.da_rest.fetch_discord_id(username) if username else None
         mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
+        # else:
+        #     mention_string = []
+        #     for user in usernames:
+        #         ping_user = self.da_rest.fetch_discord_id(user)
+        #         mention_string += ctx.message.guild.get_member(ping_user).mention if ping_user else None
         embed = []
         for result in results[:display_count]:
-            embed.append(
-                discord.Embed(url="http://deviantart.com", description=message).set_image(url=result['preview']['src']))
+            embed.append(self._build_embed(result['preview']['src'], message) if not usernames else \
+                         self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
+
+    @staticmethod
+    def _build_embed(url, message):
+        return discord.Embed(url="http://deviantart.com", description=message).set_image(url=url)
 
     @commands.command(name='nomention')
     async def do_not_mention(self, ctx, user: discord.Member):
@@ -190,7 +200,7 @@ class CreationCommands(commands.Cog):
         await ctx.send("Pulling random images, this may take a moment...")
         results, users, links = self.da_rest.get_random_images(display_count)
         message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
-        await self._send_art_results(ctx, channel, results, message)
+        await self._send_art_results(ctx, channel, results, message, usernames=users)
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
