@@ -98,7 +98,8 @@ class CreationCommands(commands.Cog):
             for user in usernames:
                 ping_user = self.da_rest.fetch_discord_id(user)
                 mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
-            mention_string = ", ".join(mention_string)
+            mention_list = list(filter(lambda mention: mention is not None, mention_string))
+            mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
         embed = []
         for result in results[:display_count]:
             embed.append(self._build_embed(result['preview']['src'], message) if not usernames else \
