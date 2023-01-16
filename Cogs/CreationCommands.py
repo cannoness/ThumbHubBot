@@ -91,13 +91,14 @@ class CreationCommands(commands.Cog):
         display_count = self._check_your_privilege(ctx)
         if not usernames:
             results = await self._filter_image_results(ctx, results, channel, username)
-        ping_user = self.da_rest.fetch_discord_id(username) if username else None
-        mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
-        # else:
-        #     mention_string = []
-        #     for user in usernames:
-        #         ping_user = self.da_rest.fetch_discord_id(user)
-        #         mention_string += ctx.message.guild.get_member(ping_user).mention if ping_user else None
+            ping_user = self.da_rest.fetch_discord_id(username) if username else None
+            mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
+        else:
+            mention_string = []
+            for user in usernames:
+                ping_user = self.da_rest.fetch_discord_id(user)
+                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
+            mention_string = ", ".join(mention_string)
         embed = []
         for result in results[:display_count]:
             embed.append(self._build_embed(result['preview']['src'], message) if not usernames else \
@@ -198,9 +199,9 @@ class CreationCommands(commands.Cog):
 
         display_count = self._check_your_privilege(ctx)
         await ctx.send("Pulling random images, this may take a moment...")
-        results, users, links = self.da_rest.get_random_images(display_count)
+        results, users, links, usernames = self.da_rest.get_random_images(display_count)
         message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
-        await self._send_art_results(ctx, channel, results, message, usernames=users)
+        await self._send_art_results(ctx, channel, results, message, usernames=usernames)
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
@@ -220,9 +221,19 @@ class CreationCommands(commands.Cog):
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
         await self._send_art_results(ctx, channel, results, message, username)
 
+    @commands.command(name='myfavs')
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    async def my_favs(self, ctx):
+        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
+        if channel.id is not ctx.message.channel.id:
+            ctx.command.reset_cooldown(ctx)
+            return
+        username = self.da_rest.fetch_da_username(ctx.message.author.id)
+        await self.favs(ctx, username)
+
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def my_favs(self, ctx, username):
+    async def favs(self, ctx, username):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
@@ -232,15 +243,15 @@ class CreationCommands(commands.Cog):
 
         results = self.da_rest.get_user_favs(username)
 
-        results = await self._filter_image_results(ctx, results, channel, username)
         random.shuffle(results)
+        results = self._filter_rss_image_results(results[:10])
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
             ctx.command.reset_cooldown(ctx)
             return
         message = f"Visit {username}'s favorites at http://www.deviantart.com/{username}/favorites/all"
-        await self._send_art_results(ctx, channel, results, message, username)
+        await self._send_art_results(ctx, channel, results, message, usernames=[username])
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
@@ -285,6 +296,11 @@ class CreationCommands(commands.Cog):
         random.shuffle(results)
         message = "A Selection from today's Daily Deviations"
         await self._send_art_results(ctx, channel, results, message)
+
+    @staticmethod
+    def _filter_rss_image_results(results):
+        return list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
+                           results))
 
 
 async def setup(bot):

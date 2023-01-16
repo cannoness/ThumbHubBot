@@ -10,8 +10,8 @@ import feedparser
 
 AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&"
 API_URL = "https://www.deviantart.com/api/v1/oauth2/"
-RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
-
+RANDOM_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
+FAV_RSS_URL = "http://backend.deviantart.com/rss.xml?type=deviation&q=favby%3A"
 
 class DARest:
     def __init__(self):
@@ -107,7 +107,7 @@ class DARest:
         random_users = self._fetch_da_usernames(num)
         images = []
         for user in random_users:
-            images += feedparser.parse(f"{RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
+            images += feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
         random.shuffle(images)
         return_images = images[:10]
         results = list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
@@ -118,7 +118,7 @@ class DARest:
             string_users = filtered_users[0]
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return results, string_users, filtered_links
+        return results, string_users, filtered_links, filtered_users
 
     def _fetch_user_faves_folder_id(self, username):
         self._validate_token()
@@ -128,25 +128,21 @@ class DARest:
         decoded_content = response.content.decode("UTF-8")
         return json.loads(decoded_content)['results'][0]['folderid']
 
-    def _fetch_all_user_faves_helper(self, username, folder_id, offset=0):
-        self._validate_token()
-        response = requests.get(
-            f"{API_URL}collections/{folder_id}?username={username}&limit=24&mature_content=false&access_token="
-            f"{self.access_token}&offset={offset}")
-        decoded_content = response.content.decode("UTF-8")
-        return json.loads(decoded_content)
+    @staticmethod
+    def _fetch_all_user_faves_helper(username, offset=0):
+        response = feedparser.parse(
+            f"{FAV_RSS_URL}{username}&offset={offset}")
+        return response
 
     def get_user_favs(self, username):
         # initial fetch
-        folder_id = self._fetch_user_faves_folder_id(username)
-        response = self._fetch_all_user_faves_helper(username, folder_id)
-        results = response['results']
-
+        response = self._fetch_all_user_faves_helper(username)
+        results = response.entries
         # build the rest of the gallery
-        while response['has_more'] and response['next_offset'] < 1000:
-            next_offset = response['next_offset']
-            response = self._fetch_all_user_faves_helper(username, folder_id, offset=next_offset)
-            results += response['results']
+        while len(response['feed']['links']) > 1 and len(results) < 1000:
+            url = response['feed']['links'][2]['href']
+            response = feedparser.parse(url)
+            results += response.entries
         return results
 
     def _validate_token(self):
