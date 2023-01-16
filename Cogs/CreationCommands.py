@@ -224,23 +224,18 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx):
-        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
         username = self.da_rest.fetch_da_username(ctx.message.author.id)
         if not username:
             await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
                            f"sing !store-da-name `@yourself` `username`")
             ctx.command.reset_cooldown(ctx)
             return
-        await self.favs(ctx, username, channel)
+        await self.favs(ctx, username)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def favs(self, ctx, username, channel=None):
-        if not channel:
-            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+    async def favs(self, ctx, username):
+        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
