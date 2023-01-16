@@ -229,6 +229,11 @@ class CreationCommands(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
         username = self.da_rest.fetch_da_username(ctx.message.author.id)
+        if not username:
+            await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
+                           f"sing !store-da-name `@yourself` `username`")
+            ctx.command.reset_cooldown(ctx)
+            return
         await self.favs(ctx, username)
 
     @commands.command(name='favs')
