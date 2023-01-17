@@ -154,7 +154,7 @@ class DARest:
             string_users = filtered_users[0]
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return results, string_users, filtered_links, filtered_users
+        return results, string_users, filtered_links
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
