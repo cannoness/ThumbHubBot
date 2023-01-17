@@ -255,7 +255,8 @@ class CreationCommands(commands.Cog):
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
     async def lit(self, ctx, username, channel=None, *args):
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+        if not channel:
+            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
