@@ -242,17 +242,14 @@ class CreationCommands(commands.Cog):
             return
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
-
-        results = self.da_rest.get_user_favs(username)
-
-        random.shuffle(results)
-        results = self._filter_rss_image_results(results[:10])
+        num = self._check_your_privilege(ctx)
+        results, users, links = self.da_rest.get_user_favs(username, num)
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
             ctx.command.reset_cooldown(ctx)
             return
-        message = f"Visit {username}'s favorites at http://www.deviantart.com/{username}/favorites/all"
+        message = f"A collection of favorites from user {username}, by users {users}: {', '.join(links)}"
         await self._send_art_results(ctx, channel, results, message, usernames=[username])
 
     @commands.command(name='lit')
@@ -298,11 +295,6 @@ class CreationCommands(commands.Cog):
         random.shuffle(results)
         message = "A Selection from today's Daily Deviations"
         await self._send_art_results(ctx, channel, results, message)
-
-    @staticmethod
-    def _filter_rss_image_results(results):
-        return list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
-                           results))
 
 
 async def setup(bot):

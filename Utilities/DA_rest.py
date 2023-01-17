@@ -134,16 +134,27 @@ class DARest:
             f"{FAV_RSS_URL}{username}&offset={offset}")
         return response
 
-    def get_user_favs(self, username):
+    def get_user_favs(self, username, num):
         # initial fetch
         response = self._fetch_all_user_faves_helper(username)
-        results = response.entries
+        images = response.entries
         # build the rest of the gallery
-        while len(response['feed']['links']) > 1 and len(results) < 1000:
+        while len(response['feed']['links']) > 1 and len(images) < 1000:
             url = response['feed']['links'][2]['href']
             response = feedparser.parse(url)
-            results += response.entries
-        return results
+            images += response.entries
+
+        random.shuffle(images)
+        return_images = images[:10]
+        results = list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
+                              return_images))
+        filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
+        filtered_links = list({f"[{image['title']}]({image['links'][-1]['href']})" for image in results[:num]})
+        if len(filtered_users) == 1:
+            string_users = filtered_users[0]
+        else:
+            string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
+        return results, string_users, filtered_links, filtered_users
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
