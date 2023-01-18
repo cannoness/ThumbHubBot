@@ -209,9 +209,9 @@ class CreationCommands(commands.Cog):
     async def art(self, ctx, username, channel=None, *args):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
+            if channel.id is not ctx.message.channel.id:
+                ctx.command.reset_cooldown(ctx)
+                return
 
         if 'random' in args:
             results = self.da_rest.fetch_entire_user_gallery(username)
@@ -231,15 +231,21 @@ class CreationCommands(commands.Cog):
                            f"sing !store-da-name `@yourself` `username`")
             ctx.command.reset_cooldown(ctx)
             return
-        await self.favs(ctx, username)
 
-    @commands.command(name='favs')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def favs(self, ctx, username):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
+        await self.favs(ctx, username, channel)
+
+    @commands.command(name='favs')
+    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    async def favs(self, ctx, username, channel=None):
+        if not channel:
+            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+            if channel.id is not ctx.message.channel.id:
+                ctx.command.reset_cooldown(ctx)
+                return
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
         num = self._check_your_privilege(ctx)
@@ -257,9 +263,9 @@ class CreationCommands(commands.Cog):
     async def lit(self, ctx, username, channel=None, *args):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
+            if channel.id is not ctx.message.channel.id:
+                ctx.command.reset_cooldown(ctx)
+                return
 
         offset = args[0] if 'random' not in args and len(args) > 0 else 0
 
