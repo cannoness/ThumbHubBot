@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from Utilities.DA_rest import DARest
 from Utilities.IG_rest import IGRest
 from Utilities.Twitter_rest import TwitterRest
@@ -24,8 +26,11 @@ POST_RATE = 1
 
 
 class Private:
+    def __init__(self, bot):
+        self.bot = bot
+
     @staticmethod
-    def _custom_cooldown(ctx):
+    def custom_cooldown(ctx):
         roles = {role.name for role in ctx.author.roles}
         if not COOLDOWN_WHITELIST.isdisjoint(roles):
             return None
@@ -61,9 +66,9 @@ class CreationCommands(commands.Cog):
     async def _filter_image_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda image: 'preview' in image.keys() and image["is_mature"], results))
+            results = list(filter(lambda image:  image["is_mature"], results))
         else:
-            results = list(filter(lambda image: 'preview' in image.keys() and not image["is_mature"], results))
+            results = list(filter(lambda image: not image["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -87,8 +92,9 @@ class CreationCommands(commands.Cog):
             return
         return results
 
-    async def _send_art_results(self, ctx, channel, results, message, username=None, usernames=None):
+    async def _send_art_results(self, ctx, channel, results, message, username=None, usernames=None, display_num=None):
         display_count = self._check_your_privilege(ctx)
+        display = display_count if not display_num or display_num >= display_count else display_num
         if not usernames:
             results = await self._filter_image_results(ctx, results, channel, username)
             ping_user = self.da_rest.fetch_discord_id(username) if username else None
@@ -101,8 +107,8 @@ class CreationCommands(commands.Cog):
             mention_list = list(filter(lambda mention: mention is not None, mention_string))
             mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
         embed = []
-        for result in results[:display_count]:
-            embed.append(self._build_embed(result['preview']['src'], message) if not usernames else \
+        for result in results[:display]:
+            embed.append(self._build_embed(result['url'], message) if not usernames else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
 
@@ -121,7 +127,7 @@ class CreationCommands(commands.Cog):
         await ctx.channel.send(f"We will now mention you {user.display_name}")
 
     @commands.command(name='twitterart')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def twitter_art(self, ctx, username, *args):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
@@ -141,7 +147,7 @@ class CreationCommands(commands.Cog):
         await channel.send(embeds=embed)
 
     @commands.command(name='igart')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def ig_art(self, ctx, username, *args):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
@@ -161,7 +167,7 @@ class CreationCommands(commands.Cog):
         await channel.send(embeds=embed)
 
     @commands.command(name='myart')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
         if channel.id is not ctx.message.channel.id:
@@ -173,10 +179,10 @@ class CreationCommands(commands.Cog):
                            f"sing !store-da-name `@yourself` `username`")
             ctx.command.reset_cooldown(ctx)
             return
-        await self.art(ctx, username, channel, *args)
+        await self.art(ctx, username, *args, channel=channel)
 
     @commands.command(name='mylit')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
         if channel.id is not ctx.message.channel.id:
@@ -191,7 +197,7 @@ class CreationCommands(commands.Cog):
         await self.lit(ctx, username, channel, *args)
 
     @commands.command(name='random')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         if channel.id is not ctx.message.channel.id:
@@ -204,26 +210,54 @@ class CreationCommands(commands.Cog):
         message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
         await self._send_art_results(ctx, channel, results, message, usernames=usernames)
 
+    def _parse_args(self, *args):
+        if len(args) == 0:
+            return None
+        arg_dict = defaultdict(None)
+        if 'random' or 'rnd' in args:
+            arg_dict['random'] = True
+        if args[-1].isdigit():
+            arg_dict['show_only'] = args[-1]
+        if '+' in "\t".join(args):
+            arg_dict['offset'] = self._get_clean_arg(args, '+')
+        if 'gallery /' in "\t".join(args):
+            arg_dict['gallery'] = self._get_clean_arg(args, '/')
+        if '#' in "\t".join(args):
+            arg_dict['tags'] = self._get_clean_arg(args, '#')
+        if 'old' in args:
+            arg_dict['old'] = True
+        if 'pop' or 'popular' in args:
+            arg_dict['pop'] = True
+        return arg_dict
+
+    @staticmethod
+    def _get_clean_arg(args, string):
+        index = [idx for idx, arg in enumerate(args) if string in arg][0]
+        return args[index][1:]
+
     @commands.command(name='art')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
-    async def art(self, ctx, username, channel=None, *args):
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def art(self, ctx, username, *args, channel=None):
+        arg = self._parse_args(*args)
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
             if channel.id is not ctx.message.channel.id:
                 ctx.command.reset_cooldown(ctx)
                 return
+        offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
+        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
 
-        if 'random' in args:
+        if arg and 'random' in arg.keys():
             results = self.da_rest.fetch_entire_user_gallery(username)
             random.shuffle(results)
         else:
-            offset = args[0] if 'random' not in args and len(args) > 0 else 0
-            results = self.da_rest.fetch_user_gallery(username, offset)
+            results = self.da_rest.fetch_user_gallery(username, offset, display_num)
+
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
-        await self._send_art_results(ctx, channel, results, message, username)
+        await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
 
     @commands.command(name='myfavs')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx):
         username = self.da_rest.fetch_da_username(ctx.message.author.id)
         if not username:
@@ -239,7 +273,7 @@ class CreationCommands(commands.Cog):
         await self.favs(ctx, username, channel)
 
     @commands.command(name='favs')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, channel=None):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
@@ -249,7 +283,7 @@ class CreationCommands(commands.Cog):
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
         num = self._check_your_privilege(ctx)
-        results, users, links = self.da_rest.get_user_favs(username, num)
+        results, users, links, _ = self.da_rest.get_user_favs(username, num)
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
@@ -259,7 +293,7 @@ class CreationCommands(commands.Cog):
         await self._send_art_results(ctx, channel, results, message, usernames=[username])
 
     @commands.command(name='lit')
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def lit(self, ctx, username, channel=None, *args):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
@@ -289,7 +323,7 @@ class CreationCommands(commands.Cog):
                 inline=False)
         await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
 
-    @commands.dynamic_cooldown(Private._custom_cooldown, type=commands.BucketType.user)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])

@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import requests
 import sqlalchemy
 import json
@@ -12,6 +14,7 @@ AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credential
 API_URL = "https://www.deviantart.com/api/v1/oauth2/"
 RANDOM_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
 FAV_RSS_URL = "http://backend.deviantart.com/rss.xml?type=deviation&q=favby%3A"
+
 
 class DARest:
     def __init__(self):
@@ -34,12 +37,32 @@ class DARest:
         decoded_content = response.content.decode("UTF-8")
         return json.loads(decoded_content)['access_token']
 
-    def fetch_user_gallery(self, username, offset=0):
-        response = self._gallery_fetch_helper(username, offset)
+    def fetch_user_gallery(self, username, offset=0, display_num=24):
+        response = self._gallery_fetch_helper(username, offset, display_num)
         results = response['results']
+        return self._filter_api_image_results(results)
+
+    @staticmethod
+    def _filter_api_image_results(results):
+        return [{'deviationid': result['deviationid'], 'url': result['content']['src'], 'is_mature':
+                result['is_mature'], 'stats': result['stats'], 'published_time': result['published_time'],
+                'title': result['title']} for result in results if 'content' in result.keys()]
+
+    @staticmethod
+    def _convert_cache_to_result(response):
+        results = []
+        for row in response.fetchall():
+            results.append(row._mapping)
         return results
 
-    def fetch_entire_user_gallery(self, username):
+    def fetch_entire_user_gallery(self, username, display_num=24):
+        if self._user_last_cache_update(username):
+            deviant_row_id = self._fetch_user_row_id(username)
+            # use cache
+            query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}"""
+            response = self.connection.execute(query)
+            return self._convert_cache_to_result(response)
+
         # initial fetch
         response = self._gallery_fetch_helper(username)
         results = response['results']
@@ -47,24 +70,35 @@ class DARest:
         # build the rest of the gallery
         while response['has_more']:
             next_offset = response['next_offset']
-            response = self._gallery_fetch_helper(username, offset=next_offset)
+            response = self._gallery_fetch_helper(username, next_offset, display_num)
             results += response['results']
-        return results
+        self._add_user_gallery_to_cache(results, username)
+        return self._filter_api_image_results(results)
 
     def fetch_daily_deviations(self):
         self._validate_token()
         response = requests.get(f"{API_URL}browse/dailydeviations?access_token={self.access_token}")
         decoded_content = response.content.decode("UTF-8")
         results = json.loads(decoded_content)['results']
-        return results
+        return self._filter_api_image_results(results)
 
-    def _gallery_fetch_helper(self, username, offset=0):
+    def _gallery_fetch_helper(self, username, offset=0, display_num=24):
         self._validate_token()
         response = requests.get(
-            f"{API_URL}gallery/all?username={username}&limit=24&access_token="
+            f"{API_URL}gallery/all?username={username}&limit={display_num}&access_token="
             f"{self.access_token}&offset={offset}")
-        decoded_content = response.content.decode("UTF-8")
-        return json.loads(decoded_content)
+        decoded_content = json.loads(response.content.decode("UTF-8"))
+        # check if existing cache should be updated, compare last updated to published_date
+        if self._user_last_cache_update(username):
+            update_results = []
+            for date in decoded_content['results']:
+                if datetime.date.fromtimestamp(int(date['published_time'])) > self._user_last_cache_update(username)[0]:
+                    update_results += date
+                else:
+                    break  # don't keep going if you don't have to
+            if len(update_results):
+                self._add_user_gallery_to_cache(update_results, username)
+        return decoded_content
 
     def store_da_name(self, discord_id, username):
         query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
@@ -108,25 +142,7 @@ class DARest:
         images = []
         for user in random_users:
             images += feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
-        random.shuffle(images)
-        return_images = images[:10]
-        results = list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
-                              return_images))
-        filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
-        filtered_links = list({f"[{image['title']}]({image['links'][-1]['href']})" for image in results[:num]})
-        if len(filtered_users) == 1:
-            string_users = filtered_users[0]
-        else:
-            string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return results, string_users, filtered_links, filtered_users
-
-    def _fetch_user_faves_folder_id(self, username):
-        self._validate_token()
-        response = requests.get(
-            f"{API_URL}collections/folders?username={username}&limit=24&mature_content=false&access_token="
-            f"{self.access_token}")
-        decoded_content = response.content.decode("UTF-8")
-        return json.loads(decoded_content)['results'][0]['folderid']
+        return self._rss_image_helper(images, num)
 
     @staticmethod
     def _fetch_all_user_faves_helper(username, offset=0):
@@ -144,9 +160,76 @@ class DARest:
             response = feedparser.parse(url)
             images += response.entries
 
+        return self._rss_image_helper(images, num)
+
+    def _validate_token(self):
+        response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
+        if 'success' not in json.loads(response.content)["status"]:
+            self.access_token = self._acquire_access_token()
+
+    def _user_last_cache_update(self, username):
+        user_id_row = self._fetch_user_row_id(username)
+        query = f"""SELECT last_updated from cache_updated_date where deviant_row_id = {user_id_row}"""
+        return self.connection.execute(query).fetchone()
+
+    def _add_user_gallery_to_cache(self, results, username):
+        # this only gets called if the user doesn't exist in the cache yet
+        user_id = self._fetch_user_row_id(username)
+        results, ext_data = self._fetch_metadata(results)
+        combined_data_dict = self._create_user_deviation_dict(results, ext_data)
+        self._initial_add_to_cache(combined_data_dict, user_id)
+
+    def _fetch_user_row_id(self, username):
+        query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " \
+                f"and ping_me = true"
+        result = self.connection.execute(query).fetchone()
+        if result:
+            return result[0]
+        return None
+
+    def _fetch_metadata(self, results):
+        uuid_list = [result['deviationid'] for result in results]
+        # not ready to support lit yet.
+        ext_data = [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src']
+                    if 'content' in result.keys() else None, 'src_snippet': result['text_content']['excerpt'][:1024]
+                    .replace("'", "''") if
+                    'text_content' in result.keys() else None, 'is_mature':
+                     result['is_mature'], 'stats': result['stats'], 'published_time': result['published_time'],
+                     'title': result['title']} for result in results]
+        # gotta chunk it...
+        response = []
+        for chunk in range(0, len(uuid_list), 50):
+            deviation_ids = "&".join([f"""deviationids%5B%5D='{id}'""" for id in uuid_list[chunk:chunk+49]])
+            response += json.loads(requests.get(f"{API_URL}deviation/metadata?{deviation_ids}&"
+                                                f"access_token={self.access_token}").content)['metadata']
+        return response, ext_data
+
+    @staticmethod
+    def _create_user_deviation_dict(results, ext_data):
+        combined_dict = defaultdict(dict)
+        for item in results + ext_data:
+            combined_dict[item['deviationid']].update(item)
+        return list(combined_dict.values())
+
+    def _initial_add_to_cache(self, results, row_id):
+        values_list = ", ".join([f""" ({row_id}, '{result['url']}','{result['src_image']}','{result['src_snippet']}', 
+                                '{result['title'].replace("'","")}', {result['stats']['favourites']}, 
+                                '{', '.join([tag['tag_name'] for tag in result['tags']]) if 'tags' in result.keys() else 
+                                None}', to_date('{datetime.datetime.fromtimestamp(int(result['published_time']))
+                                .strftime('%Y%m%d')}', 'YYYYMMDD'), '{result['is_mature']}') """ for result in results])
+        query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \
+                f"date_created, is_mature) VALUES {values_list} "
+        self.connection.execute(query)
+        query = f"INSERT INTO cache_updated_date (deviant_row_id) VALUES ({row_id}) ON CONFLICT " \
+                f"(deviant_row_id) DO UPDATE SET last_updated = now()"
+        self.connection.execute(query)
+
+    @staticmethod
+    def _rss_image_helper(images, num):
         random.shuffle(images)
         return_images = images[:10]
-        results = list(filter(lambda image: 'media_content' in image.keys() and image["rating"] == 'nonadult',
+        results = list(filter(lambda image: 'media_content' in image.keys() and image['media_content'][-1]['medium']
+                                            == 'image' and image["rating"] == 'nonadult',
                               return_images))
         filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
         filtered_links = list({f"[{image['title']}]({image['links'][-1]['href']})" for image in results[:num]})
@@ -154,9 +237,4 @@ class DARest:
             string_users = filtered_users[0]
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return results, string_users, filtered_links
-
-    def _validate_token(self):
-        response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
-        if 'success' not in json.loads(response.content)["status"]:
-            self.access_token = self._acquire_access_token()
+        return results, string_users, filtered_links, filtered_users
