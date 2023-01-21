@@ -107,6 +107,10 @@ class DARest:
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
         self.connection.execute(query)
 
+    def store_random_da_name(self, username):
+        query = f"INSERT INTO deviant_usernames (ping_me, deviant_username) VALUES (false, '{username}') "
+        self.connection.execute(query)
+
     def do_not_ping_me(self, discord_id):
         query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, false) " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
@@ -192,12 +196,7 @@ class DARest:
     def _fetch_metadata(self, results):
         uuid_list = [result['deviationid'] for result in results]
         # not ready to support lit yet.
-        ext_data = [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src']
-                    if 'content' in result.keys() else None, 'src_snippet': result['text_content']['excerpt'][:1024]
-                    .replace("'", "''") if
-                    'text_content' in result.keys() else None, 'is_mature':
-                     result['is_mature'], 'stats': result['stats'], 'published_time': result['published_time'],
-                     'title': result['title']} for result in results]
+        ext_data = self._filter_api_image_results(results)
         # gotta chunk it...
         response = []
         for chunk in range(0, len(uuid_list), 50):
