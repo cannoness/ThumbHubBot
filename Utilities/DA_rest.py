@@ -37,18 +37,19 @@ class DARest:
         decoded_content = response.content.decode("UTF-8")
         return json.loads(decoded_content)['access_token']
 
-    def fetch_user_gallery(self, username, offset=0, display_num=24):
-        response = self._gallery_fetch_helper(username, offset, display_num)
-        results = response['results']
-        return self._filter_api_image_results(results)
+    def fetch_user_gallery(self, username, version, offset=0, display_num=24):
+        response = self.fetch_entire_user_gallery(username, version, display_num)
+        return response[offset:]
 
     @staticmethod
     def _filter_api_image_results(results):
+        nl = '\n'
         return [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src'] if
-                'content' in result.keys() else "None", 'src_snippet': result['text_content']['excerpt'][:1024] if
-                 'text_content' in result.keys() else "None", 'is_mature': result['is_mature'], 'stats': result['stats'],
-                 'published_time': result['published_time'],
-                 'title': result['title']} for result in results if 'content' in result.keys()]
+                'content' in result.keys() else "None", 'src_snippet': result['text_content']['excerpt'][:1024]
+                 .replace("'", "''").replace("<br />", nl) if 'text_content' in result.keys() else "None", 'is_mature':
+                 result['is_mature'],
+                 'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title']} for
+                result in results]
 
     @staticmethod
     def _convert_cache_to_result(response):
@@ -57,11 +58,33 @@ class DARest:
             results.append(row._mapping)
         return results
 
-    def fetch_entire_user_gallery(self, username, display_num=24):
+    def fetch_user_popular(self, username, version, display_num=24):
+        deviant_row_id = self._fetch_user_row_id(username)
+        if not self._user_last_cache_update(username):
+            self.fetch_entire_user_gallery(username, version)
+        # use cache
+        query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' 
+                order by favs desc 
+                limit {display_num} """
+        response = self.connection.execute(query)
+        return self._convert_cache_to_result(response)
+
+    def fetch_user_old(self, username, version, display_num=24):
+        deviant_row_id = self._fetch_user_row_id(username)
+        if not self._user_last_cache_update(username):
+            self.fetch_entire_user_gallery(username, version)
+        # use cache
+        query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' 
+                order by date_created asc 
+                limit {display_num} """
+        response = self.connection.execute(query)
+        return self._convert_cache_to_result(response)
+
+    def fetch_entire_user_gallery(self, username, version, display_num=24):
         if self._user_last_cache_update(username):
             deviant_row_id = self._fetch_user_row_id(username)
             # use cache
-            query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}"""
+            query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' """
             response = self.connection.execute(query)
             return self._convert_cache_to_result(response)
 
@@ -86,8 +109,9 @@ class DARest:
 
     def _gallery_fetch_helper(self, username, offset=0, display_num=24):
         self._validate_token()
+        # only do this to check if the cache has to be updated...
         response = requests.get(
-            f"{API_URL}gallery/all?username={username}&limit={display_num}&access_token="
+            f"{API_URL}gallery/all?username={username}&limit=24&access_token="
             f"{self.access_token}&offset={offset}")
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
@@ -213,9 +237,12 @@ class DARest:
         return list(combined_dict.values())
 
     def _initial_add_to_cache(self, results, row_id):
-        values_list = ", ".join([f""" ({row_id}, '{result['url']}','{result['src_image']}','{result['src_snippet']}', 
-                                '{result['title'].replace("'","")}', {result['stats']['favourites']}, 
-                                '{', '.join([tag['tag_name'] for tag in result['tags']]) if 'tags' in result.keys() else 
+        nl = '\n'
+        values_list = ", ".join([f""" ({row_id}, '{result['url']}','{result['src_image']}','{result['src_snippet']
+                                .replace("<br />", nl)}', '{result['title'].replace("'", "")}', 
+                                {result['stats']['favourites']}, '{', '.join([tag['tag_name'] for tag in 
+                                                                              result['tags']]) if 'tags' in 
+                                                                                                  result.keys() else 
                                 None}', to_date('{datetime.datetime.fromtimestamp(int(result['published_time']))
                                 .strftime('%Y%m%d')}', 'YYYYMMDD'), '{result['is_mature']}') """ for result in results])
         query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \

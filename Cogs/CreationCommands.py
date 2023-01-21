@@ -66,9 +66,9 @@ class CreationCommands(commands.Cog):
     async def _filter_image_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda image: image['src_image'] != "None" and image["is_mature"], results))
-        else:
-            results = list(filter(lambda image: image['src_image'] != "None" and not image["is_mature"], results))
+            results = list(filter(lambda image:  image["is_mature"], results))
+        elif channel.name != "bot-testing":
+            results = list(filter(lambda image: not image["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -81,9 +81,9 @@ class CreationCommands(commands.Cog):
     async def _filter_lit_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda lit: lit['src_snippet'] != "None" and lit["is_mature"], results))
-        else:
-            results = list(filter(lambda lit: lit['src_snippet'] != "None" and not lit["is_mature"], results))
+            results = list(filter(lambda lit:  lit["is_mature"], results))
+        elif channel.name != "bot-testing":
+            results = list(filter(lambda lit: not lit["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
@@ -94,7 +94,7 @@ class CreationCommands(commands.Cog):
 
     async def _send_art_results(self, ctx, channel, results, message, username=None, usernames=None, display_num=None):
         display_count = self._check_your_privilege(ctx)
-        display = display_count if not display_num or display_num >= display_count else display_num
+        display = display_count if (not display_num or display_num >= display_count) else display_num
         if not usernames:
             results = await self._filter_image_results(ctx, results, channel, username)
             ping_user = self.da_rest.fetch_discord_id(username) if username else None
@@ -111,6 +111,30 @@ class CreationCommands(commands.Cog):
             embed.append(self._build_embed(result['src_image'], message) if not usernames else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
+
+    async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):
+        display_count = int(self._check_your_privilege(ctx))
+        display = display_count if (not display_num or display_num >= display_count) else display_num
+        if not usernames:
+            # filter out lit
+            results = await self._filter_lit_results(ctx, results, channel, username)
+            ping_user = self.da_rest.fetch_discord_id(username) if username else None
+            mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
+        else:
+            mention_string = []
+            for user in usernames:
+                ping_user = self.da_rest.fetch_discord_id(user)
+                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
+            mention_list = list(filter(lambda mention: mention is not None, mention_string))
+            mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
+
+        embed = discord.Embed()
+        nl = '\n'
+        for result in results[:display]:
+            embed.add_field(
+                name=f"{result['title']}: ({result['url']})", value=f"'{result['src_snippet'].replace('<br />', nl)}'",
+                inline=False)
+        await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
 
     @staticmethod
     def _build_embed(url, message):
@@ -217,9 +241,9 @@ class CreationCommands(commands.Cog):
         if 'random' in args or 'rnd' in args:
             arg_dict['random'] = True
         if args[-1].isdigit():
-            arg_dict['show_only'] = args[-1]
+            arg_dict['show_only'] = int(args[-1])
         if '+' in "\t".join(args):
-            arg_dict['offset'] = self._get_clean_arg(args, '+')
+            arg_dict['offset'] = int(self._get_clean_arg(args, '+'))
         if 'gallery /' in "\t".join(args):
             arg_dict['gallery'] = self._get_clean_arg(args, '/')
         if '#' in "\t".join(args):
@@ -235,6 +259,20 @@ class CreationCommands(commands.Cog):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
+    def _fetch_based_on_args(self, username, version, arg):
+        offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
+        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
+        if arg:
+            if 'random' in arg.keys():
+                results = self.da_rest.fetch_entire_user_gallery(username, version)
+                return random.shuffle(results), offset, display_num
+            elif 'pop' in arg.keys():
+                return self.da_rest.fetch_user_popular(username, version, display_num), offset, display_num
+            elif 'old' in arg.keys():
+                return self.da_rest.fetch_user_old(username, version, display_num), offset, display_num
+
+        return self.da_rest.fetch_user_gallery(username, version, offset, display_num), offset, display_num
+
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username, *args, channel=None):
@@ -244,14 +282,8 @@ class CreationCommands(commands.Cog):
             if channel.id is not ctx.message.channel.id:
                 ctx.command.reset_cooldown(ctx)
                 return
-        offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
-        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
 
-        if arg and 'random' in arg.keys():
-            results = self.da_rest.fetch_entire_user_gallery(username)
-            random.shuffle(results)
-        else:
-            results = self.da_rest.fetch_user_gallery(username, offset, display_num)
+        results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
 
         message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
         await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
@@ -295,33 +327,16 @@ class CreationCommands(commands.Cog):
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def lit(self, ctx, username, *args, channel=None):
+        arg = self._parse_args(*args)
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
             if channel.id is not ctx.message.channel.id:
                 ctx.command.reset_cooldown(ctx)
                 return
 
-        offset = args[0] if 'random' not in args and len(args) > 0 else 0
+        results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
 
-        if 'random' in args:
-            results = self.da_rest.fetch_entire_user_gallery(username)
-            random.shuffle(results)
-        else:
-            results = self.da_rest.fetch_user_gallery(username, offset)
-
-        # filter out lit
-        results = await self._filter_lit_results(ctx, results, channel, username)
-
-        display_count = int(self._check_your_privilege(ctx))
-
-        ping_user = self.da_rest.fetch_discord_id(username) if username else None
-        mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
-        embed = discord.Embed()
-        for result in results[:display_count]:
-            embed.add_field(
-                name=f"{result['title']}: ({result['url']})", value=result['src_snippet'],
-                inline=False)
-        await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
+        await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
