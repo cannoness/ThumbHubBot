@@ -39,7 +39,7 @@ class DARest:
 
     def fetch_user_gallery(self, username, version, offset=0, display_num=24):
         response = self.fetch_entire_user_gallery(username, version, display_num)
-        return response[offset:]
+        return response[offset:display_num]
 
     @staticmethod
     def _filter_api_image_results(results):
@@ -60,6 +60,8 @@ class DARest:
 
     def fetch_user_popular(self, username, version, display_num=24):
         deviant_row_id = self._fetch_user_row_id(username)
+        if not deviant_row_id:
+            return None
         if not self._user_last_cache_update(username):
             self.fetch_entire_user_gallery(username, version)
         # use cache
@@ -71,6 +73,8 @@ class DARest:
 
     def fetch_user_old(self, username, version, display_num=24):
         deviant_row_id = self._fetch_user_row_id(username)
+        if not deviant_row_id:
+            return None
         if not self._user_last_cache_update(username):
             self.fetch_entire_user_gallery(username, version)
         # use cache
@@ -97,7 +101,9 @@ class DARest:
             next_offset = response['next_offset']
             response = self._gallery_fetch_helper(username, next_offset, display_num)
             results += response['results']
-        self._add_user_gallery_to_cache(results, username)
+        in_store = self._fetch_user_row_id(username)
+        if in_store:
+            self._add_user_gallery_to_cache(results, username)
         return self._filter_api_image_results(results)
 
     def fetch_daily_deviations(self):
@@ -199,6 +205,8 @@ class DARest:
 
     def _user_last_cache_update(self, username):
         user_id_row = self._fetch_user_row_id(username)
+        if not user_id_row:
+            return None
         query = f"""SELECT last_updated from cache_updated_date where deviant_row_id = {user_id_row}"""
         return self.connection.execute(query).fetchone()
 
@@ -210,8 +218,7 @@ class DARest:
         self._initial_add_to_cache(combined_data_dict, user_id)
 
     def _fetch_user_row_id(self, username):
-        query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " \
-                f"and ping_me = true"
+        query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' "
         result = self.connection.execute(query).fetchone()
         if result:
             return result[0]

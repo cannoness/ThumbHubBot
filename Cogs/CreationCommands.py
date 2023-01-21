@@ -130,11 +130,14 @@ class CreationCommands(commands.Cog):
 
         embed = discord.Embed()
         nl = '\n'
-        for result in results[:display]:
-            embed.add_field(
-                name=f"{result['title']}: ({result['url']})", value=f"'{result['src_snippet'].replace('<br />', nl)}'",
-                inline=False)
-        await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
+        try:
+            for result in results[:display]:
+                embed.add_field(
+                    name=f"{result['title']}: ({result['url']})", value=f"'{result['src_snippet'].replace('<br />', nl)}'",
+                    inline=False)
+            await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
+        except Exception as ex:
+            print(ex)
 
     @staticmethod
     def _build_embed(url, message):
@@ -276,17 +279,24 @@ class CreationCommands(commands.Cog):
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username, *args, channel=None):
-        arg = self._parse_args(*args)
-        if not channel:
-            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-            if channel.id is not ctx.message.channel.id:
+        try:
+            arg = self._parse_args(*args)
+            if not channel:
+                channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+                if channel.id is not ctx.message.channel.id:
+                    ctx.command.reset_cooldown(ctx)
+                    return
+
+            results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
+
+            if not results and username and arg:
+                await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-
-        results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
-
-        message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
-        await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
+            message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
+            await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
+        except Exception as ex:
+            print(ex)
 
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -335,7 +345,10 @@ class CreationCommands(commands.Cog):
                 return
 
         results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
-
+        if not results and username and arg:
+            await channel.send(f"{username} must be in store to use 'pop' and 'old'")
+            ctx.command.reset_cooldown(ctx)
+            return
         await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
