@@ -66,9 +66,9 @@ class CreationCommands(commands.Cog):
     async def _filter_image_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda image:  image["is_mature"], results))
+            results = list(filter(lambda image: image['src_image'] != "None" and image["is_mature"], results))
         else:
-            results = list(filter(lambda image: not image["is_mature"], results))
+            results = list(filter(lambda image: image['src_image'] != "None" and not image["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -81,9 +81,9 @@ class CreationCommands(commands.Cog):
     async def _filter_lit_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda lit: 'preview' not in lit.keys() and lit["is_mature"], results))
+            results = list(filter(lambda lit: lit['src_snippet'] != "None" and lit["is_mature"], results))
         else:
-            results = list(filter(lambda lit: 'preview' not in lit.keys() and not lit["is_mature"], results))
+            results = list(filter(lambda lit: lit['src_snippet'] != "None" and not lit["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
@@ -108,7 +108,7 @@ class CreationCommands(commands.Cog):
             mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
         embed = []
         for result in results[:display]:
-            embed.append(self._build_embed(result['url'], message) if not usernames else
+            embed.append(self._build_embed(result['src_image'], message) if not usernames else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
 
@@ -194,7 +194,7 @@ class CreationCommands(commands.Cog):
                            f"sing !store-da-name `@yourself` `username`")
             ctx.command.reset_cooldown(ctx)
             return
-        await self.lit(ctx, username, channel, *args)
+        await self.lit(ctx, username, *args, channel=channel)
 
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -214,7 +214,7 @@ class CreationCommands(commands.Cog):
         if len(args) == 0:
             return None
         arg_dict = defaultdict(None)
-        if 'random' or 'rnd' in args:
+        if 'random' in args or 'rnd' in args:
             arg_dict['random'] = True
         if args[-1].isdigit():
             arg_dict['show_only'] = args[-1]
@@ -226,7 +226,7 @@ class CreationCommands(commands.Cog):
             arg_dict['tags'] = self._get_clean_arg(args, '#')
         if 'old' in args:
             arg_dict['old'] = True
-        if 'pop' or 'popular' in args:
+        if 'pop'  in args or 'popular' in args:
             arg_dict['pop'] = True
         return arg_dict
 
@@ -294,7 +294,7 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def lit(self, ctx, username, channel=None, *args):
+    async def lit(self, ctx, username, *args, channel=None):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
             if channel.id is not ctx.message.channel.id:
@@ -319,7 +319,7 @@ class CreationCommands(commands.Cog):
         embed = discord.Embed()
         for result in results[:display_count]:
             embed.add_field(
-                name=f"{result['title']}: ({result['url']})", value=result['text_content']['excerpt'][:1024],
+                name=f"{result['title']}: ({result['url']})", value=result['src_snippet'],
                 inline=False)
         await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
 
