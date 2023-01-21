@@ -70,7 +70,7 @@ class CreationCommands(commands.Cog):
         elif channel.name != "bot-testing":
             results = list(filter(lambda image: not image["is_mature"], results))
 
-        if len(results) == 0 and username:
+        if not results and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
                                f"Use !lit for literature share")
             ctx.command.reset_cooldown(ctx)
@@ -85,7 +85,7 @@ class CreationCommands(commands.Cog):
         elif channel.name != "bot-testing":
             results = list(filter(lambda lit: not lit["is_mature"], results))
 
-        if len(results) == 0 and username:
+        if not results and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
                                f"Use !art for visual art share")
             ctx.command.reset_cooldown(ctx)
@@ -268,7 +268,8 @@ class CreationCommands(commands.Cog):
         if arg:
             if 'random' in arg.keys():
                 results = self.da_rest.fetch_entire_user_gallery(username, version)
-                return random.shuffle(results), offset, display_num
+                random.shuffle(results)
+                return results, offset, display_num
             elif 'pop' in arg.keys():
                 return self.da_rest.fetch_user_popular(username, version, display_num), offset, display_num
             elif 'old' in arg.keys():
@@ -289,7 +290,7 @@ class CreationCommands(commands.Cog):
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
 
-            if not results and username and arg:
+            if not results and username or (args and 'pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
@@ -345,7 +346,7 @@ class CreationCommands(commands.Cog):
                 return
 
         results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
-        if not results and username and arg:
+        if not results and username and args and 'pop' in arg.keys() or 'old' in arg.keys():
             await channel.send(f"{username} must be in store to use 'pop' and 'old'")
             ctx.command.reset_cooldown(ctx)
             return

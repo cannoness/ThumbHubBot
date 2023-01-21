@@ -128,7 +128,7 @@ class DARest:
                     update_results += date
                 else:
                     break  # don't keep going if you don't have to
-            if len(update_results):
+            if update_results:
                 self._add_user_gallery_to_cache(update_results, username)
         return decoded_content
 
