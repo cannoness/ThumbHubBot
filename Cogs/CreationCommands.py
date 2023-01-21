@@ -66,9 +66,9 @@ class CreationCommands(commands.Cog):
     async def _filter_image_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda image:  image["is_mature"], results))
+            results = list(filter(lambda image: 'true' in image["is_mature"], results))
         elif channel.name != "bot-testing":
-            results = list(filter(lambda image: not image["is_mature"], results))
+            results = list(filter(lambda image: 'false' in image["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -81,9 +81,9 @@ class CreationCommands(commands.Cog):
     async def _filter_lit_results(ctx, results, channel, username=None):
         # filter out lit
         if channel.name == "nsfw-share":
-            results = list(filter(lambda lit:  lit["is_mature"], results))
+            results = list(filter(lambda lit: 'true' in lit["is_mature"], results))
         elif channel.name != "bot-testing":
-            results = list(filter(lambda lit: not lit["is_mature"], results))
+            results = list(filter(lambda lit: 'false' in lit["is_mature"], results))
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
