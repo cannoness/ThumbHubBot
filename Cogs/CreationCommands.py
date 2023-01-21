@@ -65,10 +65,11 @@ class CreationCommands(commands.Cog):
     @staticmethod
     async def _filter_image_results(ctx, results, channel, username=None):
         # filter out lit
-        if channel.name == "nsfw-share":
-            results = list(filter(lambda image:  image["is_mature"], results))
-        elif channel.name != "bot-testing":
-            results = list(filter(lambda image: not image["is_mature"], results))
+        if results:
+            if channel.name == "nsfw-share":
+                results = list(filter(lambda image:  image["is_mature"], results))
+            elif channel.name != "bot-testing":
+                results = list(filter(lambda image: not image["is_mature"], results))
 
         if not results and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -80,10 +81,11 @@ class CreationCommands(commands.Cog):
     @staticmethod
     async def _filter_lit_results(ctx, results, channel, username=None):
         # filter out lit
-        if channel.name == "nsfw-share":
-            results = list(filter(lambda lit:  lit["is_mature"], results))
-        elif channel.name != "bot-testing":
-            results = list(filter(lambda lit: not lit["is_mature"], results))
+        if results:
+            if channel.name == "nsfw-share":
+                results = list(filter(lambda lit:  lit["is_mature"], results))
+            elif channel.name != "bot-testing":
+                results = list(filter(lambda lit: not lit["is_mature"], results))
 
         if not results and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
@@ -97,6 +99,8 @@ class CreationCommands(commands.Cog):
         display = display_count if (not display_num or display_num >= display_count) else display_num
         if not usernames:
             results = await self._filter_image_results(ctx, results, channel, username)
+            if not results:
+                return
             ping_user = self.da_rest.fetch_discord_id(username) if username else None
             mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         else:
@@ -118,6 +122,8 @@ class CreationCommands(commands.Cog):
         if not usernames:
             # filter out lit
             results = await self._filter_lit_results(ctx, results, channel, username)
+            if not results:
+                return
             ping_user = self.da_rest.fetch_discord_id(username) if username else None
             mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         else:
@@ -290,7 +296,7 @@ class CreationCommands(commands.Cog):
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
 
-            if not results and username or (args and 'pop' in arg.keys() or 'old' in arg.keys()):
+            if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
@@ -338,19 +344,22 @@ class CreationCommands(commands.Cog):
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def lit(self, ctx, username, *args, channel=None):
-        arg = self._parse_args(*args)
-        if not channel:
-            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-            if channel.id is not ctx.message.channel.id:
+        try:
+            arg = self._parse_args(*args)
+            if not channel:
+                channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+                if channel.id is not ctx.message.channel.id:
+                    ctx.command.reset_cooldown(ctx)
+                    return
+
+            results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
+            if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
+                await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-
-        results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
-        if not results and username and args and 'pop' in arg.keys() or 'old' in arg.keys():
-            await channel.send(f"{username} must be in store to use 'pop' and 'old'")
-            ctx.command.reset_cooldown(ctx)
-            return
-        await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
+            await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
+        except Exception as ex:
+            print(ex)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
