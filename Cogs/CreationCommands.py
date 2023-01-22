@@ -34,7 +34,7 @@ class Private:
         roles = {role.name for role in ctx.author.roles}
         if not COOLDOWN_WHITELIST.isdisjoint(roles):
             return None
-        elif PRIVILEGED_ROLES.isdisjoint(roles):
+        elif not PRIVILEGED_ROLES.isdisjoint(roles):
             discord.app_commands.Cooldown(POST_RATE, VIP_COOLDOWN)
         else:
             return discord.app_commands.Cooldown(POST_RATE, DEFAULT_COOLDOWN)
