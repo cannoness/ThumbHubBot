@@ -30,11 +30,12 @@ class SpecialCommands(commands.Cog):
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
         if not discord_id:
             discord_id = ctx.author
+        print(discord_id)
         self.da_rest.store_da_name(discord_id.id, username)
         await ctx.send(f"Storing or updating DA username {username} for user {discord_id.display_name}")
 
     @commands.command(name='store-random-da-name')
-    async def store_name(self, ctx, username):
+    async def store_random_name(self, ctx, username):
         self.da_rest.store_random_da_name(username)
         await ctx.send(f"Storing DA username {username} without mention.")
 
