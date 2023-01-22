@@ -253,13 +253,15 @@ class CreationCommands(commands.Cog):
             arg_dict['show_only'] = int(args[-1])
         if '+' in "\t".join(args):
             arg_dict['offset'] = int(self._get_clean_arg(args, '+'))
-        if 'gallery /' in "\t".join(args):
-            arg_dict['gallery'] = self._get_clean_arg(args, '/')
+        if 'category /' in "\t".join(args):
+            arg_dict['category'] = self._get_clean_arg(args, '/')
+        if 'gallery "' in "\t".join(args):
+            arg_dict['gallery'] = self._get_clean_arg(args, '"')[:-1]
         if '#' in "\t".join(args):
             arg_dict['tags'] = self._get_clean_arg(args, '#')
         if 'old' in args:
             arg_dict['old'] = True
-        if 'pop'  in args or 'popular' in args:
+        if 'pop' in args or 'popular' in args:
             arg_dict['pop'] = True
         return arg_dict
 

@@ -29,7 +29,7 @@ class SpecialCommands(commands.Cog):
     @commands.command(name='store-da-name')
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
         if not discord_id:
-            discord_id = ctx.message.author
+            discord_id = ctx.author
         self.da_rest.store_da_name(discord_id.id, username)
         await ctx.send(f"Storing or updating DA username {username} for user {discord_id.display_name}")
 
