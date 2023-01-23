@@ -88,7 +88,8 @@ class DARest:
         if self._user_last_cache_update(username):
             deviant_row_id = self._fetch_user_row_id(username)
             # use cache
-            query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' """
+            query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' 
+            order by date_created desc """
             response = self.connection.execute(query)
             return self._convert_cache_to_result(response)
 
