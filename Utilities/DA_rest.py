@@ -86,6 +86,7 @@ class DARest:
 
     def fetch_entire_user_gallery(self, username, version, display_num=24):
         if self._user_last_cache_update(username):
+            self._gallery_fetch_helper(username)
             deviant_row_id = self._fetch_user_row_id(username)
             # use cache
             query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' 
@@ -94,6 +95,7 @@ class DARest:
             return self._convert_cache_to_result(response)
 
         # initial fetch
+
         response = self._gallery_fetch_helper(username)
         results = response['results']
 
@@ -122,13 +124,15 @@ class DARest:
             f"{self.access_token}&offset={offset}")
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
+        print("+", self._user_last_cache_update(username))
         if self._user_last_cache_update(username):
             update_results = []
             for date in decoded_content['results']:
-                if datetime.date.fromtimestamp(int(date['published_time'])) >= self._user_last_cache_update(username)[0]:
-                    update_results += date
+                if datetime.date.fromtimestamp(int(date['published_time'])) >= self._user_last_cache_update(username):
+                    update_results.append(date)
                 else:
                     break  # don't keep going if you don't have to
+            print(update_results)
             if update_results:
                 self._add_user_gallery_to_cache(update_results, username)
         return decoded_content
@@ -209,7 +213,8 @@ class DARest:
         if not user_id_row:
             return None
         query = f"""SELECT last_updated from cache_updated_date where deviant_row_id = {user_id_row}"""
-        return self.connection.execute(query).fetchone()
+        result = self.connection.execute(query)
+        return result.fetchone()[0]
 
     def _add_user_gallery_to_cache(self, results, username):
         # this only gets called if the user doesn't exist in the cache yet
@@ -254,7 +259,7 @@ class DARest:
                                 None}', to_date('{datetime.datetime.fromtimestamp(int(result['published_time']))
                                 .strftime('%Y%m%d')}', 'YYYYMMDD'), '{result['is_mature']}') """ for result in results])
         query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \
-                f"date_created, is_mature) VALUES {values_list} "
+                f"date_created, is_mature) VALUES {values_list} ON CONFLICT (url) DO NOTHING"
         self.connection.execute(query)
         query = f"INSERT INTO cache_updated_date (deviant_row_id) VALUES ({row_id}) ON CONFLICT " \
                 f"(deviant_row_id) DO UPDATE SET last_updated = now()"
