@@ -124,7 +124,6 @@ class DARest:
             f"{self.access_token}&offset={offset}")
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
-        print("+", self._user_last_cache_update(username))
         if self._user_last_cache_update(username):
             update_results = []
             for date in decoded_content['results']:
@@ -132,7 +131,6 @@ class DARest:
                     update_results.append(date)
                 else:
                     break  # don't keep going if you don't have to
-            print(update_results)
             if update_results:
                 self._add_user_gallery_to_cache(update_results, username)
         return decoded_content
