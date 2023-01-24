@@ -125,7 +125,8 @@ class DARest:
         if self._user_last_cache_update(username):
             update_results = []
             for date in decoded_content['results']:
-                if datetime.date.fromtimestamp(int(date['published_time'])) > self._user_last_cache_update(username)[0]:
+                if datetime.date.fromtimestamp(int(date['published_time'])) + datetime.timedelta(days=1) > \
+                        self._user_last_cache_update(username)[0]:
                     update_results += date
                 else:
                     break  # don't keep going if you don't have to
