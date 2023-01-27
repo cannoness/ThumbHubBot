@@ -220,8 +220,10 @@ class DARest:
               f"ext_preload=true&filter_empty_folder=true&with_session=false"
         response = requests.get(url)
         results = json.loads(response.content)['results']
-        deviations = [result['deviations'] for result in results if result['name'] == gallery][0]
-        return self._filter_api_image_results(deviations)
+        deviations = [result['deviations'] for result in results if result['name'] == gallery]
+        if len(deviations):
+            return self._filter_api_image_results(deviations)
+        return deviations
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
