@@ -27,7 +27,7 @@ class AdminCommands(commands.Cog):
         if {"The Hub", "Moderators"}.isdisjoint(user_roles):
             return
         else:
-            await ctx.message.send("I AM STILL ALIVE (and doing science)")
+            await ctx.message.channel.send("I AM STILL ALIVE (and doing science)")
 
 
 async def setup(bot):
