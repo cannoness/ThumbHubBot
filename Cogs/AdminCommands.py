@@ -23,8 +23,8 @@ class AdminCommands(commands.Cog):
 
     @commands.command(name='cpr')
     async def health_check(self, ctx):
-        user_roles = [role.name for role in ctx.message.author.roles]
-        if "The Hub" not in user_roles or "Moderators" not in user_roles:
+        user_roles = set([role.name for role in ctx.message.author.roles])
+        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
             return
         else:
             await ctx.message.send("I AM STILL ALIVE (and doing science)")
