@@ -44,7 +44,7 @@ class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
-        self.ig_rest = IGRest()
+        self.ig_rest = None #IGRest()
         self.twitter_rest = TwitterRest()
 
     @staticmethod
@@ -303,7 +303,7 @@ class CreationCommands(commands.Cog):
                 ctx.command.reset_cooldown(ctx)
                 return
             message = f"""Viewing {", ".join(list({f"[{image['title']}]({image['url']})" for image in 
-                                                   results[:display_num]}))}.\n
+                                                   results[:self._check_your_privilege(ctx)]}))}.\n
                         Visit {username}'s gallery: http://www.deviantart.com/{username}"""
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
@@ -376,7 +376,8 @@ class CreationCommands(commands.Cog):
         results = self.da_rest.fetch_daily_deviations()
         results = await self._filter_image_results(ctx, results, channel)
         random.shuffle(results)
-        message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in results])}.\n
+        message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in 
+                                          results[:self._check_your_privilege(ctx)]])}.\n
                     A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
         await self._send_art_results(ctx, channel, results, message)
 
