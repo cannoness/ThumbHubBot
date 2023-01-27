@@ -84,6 +84,20 @@ class DARest:
         response = self.connection.execute(query)
         return self._convert_cache_to_result(response)
 
+    def get_user_devs_by_tag(self, username, version, tags, display_num=24):
+        deviant_row_id = self._fetch_user_row_id(username)
+        if not deviant_row_id:
+            return None
+        if not self._user_last_cache_update(username):
+            self.fetch_entire_user_gallery(username, version)
+        # use cache
+        query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and {version} != 'None' and
+                        position('{tags}' in tags) > 0
+                        order by date_created desc 
+                        limit {display_num} """
+        response = self.connection.execute(query)
+        return self._convert_cache_to_result(response)
+
     def fetch_entire_user_gallery(self, username, version, display_num=24):
         if self._user_last_cache_update(username):
             self._gallery_fetch_helper(username)
@@ -200,6 +214,14 @@ class DARest:
             images += response.entries
 
         return self._rss_image_helper(images, num)
+
+    def get_user_gallery(self, username, version, gallery):
+        url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
+              f"ext_preload=true&filter_empty_folder=true&with_session=false"
+        response = requests.get(url)
+        results = json.loads(response.content)['results']
+        deviations = [result['deviations'] for result in results if result['name'] == gallery][0]
+        return self._filter_api_image_results(deviations)
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")

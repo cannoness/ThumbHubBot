@@ -44,7 +44,7 @@ class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
-        self.ig_rest = IGRest()
+        self.ig_rest = None #IGRest()
         self.twitter_rest = TwitterRest()
 
     @staticmethod
@@ -143,7 +143,7 @@ class CreationCommands(commands.Cog):
                     inline=False)
             await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
         except Exception as ex:
-            print(ex)
+            print(ex, flush=True)
 
     @staticmethod
     def _build_embed(url, message):
@@ -255,8 +255,8 @@ class CreationCommands(commands.Cog):
             arg_dict['offset'] = int(self._get_clean_arg(args, '+'))
         if 'category /' in "\t".join(args):
             arg_dict['category'] = self._get_clean_arg(args, '/')
-        if 'gallery "' in "\t".join(args):
-            arg_dict['gallery'] = self._get_clean_arg(args, '"')[:-1]
+        if 'gallery' in "\t".join(args):
+            arg_dict['gallery'] = args[args.index("gallery") + 1]
         if '#' in "\t".join(args):
             arg_dict['tags'] = self._get_clean_arg(args, '#')
         if 'old' in args:
@@ -282,6 +282,11 @@ class CreationCommands(commands.Cog):
                 return self.da_rest.fetch_user_popular(username, version, display_num), offset, display_num
             elif 'old' in arg.keys():
                 return self.da_rest.fetch_user_old(username, version, display_num), offset, display_num
+            elif 'gallery' in arg.keys():
+                return self.da_rest.get_user_gallery(username, version, arg['gallery']), offset, display_num
+            elif 'tags' in arg.keys():
+                return self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num), offset, \
+                       display_num
 
         return self.da_rest.fetch_user_gallery(username, version, offset, display_num), offset, display_num
 
