@@ -45,7 +45,7 @@ class DARest:
     def _filter_api_image_results(results):
         nl = '\n'
         return [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src'] if
-                 'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else None,
+                 'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
                  'src_snippet': result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl) if
                  'text_content' in result.keys() else "None", 'is_mature': result['is_mature'],
                  'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title']} for
