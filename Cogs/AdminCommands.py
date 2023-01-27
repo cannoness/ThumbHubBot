@@ -21,6 +21,15 @@ class AdminCommands(commands.Cog):
                     print(ex)
                     continue
 
+    # ADMIN ONLY, USE SPARINGLY
+    @commands.command(name='cpr')
+    async def health_check(self, ctx):
+        user_roles = [role.name for role in ctx.message.author.roles]
+        if "The Hub" not in user_roles:
+            return
+        else:
+            await ctx.message.send("I AM STILL ALIVE (and doing science)")
+
 
 async def setup(bot):
     await bot.add_cog(AdminCommands(bot))
