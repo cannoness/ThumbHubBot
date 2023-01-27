@@ -44,7 +44,7 @@ class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
-        self.ig_rest = None #IGRest()
+        self.ig_rest = IGRest()
         self.twitter_rest = TwitterRest()
 
     @staticmethod
@@ -307,7 +307,7 @@ class CreationCommands(commands.Cog):
                         Visit {username}'s gallery: http://www.deviantart.com/{username}"""
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
-            print(ex)
+            print(ex, flush=True)
 
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -363,7 +363,7 @@ class CreationCommands(commands.Cog):
                 return
             await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
         except Exception as ex:
-            print(ex)
+            print(ex, flush=True)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
