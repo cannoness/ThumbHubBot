@@ -376,7 +376,7 @@ class CreationCommands(commands.Cog):
         results = self.da_rest.fetch_daily_deviations()
         results = await self._filter_image_results(ctx, results, channel)
         random.shuffle(results)
-        message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in results])}
+        message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in results])}.\n
                     A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
         await self._send_art_results(ctx, channel, results, message)
 
