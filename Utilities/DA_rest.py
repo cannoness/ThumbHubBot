@@ -222,7 +222,7 @@ class DARest:
         results = json.loads(response.content)['results']
         deviations = [result['deviations'] for result in results if result['name'] == gallery]
         if len(deviations):
-            return self._filter_api_image_results(deviations)
+            return [types for types in self._filter_api_image_results(deviations[0]) if types[version] != 'None']
         return deviations
 
     def _validate_token(self):
