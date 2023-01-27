@@ -44,7 +44,7 @@ class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
-        self.ig_rest = None #IGRest()
+        self.ig_rest = IGRest()
         self.twitter_rest = TwitterRest()
 
     @staticmethod
