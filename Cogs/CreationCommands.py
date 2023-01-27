@@ -302,7 +302,9 @@ class CreationCommands(commands.Cog):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-            message = f"Visit {username}'s gallery: http://www.deviantart.com/{username}"
+            message = f"""Viewing {", ".join(list({f"[{image['title']}]({image['url']})" for image in 
+                                                   results[:display_num]}))}.\n
+                        Visit {username}'s gallery: http://www.deviantart.com/{username}"""
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
             print(ex)
@@ -374,7 +376,8 @@ class CreationCommands(commands.Cog):
         results = self.da_rest.fetch_daily_deviations()
         results = await self._filter_image_results(ctx, results, channel)
         random.shuffle(results)
-        message = "A Selection from today's Daily Deviations"
+        message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in results])}
+                    A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
         await self._send_art_results(ctx, channel, results, message)
 
 

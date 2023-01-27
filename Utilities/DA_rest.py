@@ -263,17 +263,21 @@ class DARest:
                 f"(deviant_row_id) DO UPDATE SET last_updated = now()"
         self.connection.execute(query)
 
-    @staticmethod
-    def _rss_image_helper(images, num):
+    def _rss_image_helper(self, images, num):
         random.shuffle(images)
         return_images = images[:10]
         results = list(filter(lambda image: 'media_content' in image.keys() and image['media_content'][-1]['medium']
                                             == 'image' and image["rating"] == 'nonadult',
                               return_images))
+        string_users, filtered_users, filtered_links = self._generate_links(results, num)
+        return results, string_users, filtered_links, filtered_users
+
+    @staticmethod
+    def _generate_links(results, num):
         filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
         filtered_links = list({f"[{image['title']}]({image['links'][-1]['href']})" for image in results[:num]})
         if len(filtered_users) == 1:
             string_users = filtered_users[0]
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return results, string_users, filtered_links, filtered_users
+        return string_users, filtered_users, filtered_links
