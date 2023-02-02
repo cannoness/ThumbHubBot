@@ -236,8 +236,10 @@ class DARest:
             return None
         query = f"""SELECT last_updated from cache_updated_date where deviant_row_id = {user_id_row}"""
         result = self.connection.execute(query)
-        if result and result.fetchone():
-            return result.fetchone()[0]
+        id = result.fetchone()
+        if id:
+            return id[0]
+        return None
 
     def _add_user_gallery_to_cache(self, results, username):
         # this only gets called if the user doesn't exist in the cache yet
