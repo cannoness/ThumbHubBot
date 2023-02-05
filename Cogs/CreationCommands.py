@@ -45,7 +45,7 @@ class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
-        self.ig_rest = IGRest()
+        self.ig_rest = None #IGRest()
         self.twitter_rest = TwitterRest()
 
     @staticmethod
@@ -168,20 +168,27 @@ class CreationCommands(commands.Cog):
     @commands.command(name='hubcoins')
     @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN)
     async def hubcoins(self, ctx):
-        coins = self.da_rest._get_hubcoins(ctx.message.author.id)
+        coins = self.da_rest.get_hubcoins(ctx.message.author.id)
         await ctx.channel.send(f"You currently have {coins} hubcoins.")
 
     @commands.command(name='spend-hubcoins')
-    @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN)
     async def spend_hubcoins(self, ctx, amount, reason):
-        current_coins = self.da_rest._get_hubcoins(ctx.message.author.id)
-        if amount < current_coins:
-            await ctx.channel.send(f"Sorry, you need {amount-current_coins} more hubcoins to perform this action.")
+        current_coins = self.da_rest.get_hubcoins(ctx.message.author.id)
+        reason_cost = 1 if 'xp' in reason else 100 if "feature" in reason else 500 if "VIP" in reason else 1000 if \
+            "spotlight" in reason else 1 if "donate" in reason else None
+        if not reason_cost or int(amount) < reason_cost:
+            await ctx.channel.send(f"Sorry, you need {int(reason_cost)} hubcoins to perform this action.") if \
+                reason_cost else await ctx.channel.send(f"Invalid spend reason supplied! You may spend on 'xp', "
+                                                        f"'feature', 'vip', 'spotlight' or 'donate'. Please try again.")
             return
-        self.da_rest.spend_coins(ctx.message.author.id, amount)
-        await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}.")
+        if int(amount) > int(current_coins):
+            await ctx.channel.send(f"Sorry, you need {int(amount)-int(current_coins)} more hubcoins to perform this "
+                                   f"action.")
+            return
+        self.da_rest.spend_coins(ctx.message.author.id, int(amount))
+        await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}. A mod will contact you soon.")
         mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
-        await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} on {reason}")
+        await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} hubcoins on {reason}")
 
     @commands.command(name='twitterart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)

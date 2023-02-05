@@ -32,12 +32,12 @@ class AdminCommands(commands.Cog):
             await ctx.message.channel.send("I AM STILL ALIVE (and doing science)")
 
     @commands.command(name='refund-hubcoins')
-    async def refund_hubcoins(self, ctx, discord_id, amount):
+    async def refund_hubcoins(self, ctx, discord_id: discord.Member, amount):
         user_roles = set([role.name for role in ctx.message.author.roles])
         if {"The Hub", "Moderators"}.isdisjoint(user_roles):
             return
         else:
-            self.da_rest.add_coins(discord_id.id, amount)
+            self.da_rest._update_coins(discord_id.id, int(amount))
             await ctx.message.channel.send(f"Refunded {amount} hubcoins to {discord_id.display_name}")
 
 

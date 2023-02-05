@@ -330,7 +330,7 @@ class DARest:
     def spend_coins(self, discord_id, amount):
         self._update_coins(discord_id, -amount)
 
-    def _get_hubcoins(self, discord_id):
+    def get_hubcoins(self, discord_id):
         # get current coins and return the count
         query = f""" SELECT hubcoins from hubcoins where discord_id = {discord_id} """
         result = self.connection.execute(query)
@@ -343,10 +343,10 @@ class DARest:
             return 0
 
     def _update_coins(self, discord_id, amount):
-        current_coins = self._get_hubcoins(discord_id)
-        add_query = f""" UPDATE hubcoins set hubcoins = {current_coins + amount} where discord_id = {discord_id}  """
+        coins = self.get_hubcoins(discord_id)
+        add_query = f""" UPDATE hubcoins set hubcoins = {coins + amount} where discord_id = {discord_id} """
         self.connection.execute(add_query)
         if amount < 0:
-            spent_query = f""" UPDATE hubcoins set spent_coins = spent_coins + {amount} where discord_id = {
+            spent_query = f""" UPDATE hubcoins set spent_coins = spent_coins - {amount} where discord_id = {
             discord_id}  """
             self.connection.execute(spent_query)
