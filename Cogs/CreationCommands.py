@@ -114,7 +114,7 @@ class CreationCommands(commands.Cog):
             mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
         embed = []
         for result in results[:display]:
-            embed.append(self._build_embed(result['src_image'], message) if not (usernames or username) else
+            embed.append(self._build_embed(result['src_image'], message) if (usernames or username) else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
         self.da_rest.add_coins(ctx.message.author.id, username)
