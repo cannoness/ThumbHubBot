@@ -311,18 +311,19 @@ class DARest:
 
     def add_coins(self, discord_id, username):
         # get discord_id for username, if exists, make sure no cheaters
-        query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' """
-        result = self.connection.execute(query)
-        possible_id = result.fetchone()
-        if possible_id:
-            user_discord_id = possible_id[0]
-            if user_discord_id == discord_id:
-                # dirty cheater
-                pass
-            else:
-                # do both
-                self._update_coins(discord_id, 2)
-                self._update_coins(user_discord_id, 1)
+        if username:
+            query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' """
+            result = self.connection.execute(query)
+            possible_id = result.fetchone()
+            if possible_id:
+                user_discord_id = possible_id[0]
+                if user_discord_id == discord_id:
+                    # dirty cheater
+                    pass
+                else:
+                    # do both
+                    self._update_coins(discord_id, 2)
+                    self._update_coins(user_discord_id, 1)
         else:
             # username wasn't in store
             self._update_coins(discord_id, 2)
