@@ -212,6 +212,7 @@ class CreationCommands(commands.Cog):
             embed.append(
                 discord.Embed(url="http://twitter.com", description=message).set_image(url=url))
         await channel.send(embeds=embed)
+        self.da_rest.add_coins(ctx.message.author.id, username)
 
     @commands.command(name='igart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -232,6 +233,7 @@ class CreationCommands(commands.Cog):
             embed.append(
                 discord.Embed(url="http://instagram.com", description=message).set_image(url=url))
         await channel.send(embeds=embed)
+        self.da_rest.add_coins(ctx.message.author.id, username)
 
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
