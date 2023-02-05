@@ -277,7 +277,7 @@ class DARest:
     def _initial_add_to_cache(self, results, row_id):
         nl = '\n'
         values_list = ", ".join([f""" ({row_id}, '{result['url']}','{result['src_image']}','{result['src_snippet']
-                                .replace("<br />", nl)}', '{result['title'].replace("'", "")}', 
+                                .replace("<br />", nl)}', '{result['title'].replace("'", "").replace("%","%%")}', 
                                 {result['stats']['favourites']}, '{', '.join([tag['tag_name'] for tag in 
                                                                               result['tags']]) if 'tags' in 
                                                                                                   result.keys() else 
