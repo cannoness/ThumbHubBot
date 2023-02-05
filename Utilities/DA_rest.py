@@ -312,7 +312,8 @@ class DARest:
     def add_coins(self, discord_id, username):
         # get discord_id for username, if exists, make sure no cheaters
         if username:
-            query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' """
+            query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' 
+                    """
             result = self.connection.execute(query)
             possible_id = result.fetchone()
             if possible_id:

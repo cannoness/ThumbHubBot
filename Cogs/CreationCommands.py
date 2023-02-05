@@ -68,9 +68,9 @@ class CreationCommands(commands.Cog):
         # filter out lit
         if results:
             if channel.name == "nsfw-share":
-                results = list(filter(lambda image:  image["is_mature"] and image['src_image'], results))
+                results = list(filter(lambda image:  image["is_mature"] and image['src_image'] != 'None', results))
             elif channel.name != "bot-testing":
-                results = list(filter(lambda image: not image["is_mature"] and image['src_image'], results))
+                results = list(filter(lambda image: not image["is_mature"] and image['src_image'] != "None", results))
 
         if not results and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -84,9 +84,9 @@ class CreationCommands(commands.Cog):
         # filter out lit
         if results:
             if channel.name == "nsfw-share":
-                results = list(filter(lambda lit:  lit["is_mature"] and lit['src_snippet'], results))
+                results = list(filter(lambda lit:  lit["is_mature"] and lit['src_snippet'] != "None", results))
             elif channel.name != "bot-testing":
-                results = list(filter(lambda lit: not lit["is_mature"] and lit['src_snippet'], results))
+                results = list(filter(lambda lit: not lit["is_mature"] and lit['src_snippet'] != "None", results))
 
         if not results and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
@@ -426,10 +426,7 @@ class CreationCommands(commands.Cog):
             message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in 
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
-            await self._send_art_results(ctx, channel, results, message, usernames=[image['title'] for image in
-                                                                                    results[:
-                                                                                            self._check_your_privilege(
-                                                                                                ctx)]])
+            await self._send_art_results(ctx, channel, results, message)
             self.da_rest.add_coins(ctx.message.author.id, None)
         except Exception as ex:
             print(ex, flush=True)
