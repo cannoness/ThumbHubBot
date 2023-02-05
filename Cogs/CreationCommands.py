@@ -115,7 +115,6 @@ class CreationCommands(commands.Cog):
             ping_user = self.da_rest.fetch_discord_id(username) if username else None
             mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         else:
-            results = await self._filter_image_results(ctx, results, channel)
             mention_string = []
             for user in usernames:
                 ping_user = self.da_rest.fetch_discord_id(user)
@@ -124,8 +123,7 @@ class CreationCommands(commands.Cog):
             mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
         embed = []
         for result in results[:display]:
-            print(result['src_image'], flush=True)
-            embed.append(self._build_embed(result['src_image'], message) if (usernames or username) else
+            embed.append(self._build_embed(result['src_image'], message) if not usernames else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
         self.da_rest.add_coins(ctx.message.author.id, username)
@@ -283,12 +281,14 @@ class CreationCommands(commands.Cog):
         if channel.id is not ctx.message.channel.id:
             ctx.command.reset_cooldown(ctx)
             return
-
-        display_count = self._check_your_privilege(ctx)
-        await ctx.send("Pulling random images, this may take a moment...")
-        results, users, links, usernames = self.da_rest.get_random_images(display_count)
-        message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
-        await self._send_art_results(ctx, channel, results, message, usernames=usernames)
+        try:
+            display_count = self._check_your_privilege(ctx)
+            await ctx.send("Pulling random images, this may take a moment...")
+            results, users, links, usernames = self.da_rest.get_random_images(display_count)
+            message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
+            await self._send_art_results(ctx, channel, results, message, usernames=usernames)
+        except Exception as ex:
+            print(ex, flush=True)
 
     def _parse_args(self, *args):
         if len(args) == 0:
@@ -436,7 +436,7 @@ class CreationCommands(commands.Cog):
             message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in 
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
-            await self._send_art_results(ctx, channel, results, message, usernames=[ctx.message.author.display_name])
+            await self._send_art_results(ctx, channel, results, message, username=ctx.message.author.display_name)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong!")
