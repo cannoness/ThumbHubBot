@@ -117,8 +117,7 @@ class CreationCommands(commands.Cog):
             embed.append(self._build_embed(result['src_image'], message) if not (usernames or username) else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
-        if not usernames:
-            self.da_rest.add_coins(ctx.message.author.id, username)
+        self.da_rest.add_coins(ctx.message.author.id, username)
 
     async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):
         display_count = int(self._check_your_privilege(ctx))
@@ -427,7 +426,6 @@ class CreationCommands(commands.Cog):
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
             await self._send_art_results(ctx, channel, results, message, usernames=[ctx.message.author.display_name])
-            self.da_rest.add_coins(ctx.message.author.id, None)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong!")
