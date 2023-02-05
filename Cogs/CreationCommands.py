@@ -166,7 +166,7 @@ class CreationCommands(commands.Cog):
         await ctx.channel.send(f"We will now mention you {user.display_name}")
 
     @commands.command(name='hubcoins')
-    @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def hubcoins(self, ctx, user: discord.Member = None):
         if user:
             coins = self.da_rest.get_hubcoins(user.id, "hubcoins")
