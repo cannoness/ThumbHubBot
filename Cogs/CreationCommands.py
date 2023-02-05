@@ -115,6 +115,8 @@ class CreationCommands(commands.Cog):
             embed.append(self._build_embed(result['src_image'], message) if not usernames else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
+        if not usernames:
+            self.da_rest.add_coins(ctx.message.author.id, username)
 
     async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):
         display_count = int(self._check_your_privilege(ctx))
@@ -144,6 +146,9 @@ class CreationCommands(commands.Cog):
             await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
         except Exception as ex:
             print(ex, flush=True)
+
+        if not usernames:
+            self.da_rest.add_coins(ctx.message.author.id, username)
 
     @staticmethod
     def _build_embed(url, message):
