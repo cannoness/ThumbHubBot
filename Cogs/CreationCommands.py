@@ -426,6 +426,7 @@ class CreationCommands(commands.Cog):
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
             await self._send_art_results(ctx, channel, results, message)
+            self.da_rest.add_coins(ctx.message.author.id, None)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong!")
