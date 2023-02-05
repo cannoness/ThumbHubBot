@@ -105,6 +105,7 @@ class CreationCommands(commands.Cog):
             ping_user = self.da_rest.fetch_discord_id(username) if username else None
             mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
         else:
+            results = await self._filter_image_results(ctx, results, channel)
             mention_string = []
             for user in usernames:
                 ping_user = self.da_rest.fetch_discord_id(user)
