@@ -318,7 +318,7 @@ class DARest:
             user_discord_id = possible_id[0]
             if user_discord_id == discord_id:
                 # dirty cheater
-                self._update_coins(discord_id, 2)
+                pass
             else:
                 # do both
                 self._update_coins(discord_id, 2)
