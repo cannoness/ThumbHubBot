@@ -334,7 +334,9 @@ class DARest:
                 else:
                     # do both
                     self._update_coins(discord_id, 2)
-                    self._update_coins(user_discord_id, 1)
+                    if user_discord_id:
+                        # could be none
+                        self._update_coins(user_discord_id, 1)
             else:
                 # username wasn't in store
                 self._update_coins(discord_id, 2)
