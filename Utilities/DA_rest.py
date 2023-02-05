@@ -308,3 +308,45 @@ class DARest:
         else:
             string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
         return string_users, filtered_users, filtered_links
+
+    def add_coins(self, discord_id, username):
+        # get discord_id for username, if exists, make sure no cheaters
+        query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' """
+        result = self.connection.execute(query)
+        possible_id = result.fetchone()
+        if possible_id:
+            user_discord_id = possible_id[0]
+            if user_discord_id == discord_id:
+                # dirty cheater
+                self._update_coins(discord_id, 2)
+            else:
+                # do both
+                self._update_coins(discord_id, 2)
+                self._update_coins(user_discord_id, 1)
+        else:
+            # username wasn't in store
+            self._update_coins(discord_id, 2)
+
+    def spend_coins(self, discord_id, amount):
+        self._update_coins(discord_id, -amount)
+
+    def _get_hubcoins(self, discord_id):
+        # get current coins and return the count
+        query = f""" SELECT hubcoins from hubcoins where discord_id = {discord_id} """
+        result = self.connection.execute(query)
+        coins = result.fetchone()
+        if coins:
+            return coins[0]
+        else:
+            query = f""" INSERT into hubcoins (discord_id) values ({discord_id}) """
+            self.connection.execute(query)
+            return 0
+
+    def _update_coins(self, discord_id, amount):
+        current_coins = self._get_hubcoins(discord_id)
+        add_query = f""" UPDATE hubcoins set hubcoins = {current_coins + amount} where discord_id = {discord_id}  """
+        self.connection.execute(add_query)
+        if amount < 0:
+            spent_query = f""" UPDATE hubcoins set spent_coins = spent_coins + {amount} where discord_id = {
+            discord_id}  """
+            self.connection.execute(spent_query)
