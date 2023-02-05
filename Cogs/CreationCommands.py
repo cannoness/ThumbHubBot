@@ -167,14 +167,18 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='hubcoins')
     @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN)
-    async def hubcoins(self, ctx):
-        coins = self.da_rest.get_hubcoins(ctx.message.author.id)
-        await ctx.channel.send(f"You currently have {coins} hubcoins.")
+    async def hubcoins(self, ctx, user: discord.Member = None):
+        if user:
+            coins = self.da_rest.get_hubcoins(user.id, "hubcoins")
+        else:
+            coins = self.da_rest.get_hubcoins(ctx.message.author.id, "hubcoins")
+        await ctx.channel.send(f"You currently have {coins} hubcoins.") if user is None else \
+            await ctx.channel.send(f"{user.display_name} currently has {coins} hubcoins.")
 
     @commands.command(name='spend-hubcoins')
     async def spend_hubcoins(self, ctx, amount, reason):
-        current_coins = self.da_rest.get_hubcoins(ctx.message.author.id)
-        reason_cost = 1 if 'xp' in reason else 100 if "feature" in reason else 500 if "VIP" in reason else 1000 if \
+        current_coins = self.da_rest.get_hubcoins(ctx.message.author.id, "hubcoins")
+        reason_cost = 1 if 'xp' in reason else 100 if "feature" in reason else 500 if "vip" in reason else 1000 if \
             "spotlight" in reason else 1 if "donate" in reason else None
         if not reason_cost or int(amount) < reason_cost:
             await ctx.channel.send(f"Sorry, you need {int(reason_cost)} hubcoins to perform this action.") if \

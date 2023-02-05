@@ -40,6 +40,15 @@ class AdminCommands(commands.Cog):
             self.da_rest._update_coins(discord_id.id, int(amount))
             await ctx.message.channel.send(f"Refunded {amount} hubcoins to {discord_id.display_name}")
 
+    @commands.command(name='spent-hubcoins')
+    async def spent_hubcoins(self, ctx, discord_id: discord.Member):
+        user_roles = set([role.name for role in ctx.message.author.roles])
+        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+            return
+        else:
+            coins = self.da_rest.get_hubcoins(discord_id.id, "spent_coins")
+            await ctx.message.channel.send(f"{discord_id.display_name} has spent {coins} hubcoins total")
+
 
 async def setup(bot):
     await bot.add_cog(AdminCommands(bot))
