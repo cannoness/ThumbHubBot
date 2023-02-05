@@ -349,6 +349,7 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
+            await channel.send(f"Something went wrong!")
 
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -406,6 +407,7 @@ class CreationCommands(commands.Cog):
             await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
+            await channel.send(f"Something went wrong!")
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
