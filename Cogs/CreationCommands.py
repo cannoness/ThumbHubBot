@@ -335,6 +335,7 @@ class CreationCommands(commands.Cog):
                 if channel.id is not ctx.message.channel.id:
                     ctx.command.reset_cooldown(ctx)
                     return
+                await channel.send(f"Fetching user gallery, may take a moment...")
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
 
@@ -395,6 +396,7 @@ class CreationCommands(commands.Cog):
                 if channel.id is not ctx.message.channel.id:
                     ctx.command.reset_cooldown(ctx)
                     return
+                await channel.send(f"Fetching user gallery, may take a moment...")
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
