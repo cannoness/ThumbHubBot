@@ -41,7 +41,7 @@ class DARest:
         if self._user_last_cache_update(username):
             response = self.fetch_entire_user_gallery(username, version, display_num)
         else:
-            response = self._gallery_fetch_helper(username, offset, display_num)
+            response = self._filter_api_image_results(self._gallery_fetch_helper(username, offset, display_num))
         return response[offset:display_num]
 
     @staticmethod
