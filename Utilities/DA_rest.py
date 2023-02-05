@@ -38,7 +38,10 @@ class DARest:
         return json.loads(decoded_content)['access_token']
 
     def fetch_user_gallery(self, username, version, offset=0, display_num=24):
-        response = self.fetch_entire_user_gallery(username, version, display_num)
+        if self._user_last_cache_update(username):
+            response = self.fetch_entire_user_gallery(username, version, display_num)
+        else:
+            response = self._gallery_fetch_helper(username, offset, display_num)
         return response[offset:display_num]
 
     @staticmethod
