@@ -68,9 +68,14 @@ class CreationCommands(commands.Cog):
         # filter out lit
         if results:
             if channel.name == "nsfw-share":
-                results = list(filter(lambda image:  image["is_mature"] and image['src_image'] != 'None', results))
+                results = list(filter(lambda image:  image["is_mature"] and image['src_image'] not in [None, "None"],
+                                      results))
             elif channel.name != "bot-testing":
-                results = list(filter(lambda image: not image["is_mature"] and image['src_image'] != "None", results))
+                results = list(filter(lambda image: not image["is_mature"] and image['src_image'] not in [None, "None"],
+                                      results))
+            elif channel.name == "bot-testing":
+                results = list(filter(lambda image:  image['src_image'] not in [None, "None"],
+                                      results))
 
         if not results and username:
             await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
@@ -84,9 +89,14 @@ class CreationCommands(commands.Cog):
         # filter out lit
         if results:
             if channel.name == "nsfw-share":
-                results = list(filter(lambda lit:  lit["is_mature"] and lit['src_snippet'] != "None", results))
+                results = list(filter(lambda lit:  lit["is_mature"] and lit['src_snippet'] not in [None, "None"],
+                                      results))
             elif channel.name != "bot-testing":
-                results = list(filter(lambda lit: not lit["is_mature"] and lit['src_snippet'] != "None", results))
+                results = list(filter(lambda lit: not lit["is_mature"] and lit['src_snippet'] not in [None, "None"],
+                                      results))
+            elif channel.name == "bot-testing":
+                results = list(filter(lambda lit:  lit['src_snippet'] not in [None, "None"],
+                                      results))
 
         if not results and username:
             await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
@@ -114,6 +124,7 @@ class CreationCommands(commands.Cog):
             mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
         embed = []
         for result in results[:display]:
+            print(result['src_image'], flush=True)
             embed.append(self._build_embed(result['src_image'], message) if (usernames or username) else
                          self._build_embed(result['media_content'][-1]['url'], message))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
