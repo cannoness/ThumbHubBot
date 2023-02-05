@@ -426,7 +426,10 @@ class CreationCommands(commands.Cog):
             message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in 
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
-            await self._send_art_results(ctx, channel, results, message)
+            await self._send_art_results(ctx, channel, results, message, usernames=[image['title'] for image in
+                                                                                    results[:
+                                                                                            self._check_your_privilege(
+                                                                                                ctx)]])
             self.da_rest.add_coins(ctx.message.author.id, None)
         except Exception as ex:
             print(ex, flush=True)
