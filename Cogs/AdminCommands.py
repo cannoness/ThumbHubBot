@@ -38,7 +38,7 @@ class AdminCommands(commands.Cog):
             return
         else:
             self.da_rest.add_coins(discord_id.id, amount)
-            await ctx.message.channel.send(f"Refunded {amount} hubcoins to {discord_id.nickname}")
+            await ctx.message.channel.send(f"Refunded {amount} hubcoins to {discord_id.display_name}")
 
 
 async def setup(bot):

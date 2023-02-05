@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
+MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 DISCOVERY_CHANNEL = os.getenv("DISCOVERY_CHANNEL")
@@ -163,6 +164,24 @@ class CreationCommands(commands.Cog):
     async def mention(self, ctx, user: discord.Member):
         self.da_rest.ping_me(user.id)
         await ctx.channel.send(f"We will now mention you {user.display_name}")
+
+    @commands.command(name='hubcoins')
+    @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN)
+    async def hubcoins(self, ctx):
+        coins = self.da_rest._get_hubcoins(ctx.message.author.id)
+        await ctx.channel.send(f"You currently have {coins} hubcoins.")
+
+    @commands.command(name='spend-hubcoins')
+    @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN)
+    async def spend_hubcoins(self, ctx, amount, reason):
+        current_coins = self.da_rest._get_hubcoins(ctx.message.author.id)
+        if amount < current_coins:
+            await ctx.channel.send(f"Sorry, you need {amount-current_coins} more hubcoins to perform this action.")
+            return
+        self.da_rest.spend_coins(ctx.message.author.id, amount)
+        await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}.")
+        mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
+        await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} on {reason}")
 
     @commands.command(name='twitterart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
