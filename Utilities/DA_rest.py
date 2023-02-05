@@ -191,11 +191,15 @@ class DARest:
         return query_results[:num]
 
     def get_random_images(self, num):
-        random_users = self._fetch_da_usernames(num)
+        random_users = self._fetch_da_usernames(10)
         images = []
         for user in random_users:
-            images += feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
-        return self._rss_image_helper(images, num)
+            image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
+            results = self._shuffle_and_apply_filter(image_feed)
+            if len(results):
+                images.append(results[0])
+            if len(images) == num:
+                return self._rss_image_helper(images, num)
 
     @staticmethod
     def _fetch_all_user_faves_helper(username, offset=0):
@@ -291,13 +295,19 @@ class DARest:
         self.connection.execute(query)
 
     def _rss_image_helper(self, images, num):
-        random.shuffle(images)
-        return_images = images[:10]
-        results = list(filter(lambda image: 'media_content' in image.keys() and image['media_content'][-1]['medium']
-                                            == 'image' and image["rating"] == 'nonadult',
-                              return_images))
+        results = self._shuffle_and_apply_filter(images)
         string_users, filtered_users, filtered_links = self._generate_links(results, num)
-        return results, string_users, filtered_links, filtered_users
+        return results[:num], string_users, filtered_links, filtered_users
+
+    @staticmethod
+    def _shuffle_and_apply_filter(images):
+        random.shuffle(images)
+        results = list(filter(lambda image: 'media_content' in image.keys() and 'medium' in
+                                            image['media_content'][-1].keys() and
+                                            image['media_content'][-1]['medium'] == 'image' and
+                                            image["rating"] == 'nonadult',
+                              images))
+        return results
 
     @staticmethod
     def _generate_links(results, num):
