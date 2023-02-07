@@ -29,11 +29,12 @@ class DARSS:
         for user in random_users:
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
             results = self._shuffle_and_apply_filter(image_feed)
-            if len(results) and len(images) > num:
-                images.append(results[0])
-            else:
-                return self._rss_image_helper(images, num)
-            return None
+            if len(results):
+                if len(images) < num:
+                    images.append(results[0])
+                else:
+                    return self._rss_image_helper(images, num)
+        return None
 
     @staticmethod
     def _fetch_all_user_faves_helper(username, offset=0):

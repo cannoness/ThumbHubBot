@@ -52,7 +52,8 @@ class DARest:
                  'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
                  'src_snippet': result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl) if
                  'text_content' in result.keys() else "None", 'is_mature': result['is_mature'],
-                 'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title']} for
+                 'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title'],
+                 'author': result['author']['username']} for
                 result in results]
 
     def fetch_user_popular(self, username, version, display_num=24):
@@ -138,7 +139,7 @@ class DARest:
         last_updated = self.db_actions.user_last_cache_update(username)
         if last_updated:
             update_results = []
-            needs_update = datetime.date.today() - last_updated > 7
+            needs_update = (datetime.date.today() - last_updated) >= datetime.timedelta(days=7)
             for date in decoded_content['results']:
                 if datetime.date.fromtimestamp(int(date['published_time'])) >= last_updated or needs_update:
                     update_results.append(date)
@@ -149,8 +150,7 @@ class DARest:
         return decoded_content
 
     def get_user_favs_by_collection(self, username, num, collection):
-        results = self.get_favorite_collection(username, collection, "src_image")
-        return results[:num]
+        return self.get_favorite_collection(username, "src_image", collection)
 
     def get_user_gallery(self, username, version, gallery):
         url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
@@ -170,8 +170,20 @@ class DARest:
         results = json.loads(response.content)['results']
         favorites = [result['deviations'] for result in results if result['name'] == collection]
         if len(favorites):
-            return [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
-        return favorites
+            results = [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
+            usernames, _, links = self._generate_links(results)
+            return results, usernames, links
+        return None
+
+    @staticmethod
+    def _generate_links(results):
+        filtered_users = list({image['author'] for image in results})
+        filtered_links = list({f"[{image['url']})" for image in results})
+        if len(filtered_users) == 1:
+            string_users = filtered_users[0]
+        else:
+            string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
+        return string_users, filtered_users, filtered_links
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")

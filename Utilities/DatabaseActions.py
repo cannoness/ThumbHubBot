@@ -146,7 +146,7 @@ class DatabaseActions:
                                 .strftime('%Y%m%d')}', 'YYYYMMDD'), '{result['is_mature']}') """ for result in results])
         query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \
                 f"date_created, is_mature) VALUES {values_list} ON CONFLICT (url) DO UPDATE set favs=excluded.favs, " \
-                f"title=excluded.title, tags=excluded.tags, mature=excluded.mature, src_image=excluded.src_image, " \
+                f"title=excluded.title, tags=excluded.tags, is_mature=excluded.is_mature, src_image=excluded.src_image, " \
                 f"src_snippet=excluded.src_snippet"
         self.connection.execute(query)
         query = f"INSERT INTO cache_updated_date (deviant_row_id) VALUES ({row_id}) ON CONFLICT " \

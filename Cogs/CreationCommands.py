@@ -92,14 +92,11 @@ class CreationCommands(commands.Cog):
                                {"Use !art for image share" if 'src_snippet' in result_type else
             "Use !lit for literature share"}""")
             ctx.command.reset_cooldown(ctx)
-            return
+            return None
         return results
 
-    def _manage_mentions(self, ctx, channel, results, result_type, username, usernames):
+    def _manage_mentions(self, ctx, username, usernames):
         if not usernames:
-            results = await self._filter_results(ctx, results, channel, result_type, username)
-            if not results:
-                return
             ping_user = self.db_actions.fetch_discord_id(username) if username else None
             return ctx.message.guild.get_member(ping_user).mention if ping_user else None
         else:
@@ -114,7 +111,12 @@ class CreationCommands(commands.Cog):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
 
-        mention_string = self._manage_mentions(ctx, channel, results, "src_image", username, usernames)
+        results = await self._filter_results(ctx, results, channel, "src_image", username) if not usernames \
+            else results
+        if not results:
+            return
+
+        mention_string = self._manage_mentions(ctx, username, usernames)
 
         embed = []
         for result in results[:display]:
@@ -127,7 +129,12 @@ class CreationCommands(commands.Cog):
         display_count = int(self._check_your_privilege(ctx))
         display = display_count if (not display_num or display_num >= display_count) else display_num
 
-        mention_string = self._manage_mentions(ctx, channel, results, "src_snippet", username, usernames)
+        results = await self._filter_results(ctx, results, channel, "src_snippet", username) if not usernames \
+            else results
+        if not results:
+            return
+
+        mention_string = self._manage_mentions(ctx, username, usernames)
 
         embed = discord.Embed()
         nl = '\n'
@@ -177,7 +184,7 @@ class CreationCommands(commands.Cog):
         await channel.send(embeds=embed)
         self.db_actions.add_coins(ctx.message.author.id, None)
 
-    def _check_store(self, ctx):
+    async def _check_store(self, ctx):
         username = self.db_actions.fetch_da_username(ctx.message.author.id)
         if not username:
             await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
@@ -191,7 +198,7 @@ class CreationCommands(commands.Cog):
     async def my_art(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
 
-        username = self._check_store(ctx)
+        username = await self._check_store(ctx)
         await self.art(ctx, username, *args, channel=channel)
 
     @commands.command(name='mylit')
@@ -199,7 +206,7 @@ class CreationCommands(commands.Cog):
     async def my_lit(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
 
-        username = self._check_store(ctx)
+        username = await self._check_store(ctx)
         await self.lit(ctx, username, *args, channel=channel)
 
     @commands.command(name='random')
@@ -300,13 +307,13 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
-        username = self._check_store(ctx)
+        username = await self._check_store(ctx)
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
         await self.favs(ctx, username, channel, *args)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def favs(self, ctx, username, *args, channel=None):
+    async def favs(self, ctx, username, channel=None, *args):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
 
@@ -314,7 +321,7 @@ class CreationCommands(commands.Cog):
         num = self._check_your_privilege(ctx)
         arg = self._parse_args(*args)
         if arg and 'collection' in arg.keys():
-            results, users, links, _ = self.da_rest.get_user_favs_by_collection(username, num, arg['collection'])
+            results, users, links = self.da_rest.get_user_favs_by_collection(username, "src_image", arg['collection'])
         else:
             results, users, links, _ = self.da_rss.get_user_favs(username, num)
 
@@ -351,15 +358,17 @@ class CreationCommands(commands.Cog):
 
         try:
             results = self.da_rest.fetch_daily_deviations()
-            art = random.randint(10) % 2 == 0
+            art = random.randint(0, 10) % 2 == 0
             results = await self._filter_results(ctx, results, channel, "src_image" if art else
                                                  "src_snippet")
+            if not results:
+                return
             random.shuffle(results)
             message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
             await self._send_art_results(ctx, channel, results, message, username=ctx.message.author.display_name) if \
-                art else await self._send_lit_results(ctx, channel, results, message)
+                art else await self._send_lit_results(ctx, channel, results)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
