@@ -178,7 +178,7 @@ class DARest:
     @staticmethod
     def _generate_links(results):
         filtered_users = list({image['author'] for image in results})
-        filtered_links = list({f"[{image['url']})" for image in results})
+        filtered_links = list({f"[{image['title']}]({image['url']})" for image in results})
         if len(filtered_users) == 1:
             string_users = filtered_users[0]
         else:

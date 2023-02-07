@@ -257,23 +257,29 @@ class CreationCommands(commands.Cog):
         if arg:
             wants_random = 'random' in arg.keys()
             if 'pop' in arg.keys():
-                return self.da_rest.fetch_user_popular(username, version, display_num) if not wants_random else \
-                           random.shuffle(self.da_rest.fetch_user_popular(username, version, display_num)), \
-                           offset, display_num
+                pop = self.da_rest.fetch_user_popular(username, version, display_num)
+                if not wants_random:
+                    return pop, offset, display_num
+                random.shuffle(pop)
+                return pop, offset, display_num
             elif 'old' in arg.keys():
-                return self.da_rest.fetch_user_old(username, version, display_num) if not wants_random else \
-                           random.shuffle(self.da_rest.fetch_user_old(username, version, display_num)), \
-                           offset, display_num
+                old = self.da_rest.fetch_user_old(username, version, display_num)
+                if not wants_random:
+                    return old, offset, display_num
+                random.shuffle(old)
+                return old, offset, display_num
             elif 'gallery' in arg.keys():
-                return self.da_rest.get_user_gallery(username, version, arg['gallery']) if not wants_random else \
-                           random.shuffle(self.da_rest.get_user_gallery(username, version, arg['gallery'])), \
-                           offset, display_num
+                gallery = self.da_rest.get_user_gallery(username, version, arg['gallery'])
+                if not wants_random:
+                    return gallery, offset, display_num
+                random.shuffle(gallery)
+                return gallery, offset, display_num
             elif 'tags' in arg.keys():
-                return self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num) if not \
-                    wants_random else \
-                    random.shuffle(
-                               self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num)), \
-                    offset, display_num
+                with_tags = self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num)
+                if not wants_random:
+                    return with_tags, offset, display_num
+                random.shuffle(with_tags)
+                return with_tags, offset, display_num
             elif wants_random:
                 results = self.da_rest.fetch_entire_user_gallery(username, version)
                 random.shuffle(results)
@@ -330,7 +336,10 @@ class CreationCommands(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
         message = f"A collection of favorites from user {username}, by users {users}: {', '.join(links)}"
-        await self._send_art_results(ctx, channel, results, message, usernames=[username])
+        try:
+            await self._send_art_results(ctx, channel, results, message, usernames=[username] if not arg else None)
+        except Exception as ex:
+            print(ex, flush=True)
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
