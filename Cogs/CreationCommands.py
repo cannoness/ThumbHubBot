@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from Utilities.DARest import DARest
 from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
+from Utilities.IGRest import IGRest
 from Utilities.TwitterRest import TwitterRest
 
 load_dotenv()
