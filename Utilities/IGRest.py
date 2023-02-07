@@ -11,15 +11,16 @@ SESSION_USER = os.getenv("SESSION_USER")
 class IGRest:
     def __init__(self):
         self.bot = instaloader.Instaloader()
-        self.bot.load_session_from_file(username="ThumbHubBot", filename=SESSION_ID)
+        self.bot.load_session_from_file(username="inanenormality", filename=SESSION_ID)
         username = self.bot.test_login()
         if not username:
-            raise SystemExit("Not logged in. Are you logged in successfully in Firefox?")
+            raise SystemExit("Not logged in?")
 
     def get_recent(self, username, num):
         try:
             profile = instaloader.Profile.from_username(self.bot.context, username)
         except Exception as ex:
+            print(ex, flush=True)
             return None
         posts = profile.get_posts()
         post_urls = []

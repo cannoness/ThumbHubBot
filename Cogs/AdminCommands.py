@@ -1,5 +1,6 @@
 from discord.ext import commands
-from Utilities.DA_rest import DARest
+from Utilities.DARest import DARest
+from Utilities.DatabaseActions import DatabaseActions
 import discord
 
 
@@ -7,6 +8,7 @@ class AdminCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
+        self.db_actions = DatabaseActions()
 
     # ADMIN ONLY, USE SPARINGLY
     @commands.command(name='dm-server')
@@ -37,7 +39,7 @@ class AdminCommands(commands.Cog):
         if {"The Hub", "Moderators"}.isdisjoint(user_roles):
             return
         else:
-            self.da_rest._update_coins(discord_id.id, int(amount))
+            self.db_actions.update_coins(discord_id.id, int(amount))
             await ctx.message.channel.send(f"Refunded {amount} hubcoins to {discord_id.display_name}")
 
     @commands.command(name='spent-hubcoins')
@@ -46,7 +48,7 @@ class AdminCommands(commands.Cog):
         if {"The Hub", "Moderators"}.isdisjoint(user_roles):
             return
         else:
-            coins = self.da_rest.get_hubcoins(discord_id.id, "spent_coins")
+            coins = self.db_actions.get_hubcoins(discord_id.id, "spent_coins")
             await ctx.message.channel.send(f"{discord_id.display_name} has spent {coins} hubcoins total")
 
 

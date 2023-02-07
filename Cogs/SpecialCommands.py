@@ -1,5 +1,6 @@
-from Utilities.DA_rest import DARest
+from Utilities.DatabaseActions import DatabaseActions
 from discord.ext import commands
+from Cogs.CreationCommands import Private
 import discord
 import os
 import random
@@ -10,6 +11,7 @@ import datetime
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', 'Moderators', 'The Hub'}
 COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
 PRIV_COUNT = 4
@@ -24,25 +26,63 @@ class SpecialCommands(commands.Cog):
         seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
         random.seed(seed)
         self.bot = bot
-        self.da_rest = DARest()
+        self.db_actions = DatabaseActions()
 
     @commands.command(name='store-da-name')
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
         if not discord_id:
             discord_id = ctx.author
         print(discord_id)
-        self.da_rest.store_da_name(discord_id.id, username)
+        self.db_actions.store_da_name(discord_id.id, username)
         await ctx.send(f"Storing or updating DA username {username} for user {discord_id.display_name}")
 
     @commands.command(name='store-random-da-name')
     async def store_random_name(self, ctx, username):
-        self.da_rest.store_random_da_name(username)
+        self.db_actions.store_random_da_name(username)
         await ctx.send(f"Storing DA username {username} without mention.")
 
     @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN, commands.BucketType.user)
     @commands.command(name='roll')
     async def roll_dice(self, ctx):
         await ctx.send(f"{ctx.message.author.display_name} Rolling 1d20: {random.randint(1, 20)}")
+
+    @commands.command(name='nomention')
+    async def do_not_mention(self, ctx, user: discord.Member):
+        self.db_actions.do_not_ping_me(user.id)
+        await ctx.channel.send(f"We will no longer mention you {user.display_name}")
+
+    @commands.command(name='mention')
+    async def mention(self, ctx, user: discord.Member):
+        self.db_actions.ping_me(user.id)
+        await ctx.channel.send(f"We will now mention you {user.display_name}")
+
+    @commands.command(name='hubcoins')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def hubcoins(self, ctx, user: discord.Member = None):
+        if user:
+            coins = self.db_actions.get_hubcoins(user.id, "hubcoins")
+        else:
+            coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
+        await ctx.channel.send(f"You currently have {coins} hubcoins.") if user is None else \
+            await ctx.channel.send(f"{user.display_name} currently has {coins} hubcoins.")
+
+    @commands.command(name='spend-hubcoins')
+    async def spend_hubcoins(self, ctx, reason, amount=None):
+        current_coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
+        reason_cost = 1 if 'xp' in reason else 100 if "feature" in reason else 500 if "vip" in reason else 1000 if \
+            "spotlight" in reason else 1 if "donate" in reason else None
+        if not reason_cost or current_coins < reason_cost:
+            await ctx.channel.send(f"Sorry, you need {int(reason_cost)-int(current_coins)} more hubcoins to perform "
+                                   f"this action.") if \
+                reason_cost else await ctx.channel.send(f"Invalid spend reason supplied! You may spend on 'xp', "
+                                                        f"'feature', 'vip', 'spotlight' or 'donate'. Please try again.")
+            return
+        if not amount:
+            amount = reason_cost
+        self.db_actions.spend_coins(ctx.message.author.id, amount)
+        await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}. A mod will contact you soon.")
+        mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
+        await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} hubcoins on {reason}")
 
 
 async def setup(bot):

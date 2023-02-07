@@ -1,14 +1,15 @@
-from collections import defaultdict
-
-from Utilities.DA_rest import DARest
-from Utilities.IG_rest import IGRest
-from Utilities.Twitter_rest import TwitterRest
-from discord.ext import commands
-import discord
 import os
 import random
+from collections import defaultdict
 
+import discord
+from discord.ext import commands
 from dotenv import load_dotenv
+
+from Utilities.DARest import DARest
+from Utilities.DARSS import DARSS
+from Utilities.DatabaseActions import DatabaseActions
+from Utilities.TwitterRest import TwitterRest
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
@@ -16,7 +17,7 @@ MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 DISCOVERY_CHANNEL = os.getenv("DISCOVERY_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers', "TheHubVIP"}
+PRIVILEGED_ROLES = {'Frequent Thumbers', "The Hub VIP"}
 COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
 MOD_COUNT = 4
 PRIV_COUNT = 4
@@ -45,8 +46,10 @@ class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.da_rest = DARest()
-        self.ig_rest = IGRest()
+        self.db_actions = DatabaseActions()
+        self.ig_rest = None  # IGRest()
         self.twitter_rest = TwitterRest()
+        self.da_rss = DARSS()
 
     @staticmethod
     def _check_your_privilege(ctx):
@@ -55,236 +58,158 @@ class CreationCommands(commands.Cog):
         mod_or_admin = not COOLDOWN_WHITELIST.isdisjoint(set(user_roles))
         return PRIV_COUNT if privileged else MOD_COUNT if mod_or_admin else DEV_COUNT
 
-    def _set_channel(self, ctx, channel):
+    def _set_channel(self, ctx, requested_channel):
         # added so we don't spam share during testing
-        if str(ctx.message.channel.id) in channel:
-            return ctx.message.channel
+        if str(ctx.message.channel.id) in requested_channel:
+            channel = ctx.message.channel
         elif ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
-            return self.bot.get_channel(int(BOT_TESTING_CHANNEL))
-        return None
+            channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        else:
+            channel = None
+
+        if not channel or channel.id is not ctx.message.channel.id:
+            ctx.command.reset_cooldown(ctx)
+            return
+
+        return channel
 
     @staticmethod
-    async def _filter_image_results(ctx, results, channel, username=None):
-        # filter out lit
+    async def _filter_results(ctx, results, channel, result_type, username=None):
         if results:
             if channel.name == "nsfw-share":
-                results = list(filter(lambda image:  image["is_mature"] and image['src_image'] not in [None, "None"],
+                results = list(filter(lambda result: result["is_mature"] and result[result_type] not in [None, "None"],
                                       results))
             elif channel.name != "bot-testing":
-                results = list(filter(lambda image: not image["is_mature"] and image['src_image'] not in [None, "None"],
-                                      results))
+                results = list(filter(lambda result: not result["is_mature"] and result[result_type] not in
+                                      [None, "None"], results))
             elif channel.name == "bot-testing":
-                results = list(filter(lambda image:  image['src_image'] not in [None, "None"],
+                results = list(filter(lambda result: result[result_type] not in [None, "None"],
                                       results))
 
         if not results and username:
-            await channel.send(f"Couldn't find any art for {username}! Is their gallery private? "
-                               f"Use !lit for literature share")
+            await channel.send(f"""Couldn't find any {"art" if 'src_image' in result_type else "lit"} for {username}! 
+                                Is their gallery private? 
+                               {"Use !art for image share" if 'src_snippet' in result_type else
+            "Use !lit for literature share"}""")
             ctx.command.reset_cooldown(ctx)
             return
         return results
 
-    @staticmethod
-    async def _filter_lit_results(ctx, results, channel, username=None):
-        # filter out lit
-        if results:
-            if channel.name == "nsfw-share":
-                results = list(filter(lambda lit:  lit["is_mature"] and lit['src_snippet'] not in [None, "None"],
-                                      results))
-            elif channel.name != "bot-testing":
-                results = list(filter(lambda lit: not lit["is_mature"] and lit['src_snippet'] not in [None, "None"],
-                                      results))
-            elif channel.name == "bot-testing":
-                results = list(filter(lambda lit:  lit['src_snippet'] not in [None, "None"],
-                                      results))
-
-        if not results and username:
-            await channel.send(f"Couldn't find any literature for {username}! Is their gallery private? "
-                               f"Use !art for visual art share")
-            ctx.command.reset_cooldown(ctx)
-            return
-        return results
+    def _manage_mentions(self, ctx, channel, results, result_type, username, usernames):
+        if not usernames:
+            results = await self._filter_results(ctx, results, channel, result_type, username)
+            if not results:
+                return
+            ping_user = self.db_actions.fetch_discord_id(username) if username else None
+            return ctx.message.guild.get_member(ping_user).mention if ping_user else None
+        else:
+            mention_string = []
+            for user in usernames:
+                ping_user = self.db_actions.fetch_discord_id(user)
+                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
+            mention_list = list(filter(lambda mention: mention is not None, mention_string))
+            return ", ".join(mention_list) if len(mention_list) > 0 else None
 
     async def _send_art_results(self, ctx, channel, results, message, username=None, usernames=None, display_num=None):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
-        if not usernames:
-            results = await self._filter_image_results(ctx, results, channel, username)
-            if not results:
-                return
-            ping_user = self.da_rest.fetch_discord_id(username) if username else None
-            mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
-        else:
-            mention_string = []
-            for user in usernames:
-                ping_user = self.da_rest.fetch_discord_id(user)
-                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
-            mention_list = list(filter(lambda mention: mention is not None, mention_string))
-            mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
+
+        mention_string = self._manage_mentions(ctx, channel, results, "src_image", username, usernames)
+
         embed = []
         for result in results[:display]:
-            embed.append(self._build_embed(result['src_image'], message) if not usernames else
-                         self._build_embed(result['media_content'][-1]['url'], message))
+            embed.append(self._build_embed(result['src_image'], message, "deviantart") if not usernames else
+                         self._build_embed(result['media_content'][-1]['url'], message, "deviantart"))
         await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
-        self.da_rest.add_coins(ctx.message.author.id, username)
+        self.db_actions.add_coins(ctx.message.author.id, username)
 
     async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):
         display_count = int(self._check_your_privilege(ctx))
         display = display_count if (not display_num or display_num >= display_count) else display_num
-        if not usernames:
-            # filter out lit
-            results = await self._filter_lit_results(ctx, results, channel, username)
-            if not results:
-                return
-            ping_user = self.da_rest.fetch_discord_id(username) if username else None
-            mention_string = ctx.message.guild.get_member(ping_user).mention if ping_user else None
-        else:
-            mention_string = []
-            for user in usernames:
-                ping_user = self.da_rest.fetch_discord_id(user)
-                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
-            mention_list = list(filter(lambda mention: mention is not None, mention_string))
-            mention_string = ", ".join(mention_list) if len(mention_list) > 0 else None
+
+        mention_string = self._manage_mentions(ctx, channel, results, "src_snippet", username, usernames)
 
         embed = discord.Embed()
         nl = '\n'
-        try:
-            for result in results[:display]:
-                embed.add_field(
-                    name=f"{result['title']}: ({result['url']})", value=f"'{result['src_snippet'].replace('<br />', nl)}'",
-                    inline=False)
-            await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
-        except Exception as ex:
-            print(ex, flush=True)
-
-        if not usernames:
-            self.da_rest.add_coins(ctx.message.author.id, username)
+        for result in results[:display]:
+            embed.add_field(
+                name=f"{result['title']}: ({result['url']})",
+                value=f"'{result['src_snippet'].replace('<br />', nl)}'",
+                inline=False)
+        await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
+        self.db_actions.add_coins(ctx.message.author.id, username)
 
     @staticmethod
-    def _build_embed(url, message):
-        return discord.Embed(url="http://deviantart.com", description=message).set_image(url=url)
-
-    @commands.command(name='nomention')
-    async def do_not_mention(self, ctx, user: discord.Member):
-        self.da_rest.do_not_ping_me(user.id)
-        await ctx.channel.send(f"We will no longer mention you {user.display_name}")
-
-    @commands.command(name='mention')
-    async def mention(self, ctx, user: discord.Member):
-        self.da_rest.ping_me(user.id)
-        await ctx.channel.send(f"We will now mention you {user.display_name}")
-
-    @commands.command(name='hubcoins')
-    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def hubcoins(self, ctx, user: discord.Member = None):
-        if user:
-            coins = self.da_rest.get_hubcoins(user.id, "hubcoins")
-        else:
-            coins = self.da_rest.get_hubcoins(ctx.message.author.id, "hubcoins")
-        await ctx.channel.send(f"You currently have {coins} hubcoins.") if user is None else \
-            await ctx.channel.send(f"{user.display_name} currently has {coins} hubcoins.")
-
-    @commands.command(name='spend-hubcoins')
-    async def spend_hubcoins(self, ctx, reason, amount=None):
-        current_coins = self.da_rest.get_hubcoins(ctx.message.author.id, "hubcoins")
-        reason_cost = 1 if 'xp' in reason else 100 if "feature" in reason else 500 if "vip" in reason else 1000 if \
-            "spotlight" in reason else 1 if "donate" in reason else None
-        if not reason_cost or current_coins < reason_cost:
-            await ctx.channel.send(f"Sorry, you need {int(reason_cost)-int(current_coins)} more hubcoins to perform "
-                                   f"this action.") if \
-                reason_cost else await ctx.channel.send(f"Invalid spend reason supplied! You may spend on 'xp', "
-                                                        f"'feature', 'vip', 'spotlight' or 'donate'. Please try again.")
-            return
-        if not amount:
-            amount = reason_cost
-        self.da_rest.spend_coins(ctx.message.author.id, amount)
-        await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}. A mod will contact you soon.")
-        mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
-        await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} hubcoins on {reason}")
+    def _build_embed(url, message, src):
+        return discord.Embed(url=f"http://{src}.com", description=message).set_image(url=url)
 
     @commands.command(name='twitterart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def twitter_art(self, ctx, username, *args):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
         display_count = self._check_your_privilege(ctx)
         urls = self.twitter_rest.get_twitter_media(username, display_count)
         if not urls:
-            await ctx.send(f"We couldn't find any media for twitter user {username}.")
+            await ctx.send(f"We couldn't find any media for twitter user @{username}.")
             ctx.command.reset_cooldown(ctx)
             return
         message = f"A collection of images from twitter user {username}!"
         embed = []
         for url in urls:
-            embed.append(
-                discord.Embed(url="http://twitter.com", description=message).set_image(url=url))
+            embed.append(self._build_embed(url, message, "twitter"))
         await channel.send(embeds=embed)
-        self.da_rest.add_coins(ctx.message.author.id, None)
+        self.db_actions.add_coins(ctx.message.author.id, None)
 
     @commands.command(name='igart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def ig_art(self, ctx, username, *args):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
         display_count = self._check_your_privilege(ctx)
         urls = self.ig_rest.get_recent(username, display_count)
         if not urls:
-            await ctx.send(f"We couldn't find any posts for IG user {username}.")
+            await ctx.send(f"We couldn't find any posts for IG user @{username}.")
             ctx.command.reset_cooldown(ctx)
             return
-        message = f"A collection of images from IG user {username}!"
+        message = f"A collection of images from IG user @{username}!"
         embed = []
         for url in urls:
-            embed.append(
-                discord.Embed(url="http://instagram.com", description=message).set_image(url=url))
+            embed.append(self._build_embed(url, message, "instagram"))
         await channel.send(embeds=embed)
-        self.da_rest.add_coins(ctx.message.author.id, None)
+        self.db_actions.add_coins(ctx.message.author.id, None)
 
-    @commands.command(name='myart')
-    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def my_art(self, ctx, *args):
-        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
-        username = self.da_rest.fetch_da_username(ctx.message.author.id)
+    def _check_store(self, ctx):
+        username = self.db_actions.fetch_da_username(ctx.message.author.id)
         if not username:
             await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
                            f"sing !store-da-name `username`")
             ctx.command.reset_cooldown(ctx)
             return
+        return username
+
+    @commands.command(name='myart')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def my_art(self, ctx, *args):
+        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
+
+        username = self._check_store(ctx)
         await self.art(ctx, username, *args, channel=channel)
 
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
-        username = self.da_rest.fetch_da_username(ctx.message.author.id)
-        if not username:
-            await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
-                           f"sing !store-da-name `username`")
-            ctx.command.reset_cooldown(ctx)
-            return
+
+        username = self._check_store(ctx)
         await self.lit(ctx, username, *args, channel=channel)
 
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
         try:
             display_count = self._check_your_privilege(ctx)
             await ctx.send("Pulling random images, this may take a moment...")
-            results, users, links, usernames = self.da_rest.get_random_images(display_count)
+            results, users, links, usernames = self.da_rss.get_random_images(display_count)
             message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
@@ -310,6 +235,8 @@ class CreationCommands(commands.Cog):
             arg_dict['old'] = True
         if 'pop' in args or 'popular' in args:
             arg_dict['pop'] = True
+        if 'collection' in "\t".join(args):
+            arg_dict['collection'] = args[args.index("collection") + 1]
         return arg_dict
 
     @staticmethod
@@ -321,19 +248,29 @@ class CreationCommands(commands.Cog):
         offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
         display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
         if arg:
-            if 'random' in arg.keys():
+            wants_random = 'random' in arg.keys()
+            if 'pop' in arg.keys():
+                return self.da_rest.fetch_user_popular(username, version, display_num) if not wants_random else \
+                           random.shuffle(self.da_rest.fetch_user_popular(username, version, display_num)), \
+                           offset, display_num
+            elif 'old' in arg.keys():
+                return self.da_rest.fetch_user_old(username, version, display_num) if not wants_random else \
+                           random.shuffle(self.da_rest.fetch_user_old(username, version, display_num)), \
+                           offset, display_num
+            elif 'gallery' in arg.keys():
+                return self.da_rest.get_user_gallery(username, version, arg['gallery']) if not wants_random else \
+                           random.shuffle(self.da_rest.get_user_gallery(username, version, arg['gallery'])), \
+                           offset, display_num
+            elif 'tags' in arg.keys():
+                return self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num) if not \
+                    wants_random else \
+                    random.shuffle(
+                               self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num)), \
+                    offset, display_num
+            elif wants_random:
                 results = self.da_rest.fetch_entire_user_gallery(username, version)
                 random.shuffle(results)
                 return results, offset, display_num
-            elif 'pop' in arg.keys():
-                return self.da_rest.fetch_user_popular(username, version, display_num), offset, display_num
-            elif 'old' in arg.keys():
-                return self.da_rest.fetch_user_old(username, version, display_num), offset, display_num
-            elif 'gallery' in arg.keys():
-                return self.da_rest.get_user_gallery(username, version, arg['gallery']), offset, display_num
-            elif 'tags' in arg.keys():
-                return self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num), offset, \
-                       display_num
 
         return self.da_rest.fetch_user_gallery(username, version, offset, display_num), offset, display_num
 
@@ -343,10 +280,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-                if channel.id is not ctx.message.channel.id:
-                    ctx.command.reset_cooldown(ctx)
-                    return
+                channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
                 await channel.send(f"Fetching user gallery, may take a moment...")
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
@@ -355,42 +289,34 @@ class CreationCommands(commands.Cog):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-            message = f"""Viewing {", ".join(list({f"[{image['title']}]({image['url']})" for image in 
+            message = f"""Viewing {", ".join(list({f"[{image['title']}]({image['url']})" for image in
                                                    results[:self._check_your_privilege(ctx)]}))}.\n
                         Visit {username}'s gallery: http://www.deviantart.com/{username}"""
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Something went wrong!")
+            await channel.send(f"Something went wrong! {ex}")
 
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def my_favs(self, ctx):
-        username = self.da_rest.fetch_da_username(ctx.message.author.id)
-        if not username:
-            await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
-                           f"sing !store-da-name `username`")
-            ctx.command.reset_cooldown(ctx)
-            return
-
+    async def my_favs(self, ctx, *args):
+        username = self._check_store(ctx)
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
-        await self.favs(ctx, username, channel)
+        await self.favs(ctx, username, channel, *args)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def favs(self, ctx, username, channel=None):
+    async def favs(self, ctx, username, *args, channel=None):
         if not channel:
             channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-            if channel.id is not ctx.message.channel.id:
-                ctx.command.reset_cooldown(ctx)
-                return
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
         num = self._check_your_privilege(ctx)
-        results, users, links, _ = self.da_rest.get_user_favs(username, num)
+        arg = self._parse_args(*args)
+        if arg and 'collection' in arg.keys():
+            results, users, links, _ = self.da_rest.get_user_favs_by_collection(username, num, arg['collection'])
+        else:
+            results, users, links, _ = self.da_rss.get_user_favs(username, num)
 
         if len(results) == 0 and username:
             await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
@@ -405,10 +331,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-                if channel.id is not ctx.message.channel.id:
-                    ctx.command.reset_cooldown(ctx)
-                    return
+                channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
                 await channel.send(f"Fetching user gallery, may take a moment...")
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
@@ -419,27 +342,27 @@ class CreationCommands(commands.Cog):
             await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Something went wrong!")
+            await channel.send(f"Something went wrong! {ex}")
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        if channel.id is not ctx.message.channel.id:
-            ctx.command.reset_cooldown(ctx)
-            return
 
         try:
             results = self.da_rest.fetch_daily_deviations()
-            results = await self._filter_image_results(ctx, results, channel)
+            art = random.randint(10) % 2 == 0
+            results = await self._filter_results(ctx, results, channel, "src_image" if art else
+                                                 "src_snippet")
             random.shuffle(results)
-            message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in 
+            message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in
                                               results[:self._check_your_privilege(ctx)]])}.\n
                         A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
-            await self._send_art_results(ctx, channel, results, message, username=ctx.message.author.display_name)
+            await self._send_art_results(ctx, channel, results, message, username=ctx.message.author.display_name) if \
+                art else await self._send_lit_results(ctx, channel, results, message)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Something went wrong!")
+            await channel.send(f"Something went wrong! {ex}")
 
 
 async def setup(bot):
