@@ -258,13 +258,13 @@ class CreationCommands(commands.Cog):
         if arg:
             wants_random = 'random' in arg.keys()
             if 'pop' in arg.keys():
-                pop = self.da_rest.fetch_user_popular(username, version, display_num)
+                pop = self.da_rest.fetch_user_popular(username, version, offset, display_num)
                 if not wants_random:
                     return pop, offset, display_num
                 random.shuffle(pop)
                 return pop, offset, display_num
             elif 'old' in arg.keys():
-                old = self.da_rest.fetch_user_old(username, version, display_num)
+                old = self.da_rest.fetch_user_old(username, version, offset, display_num)
                 if not wants_random:
                     return old, offset, display_num
                 random.shuffle(old)
@@ -276,7 +276,7 @@ class CreationCommands(commands.Cog):
                 random.shuffle(gallery)
                 return gallery, offset, display_num
             elif 'tags' in arg.keys():
-                with_tags = self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], display_num)
+                with_tags = self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], offset, display_num)
                 if not wants_random:
                     return with_tags, offset, display_num
                 random.shuffle(with_tags)
