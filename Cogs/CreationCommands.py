@@ -48,7 +48,7 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.ig_rest = IGRest()
+        self.ig_rest = None  # IGRest()
         self.twitter_rest = TwitterRest()
         self.da_rss = DARSS()
 
@@ -213,7 +213,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+        channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
         try:
             display_count = self._check_your_privilege(ctx)
             await ctx.send("Pulling random images, this may take a moment...")
