@@ -41,9 +41,10 @@ class DARest:
         if self.db_actions.user_last_cache_update(username):
             response = self.fetch_entire_user_gallery(username, version)
         else:
+            display_num = 10
             response = self._filter_api_image_results(
-                self._gallery_fetch_helper(username, offset)['results'])
-        return response[offset:display_num]
+                self._gallery_fetch_helper(username, offset, display_num)['results'])
+        return response[offset:display_num+offset]
 
     @staticmethod
     def _filter_api_image_results(results):
@@ -56,7 +57,7 @@ class DARest:
                  'author': result['author']['username']} for
                 result in results]
 
-    def fetch_user_popular(self, username, version, display_num=24):
+    def fetch_user_popular(self, username, version, offset=0, display_num=24):
         deviant_row_id = self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
@@ -67,9 +68,9 @@ class DARest:
                 order by favs desc 
                 limit {display_num} """
         response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)
+        return self.db_actions.convert_cache_to_result(response)[offset:display_num+offset]
 
-    def fetch_user_old(self, username, version, display_num=24):
+    def fetch_user_old(self, username, version, offset=0, display_num=24):
         deviant_row_id = self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
@@ -80,9 +81,9 @@ class DARest:
                 order by date_created asc 
                 limit {display_num} """
         response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)
+        return self.db_actions.convert_cache_to_result(response)[offset:display_num+offset]
 
-    def get_user_devs_by_tag(self, username, version, tags, display_num=24):
+    def get_user_devs_by_tag(self, username, version, tags, offset=0, display_num=24):
         deviant_row_id = self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
@@ -94,7 +95,7 @@ class DARest:
                         order by date_created desc 
                         limit {display_num} """
         response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)
+        return self.db_actions.convert_cache_to_result(response)[offset:display_num+offset]
 
     def fetch_entire_user_gallery(self, username, version):
         if self.db_actions.user_last_cache_update(username):
@@ -128,12 +129,12 @@ class DARest:
         results = json.loads(decoded_content)['results']
         return self._filter_api_image_results(results)
 
-    def _gallery_fetch_helper(self, username, offset=0):
+    def _gallery_fetch_helper(self, username, offset=0, display_num=24):
         self._validate_token()
         # only do this to check if the cache has to be updated...
         response = requests.get(
             f"{API_URL}gallery/all?username={username}&limit=24&access_token="
-            f"{self.access_token}&offset={offset}")
+            f"{self.access_token}&offset={offset}&display_num={display_num}")
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
         last_updated = self.db_actions.user_last_cache_update(username)

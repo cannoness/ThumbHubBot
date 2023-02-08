@@ -48,7 +48,7 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.ig_rest = IGRest()
+        self.ig_rest = None  # IGRest()
         self.twitter_rest = TwitterRest()
         self.da_rss = DARSS()
 
@@ -171,7 +171,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='igart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def ig_art(self, ctx, username, *args):
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+        channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
         display_count = self._check_your_privilege(ctx)
         urls = self.ig_rest.get_recent(username, display_count)
         if not urls:
@@ -371,6 +371,9 @@ class CreationCommands(commands.Cog):
             art = random.randint(0, 10) % 2 == 0
             results = await self._filter_results(ctx, results, channel, "src_image" if art else
                                                  "src_snippet")
+            if not results and not art:
+                art = True
+                results = await self._filter_results(ctx, results, channel, "src_image")
             if not results:
                 return
             random.shuffle(results)
