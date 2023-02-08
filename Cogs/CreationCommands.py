@@ -373,8 +373,9 @@ class CreationCommands(commands.Cog):
                                                  "src_snippet")
             if not results and not art:
                 art = True
-                results = await self._filter_results(ctx, results, channel, "src_image")
+                results = await self._filter_results(ctx, self.da_rest.fetch_daily_deviations(), channel, "src_image")
             if not results:
+                await channel.send(f"Couldn't fetch dailies, try again.")
                 return
             random.shuffle(results)
             message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in
