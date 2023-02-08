@@ -48,7 +48,7 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.ig_rest = None  # IGRest()
+        self.ig_rest = IGRest()
         self.twitter_rest = TwitterRest()
         self.da_rss = DARSS()
 
