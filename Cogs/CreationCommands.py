@@ -19,7 +19,7 @@ NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 DISCOVERY_CHANNEL = os.getenv("DISCOVERY_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', "The Hub VIP"}
-COOLDOWN_WHITELIST = {"Moderators", "The Hub"}
+COOLDOWN_WHITELIST = {"Moderators", "The Hub",  "Bot Sleuth"}
 MOD_COUNT = 4
 PRIV_COUNT = 4
 DEV_COUNT = 2
@@ -48,7 +48,7 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.ig_rest = None  # IGRest()
+        self.ig_rest = IGRest()
         self.twitter_rest = TwitterRest()
         self.da_rss = DARSS()
 
@@ -198,7 +198,8 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
-
+        if not channel:
+            return
         username = await self._check_store(ctx)
         await self.art(ctx, username, *args, channel=channel)
 
@@ -206,7 +207,8 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
         channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
-
+        if not channel:
+            return
         username = await self._check_store(ctx)
         await self.lit(ctx, username, *args, channel=channel)
 
