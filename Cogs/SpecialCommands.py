@@ -1,3 +1,6 @@
+from discord import app_commands
+from discord.app_commands import command
+
 from Utilities.DatabaseActions import DatabaseActions
 from discord.ext import commands
 from Cogs.CreationCommands import Private
@@ -7,6 +10,7 @@ import random
 
 from dotenv import load_dotenv
 import datetime
+
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
@@ -25,6 +29,7 @@ class SpecialCommands(commands.Cog):
     def __init__(self, bot):
         seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
         random.seed(seed)
+
         self.bot = bot
         self.db_actions = DatabaseActions()
 
@@ -83,6 +88,10 @@ class SpecialCommands(commands.Cog):
         await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}. A mod will contact you soon.")
         mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
         await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} hubcoins on {reason}")
+
+    @commands.hybrid_command(name="slash", with_app_command=True)
+    async def slash(self, interaction, number: int, string: str) -> None:
+        await interaction.interaction.response.send_message(f'{number=} {string=}', ephemeral=True)
 
 
 async def setup(bot):

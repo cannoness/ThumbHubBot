@@ -1,4 +1,8 @@
+from typing import Optional, Literal
+
 from discord.ext import commands
+from discord.ext.commands import Context, Greedy
+
 from Utilities.DARest import DARest
 from Utilities.DatabaseActions import DatabaseActions
 import discord
@@ -50,6 +54,40 @@ class AdminCommands(commands.Cog):
         else:
             coins = self.db_actions.get_hubcoins(discord_id.id, "spent_coins")
             await ctx.message.channel.send(f"{discord_id.display_name} has spent {coins} hubcoins total")
+
+    @commands.command(name="sync")
+    async def sync(self, ctx: Context, guilds: Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) \
+            -> None:
+        if not guilds:
+            if spec == "~":
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+            elif spec == "*":
+                ctx.bot.tree.copy_global_to(guild=ctx.guild)
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+            elif spec == "^":
+                ctx.bot.tree.clear_commands(guild=ctx.guild)
+                await ctx.bot.tree.sync(guild=ctx.guild)
+                synced = []
+            else:
+                synced = await ctx.bot.tree.sync()
+
+            bcommands = [c.name for c in self.bot.tree.get_commands()]
+            print(f"registered commands: {', '.join(bcommands)}")
+            await ctx.send(
+                f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
+            )
+            return
+
+        ret = 0
+
+        try:
+            await ctx.bot.tree.sync()
+        except discord.HTTPException as ex:
+            print(ex)
+        else:
+            ret += 1
+
+        await ctx.send(f"Synced the tree to {ret}/{len(guilds)}.")
 
 
 async def setup(bot):
