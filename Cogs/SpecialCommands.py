@@ -125,6 +125,10 @@ class SpecialCommands(commands.Cog):
                                                                     f'{1-int(coins)} more to send a card',
                                                                     ephemeral=True)
         except Exception as ex:
+            await interaction.interaction.response.send_message(f"We're sorry, this message could not be sent. "
+                                                                f"This person may not be accepting messages from "
+                                                                f"non-friends or have the bot blocked.",
+                                                                ephemeral=True)
             print(ex)
 
 
