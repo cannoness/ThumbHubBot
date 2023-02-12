@@ -37,7 +37,7 @@ class DARest:
         decoded_content = response.content.decode("UTF-8")
         return json.loads(decoded_content)['access_token']
 
-    def fetch_user_gallery(self, username, version, offset=0, display_num=24):
+    def fetch_user_gallery(self, username, version, offset=0, display_num=10):
         if self.db_actions.user_last_cache_update(username):
             response = self.fetch_entire_user_gallery(username, version)
         else:

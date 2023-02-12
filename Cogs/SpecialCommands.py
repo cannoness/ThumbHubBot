@@ -17,6 +17,7 @@ ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', 'Moderators', 'The Hub'}
+VIP_ROLE = "THE HUB VIP"
 COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth"}
 PRIV_COUNT = 4
 DEV_COUNT = 2
@@ -89,9 +90,41 @@ class SpecialCommands(commands.Cog):
         mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
         await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} hubcoins on {reason}")
 
-    @commands.hybrid_command(name="slash", with_app_command=True)
-    async def slash(self, interaction, number: int, string: str) -> None:
-        await interaction.interaction.response.send_message(f'{number=} {string=}', ephemeral=True)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    @commands.hybrid_command(name="joycard", with_app_command=True)
+    async def joycard(self, interaction, user: discord.User, message: str, anon: bool) -> None:
+        try:
+            coins = self.db_actions.get_hubcoins(interaction.author.id, "hubcoins")
+            if int(coins) >= 1:
+                embed = discord.Embed(title=":two_hearts: Someone has sent you a Joy Card! :two_hearts:" if anon else
+                                      f":two_hearts: You have been sent a Joy Card from ThumbHub Member "
+                                      f"{interaction.author} :two_hearts:",
+                                      color=discord.Color.from_rgb(245, 130, 216), description=f"{message}"
+                                                                                               f"\n\u200b\n\u200b")
+                embed.add_field(value=f"If this message was inappropriate, please DM "
+                                      f"{interaction.message.guild.get_member(162740078031011840)} "
+                                      f"with what was sent to report it; we will take care of it.", name="",
+                                inline=False)
+
+                embed.add_field(name="", value="[From the ThumbHub Team](https://discord.gg/yJberKm)", inline=False)
+                embed.set_thumbnail(url=interaction.author.avatar) if not anon else \
+                    embed.set_thumbnail(url="https://img.freepik.com/free-icon/anonymous_318-504704.jpg")
+                sent = await user.send(embed=embed)
+                if sent:
+                    await interaction.interaction.response.send_message(f'Sent {message} to {user.name} '
+                                                                        f'{"anonymously" if anon else ""}',
+                                                                        ephemeral=True)
+                    self.db_actions.spend_coins(interaction.message.author.id, 1)
+                    coins = self.db_actions.get_hubcoins(interaction.message.author.id, "hubcoins")
+                    await interaction.interaction.followup.send(f"Grats! You have {coins} hubcoins remaining!",
+                                                           ephemeral=True)
+                    print(f"{message} sent by {interaction.author.display_name} to {user.display_name}")
+            else:
+                await interaction.interaction.response.send_message(f'You currently have {coins} hubcoins and need '
+                                                                    f'{1-int(coins)} more to send a card',
+                                                                    ephemeral=True)
+        except Exception as ex:
+            print(ex)
 
 
 async def setup(bot):

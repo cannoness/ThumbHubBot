@@ -58,6 +58,9 @@ class AdminCommands(commands.Cog):
     @commands.command(name="sync")
     async def sync(self, ctx: Context, guilds: Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) \
             -> None:
+        user_roles = set([role.name for role in ctx.message.author.roles])
+        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+            return
         if not guilds:
             if spec == "~":
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
