@@ -118,7 +118,8 @@ class SpecialCommands(commands.Cog):
                     coins = self.db_actions.get_hubcoins(interaction.message.author.id, "hubcoins")
                     await interaction.interaction.followup.send(f"Grats! You have {coins} hubcoins remaining!",
                                                                 ephemeral=True)
-                    print(f"Sent by {interaction.author.display_name} to {user.display_name}")
+                    print(f"Sent by {interaction.author.display_name} to {user.display_name} "
+                          f"{'anonymously' if anon else ''}")
             else:
                 await interaction.interaction.response.send_message(f'You currently have {coins} hubcoins and need '
                                                                     f'{1-int(coins)} more to send a card',
