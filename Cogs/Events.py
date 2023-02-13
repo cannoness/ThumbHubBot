@@ -18,7 +18,7 @@ class Events(commands.Cog):
         if isinstance(error, commands.errors.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)
             await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, try again after "
-                           f"{int(minutes)}m {int(seconds)}s.")
+                           f"{int(minutes)}m {int(seconds)}s.", ephemeral=True)
             print("command didn't work.")
 
 
