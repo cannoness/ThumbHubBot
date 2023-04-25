@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from Utilities.DARest import DARest
 from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
-from Utilities.IGRest import IGRest
 from Utilities.TwitterRest import TwitterRest
 
 load_dotenv()
@@ -52,7 +51,6 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.ig_rest = IGRest()
         self.twitter_rest = TwitterRest()
         self.da_rss = DARSS()
 
@@ -169,23 +167,6 @@ class CreationCommands(commands.Cog):
         embed = []
         for url in urls:
             embed.append(self._build_embed(url, message, "twitter"))
-        await channel.send(embeds=embed)
-        self.db_actions.add_coins(ctx.message.author.id, None)
-
-    @commands.command(name='igart')
-    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def ig_art(self, ctx, username, *args):
-        channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
-        display_count = self._check_your_privilege(ctx)
-        urls = self.ig_rest.get_recent(username, display_count)
-        if not urls:
-            await ctx.send(f"We couldn't find any posts for IG user @{username}.")
-            ctx.command.reset_cooldown(ctx)
-            return
-        message = f"A collection of images from IG user @{username}!"
-        embed = []
-        for url in urls:
-            embed.append(self._build_embed(url, message, "instagram"))
         await channel.send(embeds=embed)
         self.db_actions.add_coins(ctx.message.author.id, None)
 

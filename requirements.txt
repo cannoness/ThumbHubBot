@@ -3,7 +3,6 @@ requests
 python-dotenv
 sqlalchemy==1.4.45
 psycopg2
-instaloader
 python-twitter-v2
 datetime
 feedparser
