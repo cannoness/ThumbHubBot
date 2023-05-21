@@ -11,7 +11,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        channel = self.bot.get_channel(ctx.channel)
+        channel = await self.bot.fetch_channel(ctx.channel)
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.command.reset_cooldown(ctx)
             await channel.send(f"{error}")
