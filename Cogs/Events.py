@@ -13,14 +13,14 @@ class Events(commands.Cog):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.command.reset_cooldown(ctx)
-            await ctx.send(f"{error}")
+            await ctx.channel.send(f"{error}")
             print("command didn't work.")
         if isinstance(error, commands.errors.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)
-            await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, try again after "
+            await ctx.channel.send(f"This command is on cooldown for user {ctx.message.author.display_name}, try again after "
                            f"{int(minutes)}m {int(seconds)}s.", ephemeral=True)
             print("command didn't work.")
-        await ctx.send(f"{error}")
+        await ctx.channel.send(f"{error}")
 
 
 async def setup(bot):
