@@ -22,11 +22,10 @@ class DARSS:
         random_users = self.db_actions.fetch_da_usernames(10)
         images = []
         for user in random_users:
-            print(user)
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall")
-            print(image_feed)
+            if image_feed.status != 200:
+                raise Exception("URL currently not accessible. We know this issue exists and we are working on it.")
             results = self._shuffle_and_apply_filter(image_feed.entries)
-            print(results)
             if len(results):
                 if len(images) < num:
                     images.append(results[0])

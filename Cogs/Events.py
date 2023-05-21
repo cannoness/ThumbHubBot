@@ -20,6 +20,7 @@ class Events(commands.Cog):
             await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, try again after "
                            f"{int(minutes)}m {int(seconds)}s.", ephemeral=True)
             print("command didn't work.")
+        await ctx.send(f"{error}")
 
 
 async def setup(bot):
