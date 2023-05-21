@@ -15,13 +15,8 @@ class DARSS:
     def __init__(self):
         load_dotenv()
         self.db_actions = DatabaseActions()
-        self.pg_secret = os.getenv("PG_SECRET")
         seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
         random.seed(seed)
-
-        engine = sqlalchemy.create_engine(
-            f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")
-        self.connection = engine.connect()
 
     def get_random_images(self, num):
         random_users = self.db_actions.fetch_da_usernames(10)

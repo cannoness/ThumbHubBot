@@ -8,12 +8,11 @@ import random
 class DatabaseActions:
     def __init__(self):
         load_dotenv()
-        self.pg_secret = os.getenv("PG_SECRET")
+        self.database_url = os.getenv("DATABASE_URL")
         seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
         random.seed(seed)
 
-        engine = sqlalchemy.create_engine(
-            f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")
+        engine = sqlalchemy.create_engine(self.database_url)
         self.connection = engine.connect()
 
     def store_da_name(self, discord_id, username):
