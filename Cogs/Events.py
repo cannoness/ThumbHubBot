@@ -11,16 +11,17 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        channel = self.bot.get_channel(ctx.channel)
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.command.reset_cooldown(ctx)
-            await ctx.channel.send(f"{error}")
+            await channel.send(f"{error}")
             print("command didn't work.")
         if isinstance(error, commands.errors.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)
-            await ctx.channel.send(f"This command is on cooldown for user {ctx.message.author.display_name}, try again after "
-                           f"{int(minutes)}m {int(seconds)}s.", ephemeral=True)
+            await channel.send(f"This command is on cooldown for user {ctx.message.author.display_name}, "
+                               f"try again after {int(minutes)}m {int(seconds)}s.", ephemeral=True)
             print("command didn't work.")
-        await ctx.channel.send(f"{error}")
+        await channel.send(f"{error}")
 
 
 async def setup(bot):
