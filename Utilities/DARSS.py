@@ -27,6 +27,7 @@ class DARSS:
         random_users = self.db_actions.fetch_da_usernames(10)
         images = []
         for user in random_users:
+            print(user)
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
             results = self._shuffle_and_apply_filter(image_feed)
             if len(results):
