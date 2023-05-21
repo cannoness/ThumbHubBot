@@ -25,6 +25,7 @@ class DARSS:
             print(user)
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall").entries
             results = self._shuffle_and_apply_filter(image_feed)
+            print(results)
             if len(results):
                 if len(images) < num:
                     images.append(results[0])
@@ -63,6 +64,7 @@ class DARSS:
                                             image['media_content'][-1]['medium'] == 'image' and
                                             image["rating"] == 'nonadult',
                               images))
+        print(results, " filter")
         return results
 
     @staticmethod
