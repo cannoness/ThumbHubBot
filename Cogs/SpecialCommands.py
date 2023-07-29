@@ -91,7 +91,7 @@ class SpecialCommands(commands.Cog):
     async def spend_hubcoins(self, ctx, *message):
         current_coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
         reason = message[0]
-        amount = int(message[-1]) if len(message) > 2 else None
+        amount = int(message[-1]) if message[-1].is_digit() else None
         reason_cost = 1 if 'xp' in reason else 100 if ("feature" in reason or "color" in reason) else 500 \
             if "vip" in reason else 1000 if "spotlight" in reason else 1 if "donate" in reason else None
         if not reason_cost or current_coins < reason_cost:
@@ -108,7 +108,7 @@ class SpecialCommands(commands.Cog):
         if "color" in reason:
             author = ctx.message.author
             current_roles = [role.name for role in ctx.message.author.roles]
-            color = message[-1].title() if len(message) <= 2 else message[-2].title()
+            color = message[-1].title() if not message[-1].isdigit() else " ".join(message[1:len(message)-1]).title()
             desired_color = f'{color} ({"FT" if "Frequent Thumbers" in current_roles  else "Dev"})'
             role = discord.utils.get(author.guild.roles, name=desired_color)
 
