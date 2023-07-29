@@ -2,7 +2,7 @@ from discord import app_commands
 from discord.app_commands import command
 
 from Utilities.DatabaseActions import DatabaseActions
-from discord.ext import commands
+from discord.ext import commands, tasks
 from Cogs.CreationCommands import Private
 import discord
 import os
@@ -33,6 +33,21 @@ class SpecialCommands(commands.Cog):
 
         self.bot = bot
         self.db_actions = DatabaseActions()
+
+        self.printer.start()
+
+    def cog_unload(self):
+        self.printer.cancel()
+
+    @tasks.loop(hours=4)
+    async def printer(self):
+        print(self.index)
+        self.index += 1
+
+    @printer.before_loop
+    async def before_printer(self):
+        print('unimplemented...')
+        # await self.bot.wait_until_ready()
 
     @commands.command(name='store-da-name')
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
@@ -73,21 +88,39 @@ class SpecialCommands(commands.Cog):
             await ctx.channel.send(f"{user.display_name} currently has {coins} hubcoins.")
 
     @commands.command(name='spend-hubcoins')
-    async def spend_hubcoins(self, ctx, reason, amount=None):
+    async def spend_hubcoins(self, ctx, *message):
         current_coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
-        reason_cost = 1 if 'xp' in reason else 100 if "feature" in reason else 500 if "vip" in reason else 1000 if \
-            "spotlight" in reason else 1 if "donate" in reason else None
+        reason = message[0]
+        amount = int(message[-1]) if len(message) > 2 else None
+        reason_cost = 1 if 'xp' in reason else 100 if ("feature" in reason or "color" in reason) else 500 \
+            if "vip" in reason else 1000 if "spotlight" in reason else 1 if "donate" in reason else None
         if not reason_cost or current_coins < reason_cost:
             await ctx.channel.send(f"Sorry, you need {int(reason_cost)-int(current_coins)} more hubcoins to perform "
                                    f"this action.") if \
                 reason_cost else await ctx.channel.send(f"Invalid spend reason supplied! You may spend on 'xp', "
-                                                        f"'feature', 'vip', 'spotlight' or 'donate'. Please try again.")
+                                                        f"'feature', 'vip', 'color', 'spotlight' or 'donate'."
+                                                        f" Please try again.")
             return
         if not amount:
             amount = reason_cost
         self.db_actions.spend_coins(ctx.message.author.id, amount)
-        await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}. A mod will contact you soon.")
         mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
+        if "color" in reason:
+            author = ctx.message.author
+            current_roles = [role.name for role in ctx.message.author.roles]
+            color = message[-1].title() if len(message) <= 2 else message[-2].title()
+            desired_color = f'{color} ({"FT" if "Frequent Thumbers" in current_roles  else "Dev"})'
+            role = discord.utils.get(author.guild.roles, name=desired_color)
+
+            if not role:
+                await ctx.channel.send(f"No role color found, a mod will DM you soon or correct manually.")
+                await mod_channel.send(f"Unable to assign '{desired_color}' role to "
+                                       f"{ctx.message.author.display_name}")
+            await author.add_roles(role)
+            await ctx.channel.send(f"Congratulations on your new role color! Color will expire in 1 week")
+            return
+        else:
+            await ctx.channel.send(f"You have spent {amount} hubcoins on {reason}. A mod will contact you soon.")
         await mod_channel.send(f"{ctx.message.author.display_name} has spent {amount} hubcoins on {reason}")
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
