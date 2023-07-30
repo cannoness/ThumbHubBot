@@ -90,7 +90,7 @@ class SpecialCommands(commands.Cog):
             coins = self.db_actions.get_hubcoins(user.id, "hubcoins")
         else:
             coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
-        await ctx.channel.send(f"You currently have {coins} hubcoins.") if user is None else \
+        await ctx.channel.send(f"You currently have {math.floor(coins)} hubcoins.") if user is None else \
             await ctx.channel.send(f"{user.display_name} currently has {math.floor(coins)} hubcoins.")
 
     @commands.command(name='spend-hubcoins')
