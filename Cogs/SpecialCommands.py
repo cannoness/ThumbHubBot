@@ -1,3 +1,5 @@
+import math
+
 from Utilities.DatabaseActions import DatabaseActions
 from discord.ext import commands, tasks
 from Cogs.CreationCommands import Private
@@ -89,7 +91,7 @@ class SpecialCommands(commands.Cog):
         else:
             coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
         await ctx.channel.send(f"You currently have {coins} hubcoins.") if user is None else \
-            await ctx.channel.send(f"{user.display_name} currently has {coins} hubcoins.")
+            await ctx.channel.send(f"{user.display_name} currently has {math.floor(coins)} hubcoins.")
 
     @commands.command(name='spend-hubcoins')
     async def spend_hubcoins(self, ctx, *message):
