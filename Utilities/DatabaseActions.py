@@ -1,3 +1,6 @@
+import math
+import time
+
 import sqlalchemy
 import os
 import datetime
@@ -106,6 +109,58 @@ class DatabaseActions:
             spent_query = f""" UPDATE hubcoins set spent_coins = spent_coins - {amount} where discord_id = {
             discord_id}  """
             self.connection.execute(spent_query)
+
+    def get_role_added(self, discord_id, column):
+        # get current coins and return the count
+        query = f""" SELECT {column} from role_assignment_date where discord_id = {discord_id} """
+        result = self.connection.execute(query)
+        row = result.fetchone()
+        if row:
+            return row[0], row[1]
+        else:
+            return 0
+
+    def add_role_timer(self, discord_id, role_color):
+        date = self.get_role_added(discord_id, "last_added_timestamp")
+        if len(date) == 1:
+            query = f""" INSERT into role_assignment_date (discord_id, role_color) values ({discord_id}, 
+                    {role_color}) """
+            self.connection.execute(query)
+        else:
+            add_query = f""" UPDATE role_assignment_date set last_added_timestamp = NOW(), 
+                        role_color = {role_color} where discord_id = {discord_id}"""
+            self.connection.execute(add_query)
+
+    def delete_role(self, discord_ids):
+        query = f""" DELETE from role_assignment_date where discord_id in ({discord_ids}) """
+        self.connection.execute(query)
+
+    def get_all_expiring_roles(self):
+        today = datetime.datetime.now().strftime('%Y-%m-%d')
+        query = f""" SELECT * from role_assignment_date where last_added_timestamp = {today} """
+        rows = self._execute_query_with_return(query)
+        current_time = datetime.datetime.now()
+        compare_against = time.mktime(current_time.timetuple())
+        roles_expiring = []
+        for row in rows:
+            timestamp = row.last_added_time_stamp
+            formatted_timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
+            comparison = time.mktime(formatted_timestamp.timetuple())
+            if comparison - compare_against > 1800:
+                roles_expiring.append([row.deviant_id, row.color])
+        return roles_expiring
+
+    def refresh_message_counts(self):
+        query = "TRUNCATE TABLE diminishing_returns_table"
+        self.connection.execute(query)
+
+    def diminish_coins_added(self, deviant_id):
+        query = f"""SELECT message_count from diminishing_returns_table where deviant_id = {deviant_id}"""
+        result = self.connection.execute(query)
+        diminish_by = result.fetchone()
+        max_percent_reduction = 0.95
+        k = 0.043
+        return max_percent_reduction*(1 - math.exp(-k*diminish_by[0]))
 
     def _execute_query_with_return(self, query):
         cursor = self.connection.execute(query)

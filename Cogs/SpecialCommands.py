@@ -34,18 +34,22 @@ class SpecialCommands(commands.Cog):
         self.bot = bot
         self.db_actions = DatabaseActions()
 
-        self.printer.start()
+        self.daily_reset.start()
 
     def cog_unload(self):
-        self.printer.cancel()
+        self.daily_reset.cancel()
 
-    @tasks.loop(hours=4)
-    async def printer(self):
-        print(self.index)
-        self.index += 1
+    @tasks.loop(hours=24)
+    async def daily_reset(self):
+        expiring_roles = self.db_actions.get_all_expiring_roles()
+        for ids, colors in expiring_roles:
+            # remove color from id
+            pass
+        self.db_actions.delete_role([ids[0] for ids in expiring_roles])
+        self.db_actions.refresh_message_counts()
 
-    @printer.before_loop
-    async def before_printer(self):
+    @daily_reset.before_loop
+    async def before_daily_reset(self):
         print('unimplemented...')
         # await self.bot.wait_until_ready()
 
@@ -105,6 +109,7 @@ class SpecialCommands(commands.Cog):
             amount = reason_cost
         self.db_actions.spend_coins(ctx.message.author.id, amount)
         mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
+        # refactor this
         if "color" in reason:
             author = ctx.message.author
             current_roles = [role.name for role in ctx.message.author.roles]
@@ -117,6 +122,7 @@ class SpecialCommands(commands.Cog):
                 await mod_channel.send(f"Unable to assign '{desired_color}' role to "
                                        f"{ctx.message.author.display_name}")
             await author.add_roles(role)
+            self.db_actions.add_role_timer(ctx.message.author.id, desired_color)
             await ctx.channel.send(f"Congratulations on your new role color! Color will expire in 1 week")
             return
         else:
