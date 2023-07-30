@@ -155,16 +155,13 @@ class DatabaseActions:
         self.connection.execute(query)
 
     def diminish_coins_added(self, deviant_id):
-        query = f"""SELECT message_count from diminishing_returns_table where deviant_id = {deviant_id}"""
-        result = self.connection.execute(query)
-        diminish_by = result.fetchone()
-        if diminish_by is None:
-            query = f"""INSERT INTO diminishing_returns_table (deviant_id)
+        query = f"""INSERT INTO diminishing_returns_table (deviant_id)
                     VALUES({deviant_id}) 
                     ON CONFLICT (deviant_id) 
-                    DO UPDATE set message_count = EXCLUDED.message_count + 1"""
-            self.connection.execute(query)
-            diminish_by = [0]
+                    DO UPDATE set message_count = diminishing_returns_table.message_count + 1 
+                    RETURNING message_count """
+        result = self.connection.execute(query)
+        diminish_by = result.fetchone()
         max_percent_reduction = 0.95
         k = 0.043
         return round(max_percent_reduction*(1 - math.exp(-k*diminish_by[0])), 6)
