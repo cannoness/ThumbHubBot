@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from discord.ext import commands
+from Utilities.DatabaseActions import DatabaseActions
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
@@ -14,6 +15,7 @@ PRIVILEGED_ROLES = {'Frequent Thumbers'}
 class Events(commands.Cog):
     def __init__(self, bot_):
         self.bot = bot_
+        self.db_actions = DatabaseActions()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -34,9 +36,10 @@ class Events(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:  # skip bot messages
             return
-        if message.channel.id == int(BOT_TESTING_CHANNEL):
-            # await message.channel.send(f'counting {message.author.name}')  # placeholder for auto-coin
-            pass
+        if message.channel.id in [int(ART_LIT_CHANNEL), int(DISCOVERY_CHANNEL), int(NSFW_CHANNEL)]:
+            diminish_by = self.db_actions.diminish_coins_added(message.author.id)
+            coins_to_add = 1 - 1*diminish_by
+            self.db_actions.update_coins(message.author.id, coins_to_add)
 
 
 async def setup(bot):

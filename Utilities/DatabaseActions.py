@@ -116,19 +116,20 @@ class DatabaseActions:
         result = self.connection.execute(query)
         row = result.fetchone()
         if row:
-            return row[0], row[1]
+            return row[0]
         else:
             return 0
 
     def add_role_timer(self, discord_id, role_color):
         date = self.get_role_added(discord_id, "last_added_timestamp")
-        if len(date) == 1:
+        # change to upsert
+        if not date:
             query = f""" INSERT into role_assignment_date (discord_id, role_color) values ({discord_id}, 
-                    {role_color}) """
+                    '{role_color}') """
             self.connection.execute(query)
         else:
             add_query = f""" UPDATE role_assignment_date set last_added_timestamp = NOW(), 
-                        role_color = {role_color} where discord_id = {discord_id}"""
+                        role_color = '{role_color}' where discord_id = {discord_id}"""
             self.connection.execute(add_query)
 
     def delete_role(self, discord_ids):
@@ -137,16 +138,15 @@ class DatabaseActions:
 
     def get_all_expiring_roles(self):
         today = datetime.datetime.now().strftime('%Y-%m-%d')
-        query = f""" SELECT * from role_assignment_date where last_added_timestamp = {today} """
+        query = f""" SELECT * from role_assignment_date where DATE(last_added_timestamp) = '{today}' """
         rows = self._execute_query_with_return(query)
         current_time = datetime.datetime.now()
         compare_against = time.mktime(current_time.timetuple())
         roles_expiring = []
         for row in rows:
-            timestamp = row.last_added_time_stamp
-            formatted_timestamp = datetime.datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
-            comparison = time.mktime(formatted_timestamp.timetuple())
-            if comparison - compare_against > 1800:
+            timestamp = row.last_added_timestamp
+            comparison = time.mktime(timestamp.timetuple())
+            if comparison - compare_against > 604800:
                 roles_expiring.append([row.deviant_id, row.color])
         return roles_expiring
 
@@ -158,9 +158,16 @@ class DatabaseActions:
         query = f"""SELECT message_count from diminishing_returns_table where deviant_id = {deviant_id}"""
         result = self.connection.execute(query)
         diminish_by = result.fetchone()
+        if diminish_by is None:
+            query = f"""INSERT INTO diminishing_returns_table (deviant_id)
+                    VALUES({deviant_id}) 
+                    ON CONFLICT (deviant_id) 
+                    DO UPDATE set message_count = EXCLUDED.message_count + 1"""
+            self.connection.execute(query)
+            diminish_by = [0]
         max_percent_reduction = 0.95
         k = 0.043
-        return max_percent_reduction*(1 - math.exp(-k*diminish_by[0]))
+        return round(max_percent_reduction*(1 - math.exp(-k*diminish_by[0])), 6)
 
     def _execute_query_with_return(self, query):
         cursor = self.connection.execute(query)

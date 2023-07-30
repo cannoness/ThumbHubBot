@@ -1,6 +1,3 @@
-from discord import app_commands
-from discord.app_commands import command
-
 from Utilities.DatabaseActions import DatabaseActions
 from discord.ext import commands, tasks
 from Cogs.CreationCommands import Private
@@ -42,22 +39,25 @@ class SpecialCommands(commands.Cog):
     @tasks.loop(hours=24)
     async def daily_reset(self):
         expiring_roles = self.db_actions.get_all_expiring_roles()
-        for ids, colors in expiring_roles:
-            # remove color from id
-            pass
-        self.db_actions.delete_role([ids[0] for ids in expiring_roles])
+        if len(expiring_roles) > 0:
+            for ids, colors in expiring_roles:
+                discord_id = self.bot.get_user(ids)
+                role = discord.utils.get(discord_id.guild.roles, name=colors)
+                discord_id.remove_roles(role)
+            self.db_actions.delete_role([ids[0] for ids in expiring_roles])
         self.db_actions.refresh_message_counts()
+        bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        await bot_channel.send("Resetting daily timers...")
 
     @daily_reset.before_loop
     async def before_daily_reset(self):
-        print('unimplemented...')
-        # await self.bot.wait_until_ready()
+        print('waiting...')
+        await self.bot.wait_until_ready()
 
     @commands.command(name='store-da-name')
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
         if not discord_id:
             discord_id = ctx.author
-        print(discord_id)
         self.db_actions.store_da_name(discord_id.id, username)
         await ctx.send(f"Storing or updating DA username {username} for user {discord_id.display_name}")
 
@@ -95,7 +95,7 @@ class SpecialCommands(commands.Cog):
     async def spend_hubcoins(self, ctx, *message):
         current_coins = self.db_actions.get_hubcoins(ctx.message.author.id, "hubcoins")
         reason = message[0]
-        amount = int(message[-1]) if message[-1].is_digit() else None
+        amount = int(message[-1]) if message[-1].isdigit() else None
         reason_cost = 1 if 'xp' in reason else 100 if ("feature" in reason or "color" in reason) else 500 \
             if "vip" in reason else 1000 if "spotlight" in reason else 1 if "donate" in reason else None
         if not reason_cost or current_coins < reason_cost:
