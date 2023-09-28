@@ -191,7 +191,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
-            await channel.send(f"Encountered exception {ex}. This has been recorded, we are displaying a random user.")
+            await channel.send(f"An exception has been recorded, we are displaying a random user.")
             raise Exception(ex)
 
     def _parse_args(self, *args):
