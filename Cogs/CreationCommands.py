@@ -299,23 +299,22 @@ class CreationCommands(commands.Cog):
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
         num = self._check_your_privilege(ctx)
         arg = self._parse_args(*args)
-        if arg and 'collection' in arg.keys():
-            results, users, links = self.da_rest.get_user_favs_by_collection(username, "src_image", arg['collection'])
-        else:
-            results, users, links, _ = self.da_rss.get_user_favs(username, num)
-
-        if len(results) == 0 and username:
-            await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
-            ctx.command.reset_cooldown(ctx)
-            return
-        message = f"A collection of favorites from user {username}, by users {users}: {', '.join(links)}"
         try:
+            if arg and 'collection' in arg.keys():
+                results, users, links = self.da_rest.get_user_favs_by_collection(username, "src_image", arg['collection'])
+            else:
+                results, users, links, _ = self.da_rss.get_user_favs(username, num)
+
+            if len(results) == 0 and username:
+                await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
+                ctx.command.reset_cooldown(ctx)
+                return
+            message = f"A collection of favorites from user {username}, by users {users}: {', '.join(links)}"
             await self._send_art_results(ctx, channel, results, message, usernames=[username] if not arg else None)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
-            print("foo")
             raise Exception(ex)
 
     @commands.command(name='lit')
