@@ -7,7 +7,7 @@ import feedparser
 
 
 RANDOM_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
-FAV_RSS_URL = "http://backend.deviantart.com/rss.xml?type=deviation&q=favby%3A"
+FAV_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=favby%3A"
 
 
 class DARSS:
