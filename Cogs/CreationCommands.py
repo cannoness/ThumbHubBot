@@ -190,7 +190,7 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
             print(ex, flush=True)
-            await self.art(ctx, self.db_actions.fetch_da_usernames(1), 'rnd', channel=channel)
+            await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
             await channel.send(f"Encountered exception {ex}. This has been recorded, we are displaying a random user.")
             raise Exception(ex)
 
@@ -333,6 +333,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
+            raise Exception(ex)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
@@ -359,6 +360,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
+            raise Exception(ex)
 
 
 async def setup(bot):
