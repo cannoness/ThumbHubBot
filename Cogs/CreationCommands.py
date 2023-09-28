@@ -190,7 +190,8 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Encountered exception {ex}. This has been recorded.")
+            await self.art(ctx, self.db_actions.fetch_da_usernames(1), 'rnd', channel=channel)
+            await channel.send(f"Encountered exception {ex}. This has been recorded, we are displaying a random user.")
             raise Exception(ex)
 
     def _parse_args(self, *args):
@@ -312,6 +313,7 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message, usernames=[username] if not arg else None)
         except Exception as ex:
             print(ex, flush=True)
+            raise Exception(ex)
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)

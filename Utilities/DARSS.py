@@ -1,5 +1,4 @@
 from Utilities.DatabaseActions import DatabaseActions
-import sqlalchemy
 import random
 import os
 import datetime
@@ -25,7 +24,7 @@ class DARSS:
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall")
             if image_feed.status != 200:
                 raise Exception(f"URL currently not accessible. We know this issue exists and we are working on it. "
-                                f"{image_feed.status}. Users selected: {random_users}")
+                                f"{image_feed}. User selected: {user}")
             results = self._shuffle_and_apply_filter(image_feed.entries)
             if len(results):
                 if len(images) < num:
@@ -40,8 +39,9 @@ class DARSS:
             f"{FAV_RSS_URL}{username}&offset={offset}")
 
         if response.status != 200:
+
             raise Exception(f"URL currently not accessible. We know this issue exists and we are working on it. "
-                            f"{response.status}. User RSS attempted: {username}")
+                            f"{response}. User RSS attempted: {username}. Defaulting to use cache.")
         return response
 
     def get_user_favs(self, username, num):
