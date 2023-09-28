@@ -49,7 +49,8 @@ class SpecialCommands(commands.Cog):
             self.db_actions.delete_role([ids[0] for ids in expiring_roles])
         self.db_actions.refresh_message_counts()
         bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
-        await bot_channel.send("Resetting daily timers...")
+        if len(expiring_roles) > 0:
+            await bot_channel.send(f"Resetting roles: {expiring_roles}")
 
     @daily_reset.before_loop
     async def before_daily_reset(self):

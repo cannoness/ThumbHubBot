@@ -24,7 +24,8 @@ class DARSS:
         for user in random_users:
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall")
             if image_feed.status != 200:
-                raise Exception("URL currently not accessible. We know this issue exists and we are working on it.")
+                raise Exception(f"URL currently not accessible. We know this issue exists and we are working on it. "
+                                f"{image_feed.status}. Users selected: {random_users}")
             results = self._shuffle_and_apply_filter(image_feed.entries)
             if len(results):
                 if len(images) < num:
@@ -37,6 +38,10 @@ class DARSS:
     def _fetch_all_user_faves_helper(username, offset=0):
         response = feedparser.parse(
             f"{FAV_RSS_URL}{username}&offset={offset}")
+
+        if response.status != 200:
+            raise Exception(f"URL currently not accessible. We know this issue exists and we are working on it. "
+                            f"{response.status}. User RSS attempted: {username}")
         return response
 
     def get_user_favs(self, username, num):
@@ -44,8 +49,8 @@ class DARSS:
         response = self._fetch_all_user_faves_helper(username)
         images = response.entries
         # fetch more, if they want more than 100 they can specify collections
-        while len(response['feed']['links']) > 1 and len(images) < 100:
-            url = response['feed']['links'][2]['href']
+        while len(response['feed']['links']) >= 1 and len(images) < 100:
+            url = response['feed']['links'][-1]['href']
             response = feedparser.parse(url)
             images += response.entries
 
@@ -64,13 +69,13 @@ class DARSS:
                                             image['media_content'][-1]['medium'] == 'image' and
                                             image["rating"] == 'nonadult',
                               images))
-        print(results, " filter")
+        print(results, " filter", flush=True)
         return results
 
     @staticmethod
     def _generate_links(results, num):
         filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
-        filtered_links = list({f"[{image['title']}]({image['links'][-1]['href']})" for image in results[:num]})
+        filtered_links = list({f"[{image['title']}]({image['link']})" for image in results[:num]})
         if len(filtered_users) == 1:
             string_users = filtered_users[0]
         else:

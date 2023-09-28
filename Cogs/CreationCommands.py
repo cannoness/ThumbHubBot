@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 from Utilities.DARest import DARest
 from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
-from Utilities.TwitterRest import TwitterRest
 
 load_dotenv()
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
@@ -51,7 +50,6 @@ class CreationCommands(commands.Cog):
         self.bot = bot
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.twitter_rest = TwitterRest()
         self.da_rss = DARSS()
 
     @staticmethod
@@ -153,23 +151,6 @@ class CreationCommands(commands.Cog):
     def _build_embed(url, message, src):
         return discord.Embed(url=f"http://{src}.com", description=message).set_image(url=url)
 
-    @commands.command(name='twitterart')
-    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def twitter_art(self, ctx, username, *args):
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
-        display_count = self._check_your_privilege(ctx)
-        urls = self.twitter_rest.get_twitter_media(username, display_count)
-        if not urls:
-            await ctx.send(f"We couldn't find any media for twitter user @{username}.")
-            ctx.command.reset_cooldown(ctx)
-            return
-        message = f"A collection of images from twitter user {username}!"
-        embed = []
-        for url in urls:
-            embed.append(self._build_embed(url, message, "twitter"))
-        await channel.send(embeds=embed)
-        self.db_actions.add_coins(ctx.message.author.id, None)
-
     async def _check_store(self, ctx):
         username = self.db_actions.fetch_da_username(ctx.message.author.id)
         if not username:
@@ -209,6 +190,8 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
             print(ex, flush=True)
+            await channel.send(f"Encountered exception {ex}. This has been recorded.")
+            raise Exception(ex)
 
     def _parse_args(self, *args):
         if len(args) == 0:
@@ -296,7 +279,8 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Something went wrong! {ex}")
+            await channel.send(f"Encountered exception {ex}. This has been recorded.")
+            raise Exception(ex)
 
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)

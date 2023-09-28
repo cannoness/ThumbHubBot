@@ -87,6 +87,8 @@ class AdminCommands(commands.Cog):
             await ctx.bot.tree.sync()
         except discord.HTTPException as ex:
             print(ex)
+            await ctx.send(f"Encountered exception {ex}. This has been recorded.")
+            raise Exception(ex)
         else:
             ret += 1
 

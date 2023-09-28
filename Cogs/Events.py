@@ -30,7 +30,7 @@ class Events(commands.Cog):
             minutes, seconds = divmod(error.retry_after, 60)
             return await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, "
                                   f"try again after {int(minutes)}m {int(seconds)}s.", ephemeral=True)
-        return await ctx.send(f"{error}")
+        return await ctx.send(f"Another error was encountered: {error}")
 
     @commands.Cog.listener()
     async def on_message(self, message):
