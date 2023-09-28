@@ -315,6 +315,7 @@ class CreationCommands(commands.Cog):
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
+            print("foo")
             raise Exception(ex)
 
     @commands.command(name='lit')
