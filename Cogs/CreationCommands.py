@@ -1,25 +1,30 @@
 import os
 import random
 from collections import defaultdict
+from io import BytesIO
 
 import discord
+import requests
 from discord.ext import commands
 from dotenv import load_dotenv
 
 from Utilities.DARest import DARest
 from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
+from Utilities.ImageUtils import Template
+
 
 load_dotenv()
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers'}
 VIP = "The Hub VIP"
 COOLDOWN_WHITELIST = {"Moderators", "The Hub",  "Bot Sleuth"}
-MOD_COUNT = 4
-PRIV_COUNT = 4
-DEV_COUNT = 2
+MOD_COUNT = 6
+PRIV_COUNT = 6
+DEV_COUNT = 4
 DEFAULT_COOLDOWN = 600
 PRIV_COOLDOWN = 300
 VIP_COOLDOWN = 180
@@ -117,11 +122,19 @@ class CreationCommands(commands.Cog):
 
         mention_string = self._manage_mentions(ctx, username, usernames)
 
-        embed = []
+        embeds = []
+        titles = []
         for result in results[:display]:
-            embed.append(self._build_embed(result['src_image'], message, "deviantart") if not usernames else
-                         self._build_embed(result['media_content'][-1]['url'], message, "deviantart"))
-        await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
+            embeds.append(BytesIO(requests.get(result['src_image']).content) if not usernames else
+                          requests.get(result['media_content'][-1]['url']).content)
+            titles.append(result['title'])
+        amaztemp = Template(titles, embeds)
+        thumbs = amaztemp.draw()
+        with BytesIO() as image_binary:
+            thumbs.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            await channel.send(message, file=discord.File(image_binary, filename='thumbs.png'))
+        # await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
         self.db_actions.add_coins(ctx.message.author.id, username)
 
     async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):
@@ -161,7 +174,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
-        channel = self._set_channel(ctx, [NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -272,9 +285,10 @@ class CreationCommands(commands.Cog):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-            message = f"""Viewing {", ".join(list({f"[{image['title']}]({image['url']})" for image in
-                                                   results[:self._check_your_privilege(ctx)]}))}.\n
-                        Visit {username}'s gallery: http://www.deviantart.com/{username}"""
+            thumbs = ", ".join(list(f"[{index + 1}]({image['url']})" for index, image in
+                                    enumerate(results[:self._check_your_privilege(ctx)])))
+            message = f'''Visit [{username}](http://www.deviantart.com/{username})\'s gallery! [{thumbs}]'''
+
             await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
