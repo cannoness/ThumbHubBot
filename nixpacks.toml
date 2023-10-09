@@ -1,7 +1,7 @@
 # nixpacks.toml
 
 [phases.setup]
-aptPkgs = ['...', '-y ttf-mscorefonts-installer']
+cmds = ['...', 'apt-get install -y ttf-mscorefonts-installer']
 
 [phases.build]
 cmds = ['fc-cache -fv', '...']
