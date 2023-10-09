@@ -11,11 +11,9 @@ from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
 
 load_dotenv()
-ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
-DISCOVERY_CHANNEL = os.getenv("DISCOVERY_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers'}
 VIP = "The Hub VIP"
 COOLDOWN_WHITELIST = {"Moderators", "The Hub",  "Bot Sleuth"}
