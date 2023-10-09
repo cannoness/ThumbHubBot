@@ -1,4 +1,7 @@
 # nixpacks.toml
 
+[phases.setup]
+aptPkgs = ['...', 'fontconfig']
+
 [phases.build]
-cmds = ['fc-cache', '...']
+cmds = ['fc-cache -fvs', '...']
