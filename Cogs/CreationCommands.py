@@ -126,7 +126,7 @@ class CreationCommands(commands.Cog):
         titles = []
         for result in results[:display]:
             embeds.append(BytesIO(requests.get(result['src_image']).content) if not usernames else
-                          requests.get(result['media_content'][-1]['url']).content)
+                          BytesIO(requests.get(result['media_content'][-1]['url']).content))
             titles.append(result['title'])
         amaztemp = Template(titles, embeds)
         thumbs = amaztemp.draw()
@@ -196,9 +196,9 @@ class CreationCommands(commands.Cog):
         try:
             display_count = self._check_your_privilege(ctx)
             await ctx.send("Pulling random images, this may take a moment...")
-            results, users, links, usernames = self.da_rss.get_random_images(display_count)
-            message = f"A collection of random images from user(s) {users}, {', '.join(links)}!"
-            await self._send_art_results(ctx, channel, results, message, usernames=usernames)
+            results, links = self.da_rss.get_random_images(display_count)
+            message = f"{links}"
+            await self._send_art_results(ctx, channel, results, message, usernames=[links])
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
@@ -313,15 +313,15 @@ class CreationCommands(commands.Cog):
         arg = self._parse_args(*args)
         try:
             if arg and 'collection' in arg.keys():
-                results, users, links = self.da_rest.get_user_favs_by_collection(username, "src_image", arg['collection'])
+                results, links = self.da_rest.get_user_favs_by_collection(username, "src_image", arg['collection'])
             else:
-                results, users, links, _ = self.da_rss.get_user_favs(username, num)
+                results, links = self.da_rss.get_user_favs(username, num)
 
             if len(results) == 0 and username:
                 await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
                 ctx.command.reset_cooldown(ctx)
                 return
-            message = f"A collection of favorites from user {username}, by users {users}: {', '.join(links)}"
+            message = f"{links}"
             await self._send_art_results(ctx, channel, results, message, usernames=[username] if not arg else None)
         except Exception as ex:
             print(ex, flush=True)
@@ -366,9 +366,10 @@ class CreationCommands(commands.Cog):
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
             random.shuffle(results)
-            message = f"""Viewing {", ".join([f"[{image['title']}]({image['url']})" for image in
-                                              results[:self._check_your_privilege(ctx)]])}.\n
-                        A Selection from today's [Daily Deviations](https://www.deviantart.com/daily-deviations)"""
+            result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
+                             enumerate(results[:self._check_your_privilege(ctx)])]
+            message = f'''From today's [Daily Deviations](https://www.deviantart.com/daily-deviations): 
+{", ".join(result_string)}'''
             await self._send_art_results(ctx, channel, results, message, username=ctx.message.author.display_name) if \
                 art else await self._send_lit_results(ctx, channel, results)
         except Exception as ex:

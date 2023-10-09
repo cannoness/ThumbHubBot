@@ -59,8 +59,8 @@ class DARSS:
 
     def _rss_image_helper(self, images, num):
         results = self._shuffle_and_apply_filter(images)
-        string_users, filtered_users, filtered_links = self._generate_links(results, num)
-        return results[:num], string_users, filtered_links, filtered_users
+        string_links = self._generate_links(results, num)
+        return results[:num], string_links
 
     @staticmethod
     def _shuffle_and_apply_filter(images):
@@ -70,15 +70,14 @@ class DARSS:
                                             image['media_content'][-1]['medium'] == 'image' and
                                             image["rating"] == 'nonadult',
                               images))
-        print(results, " filter", flush=True)
         return results
 
     @staticmethod
     def _generate_links(results, num):
-        filtered_users = list({image['media_credit'][0]['content'] for image in results[:num]})
-        filtered_links = list({f"[{image['title']}]({image['link']})" for image in results[:num]})
-        if len(filtered_users) == 1:
-            string_users = filtered_users[0]
+        filtered_links = list(f"[[{index + 1}]({image['link']})]{image['media_credit'][0]['content']}"
+                              for index, image in enumerate(results[:num]))
+        if len(filtered_links) == 1:
+            string_links = filtered_links[0]
         else:
-            string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return string_users, filtered_users, filtered_links
+            string_links = ", ".join(filtered_links)
+        return string_links
