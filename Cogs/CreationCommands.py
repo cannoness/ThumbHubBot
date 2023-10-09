@@ -121,7 +121,7 @@ class CreationCommands(commands.Cog):
             return
 
         mention_string = self._manage_mentions(ctx, username, usernames)
-        final_message = message.format(mention_string) if mention_string else message.format(username)
+        final_message = message.format(mention_string) if mention_string and username else message.format()
 
         embeds = []
         titles = []
