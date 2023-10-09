@@ -161,7 +161,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
-        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [NSFW_CHANNEL])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -170,7 +170,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
-        channel = self._set_channel(ctx, [ART_LIT_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [NSFW_CHANNEL])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -179,7 +179,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
-        channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
+        channel = self._set_channel(ctx, [NSFW_CHANNEL])
         try:
             display_count = self._check_your_privilege(ctx)
             await ctx.send("Pulling random images, this may take a moment...")
@@ -263,7 +263,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
+                channel = self._set_channel(ctx, [NSFW_CHANNEL])
                 await channel.send(f"Fetching user gallery, may take a moment...")
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
@@ -285,14 +285,14 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
         username = await self._check_store(ctx)
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+        channel = self._set_channel(ctx, [])
         await self.favs(ctx, username, channel, *args)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, channel=None, *args):
         if not channel:
-            channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+            channel = self._set_channel(ctx, [])
 
         await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
         num = self._check_your_privilege(ctx)
@@ -321,7 +321,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [NSFW_CHANNEL, DISCOVERY_CHANNEL])
+                channel = self._set_channel(ctx, [NSFW_CHANNEL])
                 await channel.send(f"Fetching user gallery, may take a moment...")
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
@@ -338,7 +338,7 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
-        channel = self._set_channel(ctx, [DISCOVERY_CHANNEL])
+        channel = self._set_channel(ctx, [])
 
         try:
             results = self.da_rest.fetch_daily_deviations()
