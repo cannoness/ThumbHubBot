@@ -327,7 +327,7 @@ class CreationCommands(commands.Cog):
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
-            raise Exception(ex)
+            raise Exception()
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
