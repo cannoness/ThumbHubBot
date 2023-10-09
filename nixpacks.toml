@@ -4,4 +4,4 @@
 aptPkgs = ['...', 'ttf-mscorefonts-installer']
 
 [phases.build]
-cmds = ['fc-cache -fv', '...']
+cmds = ['fc-cache -fv -y', '...']
