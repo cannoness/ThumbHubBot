@@ -111,16 +111,17 @@ class CreationCommands(commands.Cog):
             mention_list = list(filter(lambda mention: mention is not None, mention_string))
             return ", ".join(mention_list) if len(mention_list) > 0 else None
 
-    async def _send_art_results(self, ctx, channel, results, message, username=None, usernames=None, display_num=None):
+    async def _send_art_results(self, ctx, channel, in_results, message, username=None, usernames=None, display_num=None):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
 
-        results = await self._filter_results(ctx, results, channel, "src_image", username) if not usernames \
-            else results
+        results = await self._filter_results(ctx, in_results, channel, "src_image", username) if not usernames \
+            else in_results
         if not results:
             return
 
         mention_string = self._manage_mentions(ctx, username, usernames)
+        final_message = message.format(mention_string) if mention_string else message.format(username)
 
         embeds = []
         titles = []
@@ -133,7 +134,7 @@ class CreationCommands(commands.Cog):
         with BytesIO() as image_binary:
             thumbs.save(image_binary, 'PNG')
             image_binary.seek(0)
-            await channel.send(message, file=discord.File(image_binary, filename='thumbs.png'))
+            await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'))
         # await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
         self.db_actions.add_coins(ctx.message.author.id, username)
 
@@ -183,7 +184,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
-        channel = self._set_channel(ctx, [NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -192,10 +193,9 @@ class CreationCommands(commands.Cog):
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
-        channel = self._set_channel(ctx, [NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
         try:
             display_count = self._check_your_privilege(ctx)
-            await ctx.send("Pulling random images, this may take a moment...")
             results, links = self.da_rss.get_random_images(display_count)
             message = f"{links}"
             await self._send_art_results(ctx, channel, results, message, usernames=[links])
@@ -276,8 +276,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [NSFW_CHANNEL])
-                await channel.send(f"Fetching user gallery, may take a moment...")
+                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
 
@@ -285,11 +284,13 @@ class CreationCommands(commands.Cog):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
+            filtered_results = await self._filter_results(ctx, results, channel, "src_image", username)
             thumbs = ", ".join(list(f"[{index + 1}]({image['url']})" for index, image in
-                                    enumerate(results[:self._check_your_privilege(ctx)])))
-            message = f'''Visit [{username}](http://www.deviantart.com/{username})\'s gallery! [{thumbs}]'''
+                                    enumerate(filtered_results[:self._check_your_privilege(ctx)])))
+            message = f'''Visit {{}}'s [gallery](http://www.deviantart.com/{username})! [{thumbs}]'''
 
-            await self._send_art_results(ctx, channel, results, message, username=username, display_num=display_num)
+            await self._send_art_results(ctx, channel, filtered_results, message, username=username,
+                                         display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Encountered exception {ex}. This has been recorded.")
@@ -299,16 +300,15 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
         username = await self._check_store(ctx)
-        channel = self._set_channel(ctx, [])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
         await self.favs(ctx, username, channel, *args)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, channel=None, *args):
         if not channel:
-            channel = self._set_channel(ctx, [])
+            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
 
-        await ctx.send(f"Loading favorites for user {username}, this may take a moment...")
         num = self._check_your_privilege(ctx)
         arg = self._parse_args(*args)
         try:
@@ -335,8 +335,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [NSFW_CHANNEL])
-                await channel.send(f"Fetching user gallery, may take a moment...")
+                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
 
             results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
@@ -352,7 +351,7 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
-        channel = self._set_channel(ctx, [])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
 
         try:
             results = self.da_rest.fetch_daily_deviations()

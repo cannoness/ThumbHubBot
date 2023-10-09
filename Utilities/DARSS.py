@@ -76,8 +76,4 @@ class DARSS:
     def _generate_links(results, num):
         filtered_links = list(f"[[{index + 1}]({image['link']})]{image['media_credit'][0]['content']}"
                               for index, image in enumerate(results[:num]))
-        if len(filtered_links) == 1:
-            string_links = filtered_links[0]
-        else:
-            string_links = ", ".join(filtered_links)
-        return string_links
+        return ", ".join(filtered_links)
