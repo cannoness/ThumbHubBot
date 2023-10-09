@@ -24,8 +24,7 @@ class DARSS:
             image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall")
             if image_feed.status != 200:
                 print(image_feed.feed.summary, flush=True)
-                raise Exception(f"URL currently not accessible. 403 errors are an issue with our host, not the bot: "
-                                f"Status {image_feed.status}. User selected: {user}")
+                raise Exception(f"URL currently not accessible.")
             results = self._shuffle_and_apply_filter(image_feed.entries)
             if len(results):
                 if len(images) < num:
@@ -41,8 +40,7 @@ class DARSS:
 
         if response.status != 200:
             print(response.feed.summary, flush=True)
-            raise Exception(f"URL currently not accessible. 403 errors are an issue with our host, not the bot: "
-                            f"Status {response.status}. User selected: {username}")
+            raise Exception(f"URL currently not accessible.")
         return response
 
     def get_user_favs(self, username, num):
