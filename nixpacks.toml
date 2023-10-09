@@ -1,4 +1,4 @@
 # nixpacks.toml
 
 [phases.build]
-cmds = ['echo fc-cache', '...']
+cmds = ['fc-cache', '...']
