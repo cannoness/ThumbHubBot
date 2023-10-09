@@ -14,7 +14,7 @@ class Template:  # Your template
 
     def draw(self):
         img = Image.new(mode="RGBA", size=(1040, 200))
-        font = ImageFont.truetype("arial.ttf", 20)  # Loads font
+        font = ImageFont.truetype("DejaVuSansMono.ttf", 20)  # Loads font
         imgdraw = ImageDraw.Draw(img)  # Create a canvas
         buffer = 20
         x_pos = 20

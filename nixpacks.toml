@@ -4,4 +4,4 @@
 aptPkgs = ['...', 'fontconfig']
 
 [phases.build]
-cmds = ['fc-cache -fvs', '...']
+cmds = ['fc-cache', '...']
