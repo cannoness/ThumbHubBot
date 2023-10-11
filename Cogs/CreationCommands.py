@@ -107,7 +107,7 @@ class CreationCommands(commands.Cog):
             mention_string = []
             for user in usernames:
                 ping_user = self.db_actions.fetch_discord_id(user)
-                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else None)
+                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else user)
             mention_list = list(filter(lambda mention: mention is not None, mention_string))
             return ", ".join(mention_list) if len(mention_list) > 0 else None
 
@@ -198,7 +198,9 @@ class CreationCommands(commands.Cog):
             display_count = self._check_your_privilege(ctx)
             results, links = self.da_rss.get_random_images(display_count)
             message = f"{links}"
-            await self._send_art_results(ctx, channel, results, message, usernames=[links])
+            usernames = [each[3:] for each in links.split(", ")]
+
+            await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
@@ -322,7 +324,8 @@ class CreationCommands(commands.Cog):
                 ctx.command.reset_cooldown(ctx)
                 return
             message = f"{links}"
-            await self._send_art_results(ctx, channel, results, message, usernames=[username] if not arg else None)
+            usernames = [each[3:] for each in links.split(", ")]
+            await self._send_art_results(ctx, channel, results, message, usernames=usernames if not arg else None)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
