@@ -12,6 +12,7 @@ import datetime
 
 
 load_dotenv()
+GUILD_ID = int(os.getenv("GUILD_ID"))
 ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
@@ -31,6 +32,7 @@ class SpecialCommands(commands.Cog):
         random.seed(seed)
 
         self.bot = bot
+        self.guild = None
         self.db_actions = DatabaseActions()
 
         self.daily_reset.start()
@@ -43,9 +45,9 @@ class SpecialCommands(commands.Cog):
         expiring_roles = self.db_actions.get_all_expiring_roles()
         if len(expiring_roles) > 0:
             for ids, colors in expiring_roles:
-                discord_id = self.bot.get_user(ids)
-                role = discord.utils.get(discord_id.guild.roles, name=colors)
-                discord_id.remove_roles(role)
+                discord_id = self.guild.get_member(ids)
+                role = discord.utils.get(self.guild.roles, name=colors)
+                await discord_id.remove_roles(role)
             self.db_actions.delete_role([ids[0] for ids in expiring_roles])
         self.db_actions.refresh_message_counts()
         bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
@@ -56,6 +58,7 @@ class SpecialCommands(commands.Cog):
     async def before_daily_reset(self):
         print('waiting...')
         await self.bot.wait_until_ready()
+        self.guild = self.bot.get_guild(GUILD_ID)
 
     @commands.command(name='store-da-name')
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
@@ -117,7 +120,8 @@ class SpecialCommands(commands.Cog):
             author = ctx.message.author
             current_roles = [role.name for role in ctx.message.author.roles]
             color = message[-1].title() if not message[-1].isdigit() else " ".join(message[1:len(message)-1]).title()
-            desired_color = f'{color} ({"FT" if "Frequent Thumbers" in current_roles  else "Dev"})'
+            role = "mod" if "Moderators" in current_roles else "FT" if "Frequent Thumbers" in current_roles else "Dev"
+            desired_color = f'{color} ({role})'
             role = discord.utils.get(author.guild.roles, name=desired_color)
 
             if not role:

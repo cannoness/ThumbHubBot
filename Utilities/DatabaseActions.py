@@ -137,8 +137,7 @@ class DatabaseActions:
         self.connection.execute(query)
 
     def get_all_expiring_roles(self):
-        today = datetime.datetime.now().strftime('%Y-%m-%d')
-        query = f""" SELECT * from role_assignment_date where DATE(last_added_timestamp) = '{today}' """
+        query = f""" SELECT * from role_assignment_date"""
         rows = self._execute_query_with_return(query)
         current_time = datetime.datetime.now()
         compare_against = time.mktime(current_time.timetuple())
@@ -146,8 +145,8 @@ class DatabaseActions:
         for row in rows:
             timestamp = row.last_added_timestamp
             comparison = time.mktime(timestamp.timetuple())
-            if comparison - compare_against > 604800:
-                roles_expiring.append([row.deviant_id, row.color])
+            if abs(comparison - compare_against) > 604800:
+                roles_expiring.append([row.discord_id, row.role_color])
         return roles_expiring
 
     def refresh_message_counts(self):

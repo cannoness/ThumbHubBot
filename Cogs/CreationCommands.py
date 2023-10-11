@@ -26,8 +26,8 @@ MOD_COUNT = 6
 PRIV_COUNT = 6
 DEV_COUNT = 4
 DEFAULT_COOLDOWN = 1800
-PRIV_COOLDOWN = 600
-VIP_COOLDOWN = 360
+PRIV_COOLDOWN = 900
+VIP_COOLDOWN = 600
 POST_RATE = 1
 
 
@@ -147,7 +147,7 @@ class CreationCommands(commands.Cog):
         if not results:
             return
 
-        mention_string = self._manage_mentions(ctx, username, usernames)
+        mention_string = self._manage_mentions(ctx, username, [])
 
         embed = discord.Embed()
         nl = '\n'
@@ -327,7 +327,6 @@ class CreationCommands(commands.Cog):
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
-            raise Exception()
 
     @commands.command(name='lit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
