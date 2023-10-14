@@ -1,7 +1,5 @@
 from Utilities.DatabaseActions import DatabaseActions
 import random
-import os
-import datetime
 from dotenv import load_dotenv
 import feedparser
 
@@ -14,8 +12,6 @@ class DARSS:
     def __init__(self):
         load_dotenv()
         self.db_actions = DatabaseActions()
-        seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-        random.seed(seed)
 
     def get_random_images(self, num):
         random_users = self.db_actions.fetch_da_usernames(10)

@@ -12,8 +12,6 @@ class DatabaseActions:
     def __init__(self):
         load_dotenv()
         self.pg_secret = os.getenv("PG_SECRET")
-        seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-        random.seed(seed)
 
         engine = sqlalchemy.create_engine(
             f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")

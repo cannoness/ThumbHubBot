@@ -4,7 +4,6 @@ from Utilities.DARSS import DARSS
 import requests
 import sqlalchemy
 import json
-import random
 import os
 import datetime
 from dotenv import load_dotenv
@@ -22,8 +21,6 @@ class DARest:
         self.db_actions = DatabaseActions()
         self.pg_secret = os.getenv("PG_SECRET")
         self.da_rss = DARSS()
-        seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-        random.seed(seed)
 
         engine = sqlalchemy.create_engine(
             f"postgresql://postgres:{self.pg_secret}@containers-us-west-85.railway.app:7965/railway")

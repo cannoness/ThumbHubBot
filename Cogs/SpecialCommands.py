@@ -28,9 +28,6 @@ POST_RATE = 1
 
 class SpecialCommands(commands.Cog):
     def __init__(self, bot):
-        seed = os.getpid()+int(datetime.datetime.now().strftime("%Y%m%d%H%M%S"))
-        random.seed(seed)
-
         self.bot = bot
         self.guild = None
         self.db_actions = DatabaseActions()
