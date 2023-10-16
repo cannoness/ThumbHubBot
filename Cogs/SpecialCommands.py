@@ -67,7 +67,7 @@ class SpecialCommands(commands.Cog):
     @commands.command(name='store-random-da-name')
     async def store_random_name(self, ctx, username):
         self.db_actions.store_random_da_name(username)
-        await ctx.send(f"Storing DA username {username} without mention.")
+        await ctx.send(f"Storing DA username {username} without private.custom_cooldown.")
 
     @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN, commands.BucketType.user)
     @commands.command(name='roll')

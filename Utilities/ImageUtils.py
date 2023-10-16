@@ -1,7 +1,9 @@
-from io import BytesIO
-
-import requests
 from PIL import Image, ImageDraw, ImageFont  # Import PIL functions
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+FONT = os.getenv("FONT")
 
 
 class Template:  # Your template
@@ -14,7 +16,7 @@ class Template:  # Your template
 
     def draw(self):
         img = Image.new(mode="RGBA", size=(1040, 200))
-        font = ImageFont.truetype("arial.ttf", 20)  # Loads font
+        font = ImageFont.truetype(FONT, 20)  # Loads font
         imgdraw = ImageDraw.Draw(img)  # Create a canvas
         buffer = 20
         x_pos = 20
@@ -33,7 +35,7 @@ class Template:  # Your template
 
     def write(self):
         img = Image.new(mode="RGBA", size=(1040, 200))
-        font = ImageFont.truetype("DejaVuSans.ttf", 20)  # Loads font
+        font = ImageFont.truetype(FONT, 20)  # Loads font
         imgdraw = ImageDraw.Draw(img)  # Create a canvas
         buffer = 20
         x_pos = 20

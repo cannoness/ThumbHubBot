@@ -107,7 +107,11 @@ class CreationCommands(commands.Cog):
             mention_string = []
             for user in usernames:
                 ping_user = self.db_actions.fetch_discord_id(user)
-                mention_string.append(ctx.message.guild.get_member(ping_user).mention if ping_user else user)
+                discord_user = ctx.message.guild.get_member(ping_user)
+                if discord_user is not None:
+                    mention_string.append(discord_user.mention if ping_user else user)
+                else:
+                    mention_string.append(user)
             mention_list = list(filter(lambda mention: mention is not None, mention_string))
             return ", ".join(mention_list) if len(mention_list) > 0 else None
 
@@ -121,7 +125,7 @@ class CreationCommands(commands.Cog):
             return
 
         mention_string = self._manage_mentions(ctx, username, usernames)
-        final_message = message.format(mention_string) if mention_string and username else message.format()
+        final_message = message.format(mention_string) if mention_string and username else message
 
         embeds = []
         titles = []
@@ -204,8 +208,9 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
+            if channel.name == "bot-testing":
+                raise Exception(ex)
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
-            raise Exception(ex)
 
     def _parse_args(self, *args):
         if len(args) == 0:
@@ -296,7 +301,8 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Encountered exception {ex}. This has been recorded.")
-            raise Exception(ex)
+            if channel.name == "bot-testing":
+                raise Exception(ex)
 
     @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -329,6 +335,8 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
+            if channel.name == "bot-testing":
+                raise Exception(ex)
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
 
     @commands.command(name='lit')
@@ -348,7 +356,8 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
-            raise Exception(ex)
+            if channel.name == "bot-testing":
+                raise Exception(ex)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dailies')
@@ -376,7 +385,9 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
-            raise Exception(ex)
+
+            if channel.name == "bot-testing":
+                raise Exception(ex)
 
 
 async def setup(bot):
