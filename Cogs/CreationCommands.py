@@ -1,7 +1,10 @@
 import os
 import random
+import re
 from collections import defaultdict
 from io import BytesIO
+from re import Match
+from typing import Callable, AnyStr
 
 import discord
 import requests
@@ -13,7 +16,6 @@ from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
 from Utilities.ImageUtils import Template
 
-
 load_dotenv()
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
@@ -21,7 +23,7 @@ BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers'}
 VIP = "The Hub VIP"
-COOLDOWN_WHITELIST = {"Moderators", "The Hub",  "Bot Sleuth"}
+COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth"}
 MOD_COUNT = 6
 PRIV_COUNT = 6
 DEV_COUNT = 4
@@ -85,7 +87,7 @@ class CreationCommands(commands.Cog):
                                       results))
             elif channel.name != "bot-testing":
                 results = list(filter(lambda result: not result["is_mature"] and result[result_type] not in
-                                      [None, "None"], results))
+                                                     [None, "None"], results))
             elif channel.name == "bot-testing":
                 results = list(filter(lambda result: result[result_type] not in [None, "None"],
                                       results))
@@ -102,20 +104,26 @@ class CreationCommands(commands.Cog):
     def _manage_mentions(self, ctx, username, usernames):
         if not usernames:
             ping_user = self.db_actions.fetch_discord_id(username) if username else None
-            return ctx.message.guild.get_member(ping_user).mention if ping_user else None
+            return ctx.message.guild.get_member(ping_user).mention if ping_user else username
         else:
             mention_string = []
             for user in usernames:
-                ping_user = self.db_actions.fetch_discord_id(user)
+                username = re.findall(r"{[^]]*\}", user)[0][1:-1]
+                ping_user = self.db_actions.fetch_discord_id(username)
                 discord_user = ctx.message.guild.get_member(ping_user)
                 if discord_user is not None:
-                    mention_string.append(discord_user.mention if ping_user else user)
+                    mention_string.append(re.sub(r"{[^]]*\}", lambda x: x.group(0).replace(f"{{{username}}}",
+                                                                                           discord_user.mention),
+                                                 user) if discord_user is not None else mention_string.append(
+                        re.sub(r"{[^]]*\}", lambda x: x.group(0).replace(f"{{{username}}}",
+                                                                         username), user)))
                 else:
-                    mention_string.append(user)
-            mention_list = list(filter(lambda mention: mention is not None, mention_string))
-            return ", ".join(mention_list) if len(mention_list) > 0 else None
+                    mention_string.append(
+                        re.sub(r"{[^]]*\}", lambda x: x.group(0).replace(f"{{{username}}}", username), user))
+            return ", ".join(mention_string)
 
-    async def _send_art_results(self, ctx, channel, in_results, message, username=None, usernames=None, display_num=None):
+    async def _send_art_results(self, ctx, channel, in_results, message, username=None, usernames=None,
+                                display_num=None):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
 
@@ -125,7 +133,10 @@ class CreationCommands(commands.Cog):
             return
 
         mention_string = self._manage_mentions(ctx, username, usernames)
-        final_message = message.format(mention_string) if mention_string and username else message
+        if not usernames:
+            final_message = message.format(mention_string)
+        else:
+            final_message = mention_string
 
         embeds = []
         titles = []
@@ -202,7 +213,7 @@ class CreationCommands(commands.Cog):
             display_count = self._check_your_privilege(ctx)
             results, links = self.da_rss.get_random_images(display_count)
             message = f"{links}"
-            usernames = [each[3:] for each in links.split(", ")]
+            usernames = [each for each in links.split(", ")]
 
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
@@ -330,8 +341,8 @@ class CreationCommands(commands.Cog):
                 ctx.command.reset_cooldown(ctx)
                 return
             message = f"{links}"
-            usernames = [each[3:] for each in links.split(", ")]
-            await self._send_art_results(ctx, channel, results, message, usernames=usernames if not arg else None)
+            usernames = [each for each in links.split(", ")]
+            await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
@@ -368,7 +379,7 @@ class CreationCommands(commands.Cog):
             results = self.da_rest.fetch_daily_deviations()
             art = random.randint(0, 10) % 2 == 0
             results = await self._filter_results(ctx, results, channel, "src_image" if art else
-                                                 "src_snippet")
+            "src_snippet")
             if not results and not art:
                 art = True
                 results = await self._filter_results(ctx, self.da_rest.fetch_daily_deviations(), channel, "src_image")
