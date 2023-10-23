@@ -68,6 +68,6 @@ class DARSS:
 
     @staticmethod
     def _generate_links(results, num):
-        filtered_links = list(f"[[{index + 1}]({image['link']})]{{{image['media_credit'][0]['content']}}}"
+        filtered_links = list(f"[[{index + 1}]({image['link']})] {{{image['media_credit'][0]['content']}}}"
                               for index, image in enumerate(results[:num]))
         return ", ".join(filtered_links)
