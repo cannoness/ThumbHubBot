@@ -141,7 +141,7 @@ class CreationCommands(commands.Cog):
         embeds = []
         titles = []
         for result in results[:display]:
-            embeds.append(BytesIO(requests.get(result['src_image']).content) if not usernames else
+            embeds.append(BytesIO(requests.get(result['src_image']).content) if 'src_image' in result.keys() else
                           BytesIO(requests.get(result['media_content'][-1]['url']).content))
             titles.append(result['title'])
         amaztemp = Template(titles, embeds)
@@ -150,7 +150,6 @@ class CreationCommands(commands.Cog):
             thumbs.save(image_binary, 'PNG')
             image_binary.seek(0)
             await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'))
-        # await channel.send(mention_string, embeds=embed) if mention_string else await channel.send(embeds=embed)
         self.db_actions.add_coins(ctx.message.author.id, username)
 
     async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):

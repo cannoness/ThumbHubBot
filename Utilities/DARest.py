@@ -174,16 +174,15 @@ class DARest:
         favorites = [result['deviations'] for result in results if result['name'] == collection]
         if len(favorites):
             results = [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
-            usernames, links = self._generate_links(results)
-            return results, usernames, links
+            links = self._generate_links(results)
+            return results, links
         return None
 
     @staticmethod
     def _generate_links(results):
-        filtered_users = list({image['author'] for image in results})
-        filtered_links = list({f"[[{index + 1}]({image['url']})] {{{image['title']}}}"
+        filtered_links = list({f"[[{index + 1}]({image['url']})] {{{image['author']}}}"
                                for index, image in enumerate(results)})
-        return filtered_users, ", ".join(filtered_links)
+        return ", ".join(filtered_links)
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
