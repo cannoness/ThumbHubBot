@@ -8,7 +8,6 @@ import os
 import datetime
 from dotenv import load_dotenv
 
-
 AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&"
 API_URL = "https://www.deviantart.com/api/v1/oauth2/"
 
@@ -47,13 +46,13 @@ class DARest:
             display_num = 10
             response = self._filter_api_image_results(
                 self._gallery_fetch_helper(username, offset, display_num)['results'])
-        return response[offset:display_num+offset]
+        return response[offset:display_num + offset]
 
     @staticmethod
     def _filter_api_image_results(results):
         nl = '\n'
         return [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src'] if
-                 'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
+        'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
                  'src_snippet': result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl) if
                  'text_content' in result.keys() else "None", 'is_mature': result['is_mature'],
                  'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title'],
@@ -71,7 +70,7 @@ class DARest:
                 order by favs desc 
                 limit {display_num} """
         response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)[offset:display_num+offset]
+        return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
     def fetch_user_old(self, username, version, offset=0, display_num=24):
         deviant_row_id = self.db_actions.fetch_user_row_id(username)
@@ -84,7 +83,7 @@ class DARest:
                 order by date_created asc 
                 limit {display_num} """
         response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)[offset:display_num+offset]
+        return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
     def get_user_devs_by_tag(self, username, version, tags, offset=0, display_num=24):
         deviant_row_id = self.db_actions.fetch_user_row_id(username)
@@ -98,7 +97,7 @@ class DARest:
                         order by date_created desc 
                         limit {display_num} """
         response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)[offset:display_num+offset]
+        return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
     def fetch_entire_user_gallery(self, username, version):
         if self.db_actions.user_last_cache_update(username):
@@ -175,19 +174,16 @@ class DARest:
         favorites = [result['deviations'] for result in results if result['name'] == collection]
         if len(favorites):
             results = [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
-            usernames, _, links = self._generate_links(results)
+            usernames, links = self._generate_links(results)
             return results, usernames, links
         return None
 
     @staticmethod
     def _generate_links(results):
         filtered_users = list({image['author'] for image in results})
-        filtered_links = list({f"[{image['title']}]({image['url']})" for image in results})
-        if len(filtered_users) == 1:
-            string_users = filtered_users[0]
-        else:
-            string_users = ", ".join(filtered_users[1:]) + f" and {filtered_users[0]}"
-        return string_users, filtered_users, filtered_links
+        filtered_links = list({f"[[{index + 1}]({image['url']})] {{{image['title']}}}"
+                               for index, image in enumerate(results)})
+        return filtered_users, ", ".join(filtered_links)
 
     def _validate_token(self):
         response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
@@ -208,7 +204,7 @@ class DARest:
         # gotta chunk it...
         response = []
         for chunk in range(0, len(uuid_list), 50):
-            deviation_ids = "&".join([f"""deviationids%5B%5D='{dev_id}'""" for dev_id in uuid_list[chunk:chunk+49]])
+            deviation_ids = "&".join([f"""deviationids%5B%5D='{dev_id}'""" for dev_id in uuid_list[chunk:chunk + 49]])
             response += json.loads(requests.get(f"{API_URL}deviation/metadata?{deviation_ids}&"
                                                 f"access_token={self.access_token}").content)['metadata']
         return response, ext_data
