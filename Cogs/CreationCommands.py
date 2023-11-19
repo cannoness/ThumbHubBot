@@ -323,7 +323,7 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def favs(self, ctx, username, channel=None, *args):
+    async def favs(self, ctx, username, *args, channel=None):
         if not channel:
             channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
 
