@@ -82,7 +82,7 @@ class CreationCommands(commands.Cog):
     @staticmethod
     async def _filter_results(ctx, results, channel, result_type, username=None):
         if results:
-            if channel.name == "nsfw-share":
+            if channel.name == "nsfw":
                 results = list(filter(lambda result: result["is_mature"] and result[result_type] not in [None, "None"],
                                       results))
             elif channel.name != "bot-testing":
