@@ -319,7 +319,7 @@ class CreationCommands(commands.Cog):
     async def my_favs(self, ctx, *args):
         username = await self._check_store(ctx)
         channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
-        await self.favs(ctx, username, channel, *args)
+        await self.favs(ctx, username, *args, channel=channel)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -377,8 +377,7 @@ class CreationCommands(commands.Cog):
         try:
             results = self.da_rest.fetch_daily_deviations()
             art = random.randint(0, 10) % 2 == 0
-            results = await self._filter_results(ctx, results, channel, "src_image" if art else
-            "src_snippet")
+            results = await self._filter_results(ctx, results, channel, "src_image" if art else "src_snippet")
             if not results and not art:
                 art = True
                 results = await self._filter_results(ctx, self.da_rest.fetch_daily_deviations(), channel, "src_image")
