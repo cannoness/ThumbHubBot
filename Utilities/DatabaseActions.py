@@ -135,7 +135,7 @@ class DatabaseActions:
             self.connection.execute(add_query)
 
     def delete_role(self, discord_ids):
-        query = f""" DELETE from role_assignment_date where discord_id in ({discord_ids}) """
+        query = f""" DELETE from role_assignment_date where discord_id in ({", ".join(discord_ids)}) """
         self.connection.execute(query)
 
     def get_all_expiring_roles(self):
