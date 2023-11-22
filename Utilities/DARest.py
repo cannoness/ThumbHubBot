@@ -40,6 +40,7 @@ class DARest:
         return json.loads(decoded_content)['access_token']
 
     def fetch_user_gallery(self, username, version, offset=0, display_num=10):
+        self._validate_token()
         if self.db_actions.user_last_cache_update(username):
             response = self.fetch_entire_user_gallery(username, version)
         else:
@@ -52,7 +53,7 @@ class DARest:
     def _filter_api_image_results(results):
         nl = '\n'
         return [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src'] if
-        'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
+                 'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
                  'src_snippet': result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl) if
                  'text_content' in result.keys() else "None", 'is_mature': result['is_mature'],
                  'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title'],
@@ -156,6 +157,7 @@ class DARest:
         return self.get_favorite_collection(username, "src_image", collection)
 
     def get_user_gallery(self, username, version, gallery):
+        self._validate_token()
         url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
               f"ext_preload=true&filter_empty_folder=true&with_session=false"
         # add the gallery name to cache for quicker pulls next time
@@ -167,6 +169,7 @@ class DARest:
         return deviations
 
     def get_favorite_collection(self, username, version, collection):
+        self._validate_token()
         url = f"{API_URL}collections/folders?access_token={self.access_token}&username={username}&calculate_size=" \
               f"true&ext_preload=true&filter_empty_folder=true&with_session=false"
         response = requests.get(url)
