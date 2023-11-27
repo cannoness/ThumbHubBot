@@ -28,7 +28,8 @@ class DARest:
         self.pg_port = os.getenv("PGPORT")
 
         engine = sqlalchemy.create_engine(
-            f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_url}:{self.pg_port}/{self.pg_db}")
+            f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_url}:{self.pg_port}/{self.pg_db}",
+            pool_pre_ping=True)
         self.connection = engine.connect()
         self.access_token = self._acquire_access_token()
 
