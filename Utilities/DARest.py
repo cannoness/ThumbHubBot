@@ -54,7 +54,7 @@ class DARest:
     def _filter_api_image_results(results):
         nl = '\n'
         return [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src'] if
-                 'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
+        'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
                  'src_snippet': result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl) if
                  'text_content' in result.keys() else "None", 'is_mature': result['is_mature'],
                  'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title'],
@@ -157,25 +157,33 @@ class DARest:
     def get_user_favs_by_collection(self, username, num, collection):
         return self.get_favorite_collection(username, "src_image", collection)
 
-    def get_user_gallery(self, username, version, gallery):
+    def get_user_gallery(self, username, version, gallery_name, offset=0, limit=25):
         self._validate_token()
         url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
-              f"ext_preload=true&filter_empty_folder=true&with_session=false"
+              f"ext_preload=false&filter_empty_folder=true&limit=25&with_session=false"
         # add the gallery name to cache for quicker pulls next time
         response = requests.get(url)
         results = json.loads(response.content)['results']
-        deviations = [result['deviations'] for result in results if result['name'] == gallery]
+        folder_id = [result['folderid'] for result in results if result['name'] == gallery_name][0]
+        gallery_url = f"{API_URL}gallery/{folder_id}?access_token={self.access_token}&username={username}&" \
+                      f"limit={limit}&offset={offset}&with_session=false"
+        response = requests.get(gallery_url)
+        deviations = json.loads(response.content)['results']
         if len(deviations):
             return [types for types in self._filter_api_image_results(deviations[0]) if types[version] != 'None']
         return deviations
 
-    def get_favorite_collection(self, username, version, collection):
+    def get_favorite_collection(self, username, version, collection_name, offset=0, limit=25):
         self._validate_token()
         url = f"{API_URL}collections/folders?access_token={self.access_token}&username={username}&calculate_size=" \
-              f"true&ext_preload=true&filter_empty_folder=true&with_session=false"
+              f"true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
         response = requests.get(url)
         results = json.loads(response.content)['results']
-        favorites = [result['deviations'] for result in results if result['name'] == collection]
+        folder_id = [result['folderid'] for result in results if result['name'] == collection_name][0]
+        collection_url = f"{API_URL}collections/{folder_id}?access_token={self.access_token}&username={username}&" \
+                         f"limit={limit}&offset={offset}&with_session=false"
+        response = requests.get(collection_url)
+        favorites = json.loads(response.content)['results']
         if len(favorites):
             results = [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
             links = self._generate_links(results)

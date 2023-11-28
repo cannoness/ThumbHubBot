@@ -39,15 +39,16 @@ class DARSS:
             raise Exception(f"URL currently not accessible.")
         return response
 
-    def get_user_favs(self, username, num):
+    def get_user_favs(self, username, num, offset=0, limit=25):
         # initial fetch
-        response = self._fetch_all_user_faves_helper(username)
+        # revisit this...
+        response = self._fetch_all_user_faves_helper(username, offset)
         images = response.entries
-        # fetch more, if they want more than 100 they can specify collections
-        while len(response['feed']['links']) >= 1 and len(images) < 100:
-            url = response['feed']['links'][-1]['href']
-            response = feedparser.parse(url)
-            images += response.entries
+        # # This is going to get moved to !favs rnd
+        # while len(response['feed']['links']) >= 1 and len(images) < 100:
+        #     url = response['feed']['links'][-1]['href']
+        #     response = feedparser.parse(url)
+        #     images += response.entries
 
         return self._rss_image_helper(images, num)
 
@@ -58,7 +59,8 @@ class DARSS:
 
     @staticmethod
     def _shuffle_and_apply_filter(images):
-        random.shuffle(images)
+        # commenting for now, but will use for rnd later.
+        # random.shuffle(images)
         results = list(filter(lambda image: 'media_content' in image.keys() and 'medium' in
                                             image['media_content'][-1].keys() and
                                             image['media_content'][-1]['medium'] == 'image' and
