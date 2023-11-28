@@ -157,7 +157,7 @@ class DARest:
     def get_user_favs_by_collection(self, username, num, collection):
         return self.get_favorite_collection(username, "src_image", collection)
 
-    def get_user_gallery(self, username, version, gallery_name, offset=0, limit=25):
+    def get_user_gallery(self, username, version, gallery_name, offset=0, limit=24):
         self._validate_token()
         url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
               f"ext_preload=false&filter_empty_folder=true&limit=25&with_session=false"
@@ -173,7 +173,7 @@ class DARest:
             return [types for types in self._filter_api_image_results(deviations[0]) if types[version] != 'None']
         return deviations
 
-    def get_favorite_collection(self, username, version, collection_name, offset=0, limit=25):
+    def get_favorite_collection(self, username, version, collection_name, offset=0, limit=24):
         self._validate_token()
         url = f"{API_URL}collections/folders?access_token={self.access_token}&username={username}&calculate_size=" \
               f"true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
