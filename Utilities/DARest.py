@@ -183,6 +183,8 @@ class DARest:
         collection_url = f"{API_URL}collections/{folder_id}?access_token={self.access_token}&username={username}&" \
                          f"limit={limit}&offset={offset}&with_session=false"
         response = requests.get(collection_url)
+        if not response.ok:
+            print(response)
         favorites = json.loads(response.content)['results']
         if len(favorites):
             results = [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
