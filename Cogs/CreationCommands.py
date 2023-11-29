@@ -251,9 +251,9 @@ class CreationCommands(commands.Cog):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
-    def _fetch_based_on_args(self, username, version, arg):
+    def _fetch_based_on_args(self, username, version, arg, max_num):
         offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
-        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
+        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= max_num else max_num
         if arg:
             wants_random = 'random' in arg.keys()
             if 'pop' in arg.keys():
@@ -269,7 +269,7 @@ class CreationCommands(commands.Cog):
                 random.shuffle(old)
                 return old, offset, display_num
             elif 'gallery' in arg.keys():
-                gallery = self.da_rest.get_user_gallery(username, version, arg['gallery'])
+                gallery = self.da_rest.get_user_gallery(username, arg['gallery'], offset, max_num)
                 if not wants_random:
                     return gallery, offset, display_num
                 random.shuffle(gallery)
@@ -295,7 +295,8 @@ class CreationCommands(commands.Cog):
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
 
-            results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg)
+            results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg,
+                                                                     self._check_your_privilege(ctx))
 
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
@@ -327,13 +328,19 @@ class CreationCommands(commands.Cog):
         if not channel:
             channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
 
-        num = self._check_your_privilege(ctx)
         arg = self._parse_args(*args)
+        priv_count = self._check_your_privilege(ctx)
+        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= priv_count else \
+            priv_count
+
+        offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
+
         try:
             if arg and 'collection' in arg.keys():
-                results, links = self.da_rest.get_user_favs_by_collection(username, "src_image", arg['collection'])
+                results, links = self.da_rest.get_user_favs_by_collection(username, arg['collection'], offset,
+                                                                          display_num)
             else:
-                results, links = self.da_rss.get_user_favs(username, num)
+                results, links = self.da_rss.get_user_favs(username, display_num)
 
             if len(results) == 0 and username:
                 await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
@@ -357,7 +364,8 @@ class CreationCommands(commands.Cog):
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
 
-            results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg)
+            results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg,
+                                                                     self._check_your_privilege(ctx))
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)

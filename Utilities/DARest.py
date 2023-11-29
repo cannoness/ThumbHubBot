@@ -154,10 +154,10 @@ class DARest:
                 self._add_user_gallery_to_cache(update_results, username)
         return decoded_content
 
-    def get_user_favs_by_collection(self, username, num, collection):
-        return self.get_favorite_collection(username, "src_image", collection)
+    def get_user_favs_by_collection(self, username, collection, offset=0, limit=24):
+        return self.get_favorite_collection(username, collection, offset, limit)
 
-    def get_user_gallery(self, username, version, gallery_name, offset=0, limit=24):
+    def get_user_gallery(self, username, gallery_name, offset=0, limit=24):
         self._validate_token()
         url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
               f"ext_preload=false&filter_empty_folder=true&limit=25&with_session=false"
@@ -170,10 +170,10 @@ class DARest:
         response = requests.get(gallery_url)
         deviations = json.loads(response.content)['results']
         if len(deviations):
-            return [types for types in self._filter_api_image_results(deviations[0]) if types[version] != 'None']
+            return self._filter_api_image_results(deviations)
         return deviations
 
-    def get_favorite_collection(self, username, version, collection_name, offset=0, limit=24):
+    def get_favorite_collection(self, username, collection_name, offset=0, limit=24):
         self._validate_token()
         url = f"{API_URL}collections/folders?access_token={self.access_token}&username={username}&calculate_size=" \
               f"true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
@@ -187,15 +187,15 @@ class DARest:
             print(response)
         favorites = json.loads(response.content)['results']
         if len(favorites):
-            results = [types for types in self._filter_api_image_results(favorites[0]) if types[version] != 'None']
+            results = self._filter_api_image_results(favorites)
             links = self._generate_links(results)
             return results, links
         return None
 
     @staticmethod
     def _generate_links(results):
-        filtered_links = list({f"[[{index + 1}]({image['url']})] {{{image['author']}}}"
-                               for index, image in enumerate(results)})
+        filtered_links = [f"[[{index + 1}]({image['url']})] {{{image['author']}}}"
+                          for index, image in enumerate(results)]
         return ", ".join(filtered_links)
 
     def _validate_token(self):
