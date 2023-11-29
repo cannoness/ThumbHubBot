@@ -1,3 +1,4 @@
+import requests
 from PIL import Image, ImageDraw, ImageFont  # Import PIL functions
 import os
 from dotenv import load_dotenv
@@ -43,11 +44,37 @@ class Template:  # Your template
         for index, image_ in enumerate(self.images):
             pasted = Image.new(mode="RGB", size=(150, 150))  # Opens Selected Image
             text_draw = ImageDraw.Draw(pasted)
-            text_draw.text((0, 0), image_['content'][:20], (0, 0, 0), font=ImageFont.truetype("arial.ttf", 10))
-            img.paste(pasted, (x_pos, y_pos))
+            wrapped_text = self._get_wrapped_text(f"{image_['src_snippet'][:190]}...",
+                                                  ImageFont.truetype(FONT, 12), 130)
+            text_draw.text((10, 10), wrapped_text, (255, 255, 255),
+                           font=ImageFont.truetype(FONT, 12))
+            img.paste(self._gradient(pasted), (x_pos, y_pos))
             imgdraw.text((x_pos, self.title_y_pos),
                          f"[{index + 1}]{self.titles[index][:12]}..." if len(self.titles[index]) > 11
                          else f"[{index + 1}]{self.titles[index]}", (255, 255, 255, 255),
                          font=font, stroke_fill='black', stroke_width=2)
             x_pos += self.thumb_dim + buffer
         return img
+
+    @staticmethod
+    def _gradient(im):
+        w, h = 150, 150
+
+        # Build an alpha/transparency channel
+        alpha = Image.linear_gradient('L').rotate(-180).resize((w, h))
+
+        # Put new alpha channel into image
+        im.putalpha(alpha)
+        return im
+
+    @staticmethod
+    def _get_wrapped_text(text: str, font: ImageFont.ImageFont,
+                          line_length: int):
+        lines = ['']
+        for word in text.split():
+            line = f'{lines[-1]} {word}'.strip()
+            if font.getlength(line) <= line_length:
+                lines[-1] = line
+            else:
+                lines.append(word)
+        return '\n'.join(lines)

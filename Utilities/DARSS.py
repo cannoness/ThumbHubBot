@@ -59,7 +59,7 @@ class DARSS:
 
     @staticmethod
     def _shuffle_and_apply_filter(images):
-        # commenting for now, but will use for rnd later.
+        # commenting for now, but will  only use for rnd later.
         # random.shuffle(images)
         results = list(filter(lambda image: 'media_content' in image.keys() and 'medium' in
                                             image['media_content'][-1].keys() and
