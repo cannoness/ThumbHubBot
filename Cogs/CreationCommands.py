@@ -149,27 +149,6 @@ class CreationCommands(commands.Cog):
             await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'))
         self.db_actions.add_coins(ctx.message.author.id, username)
 
-    async def _send_lit_results(self, ctx, channel, results, username=None, usernames=None, display_num=None):
-        display_count = int(self._check_your_privilege(ctx))
-        display = display_count if (not display_num or display_num >= display_count) else display_num
-
-        results = await self._filter_results(ctx, results, channel, username) if not usernames \
-            else results
-        if not results:
-            return
-
-        mention_string = self._manage_mentions(ctx, username, [])
-
-        embed = discord.Embed()
-        nl = '\n'
-        for result in results[:display]:
-            embed.add_field(
-                name=f"{result['title']}: ({result['url']})",
-                value=f"'{result['src_snippet'].replace('<br />', nl)}'",
-                inline=False)
-        await channel.send(mention_string, embed=embed) if mention_string else await channel.send(embed=embed)
-        self.db_actions.add_coins(ctx.message.author.id, username)
-
     @staticmethod
     def _build_embed(url, message, src):
         return discord.Embed(url=f"http://{src}.com", description=message).set_image(url=url)
@@ -361,13 +340,12 @@ class CreationCommands(commands.Cog):
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
 
-            results, offset, display_num = self._fetch_based_on_args(username, "src_snippet", arg,
-                                                                     self._check_your_privilege(ctx))
+            results, offset, display_num = self._fetch_based_on_args(username, arg, self._check_your_privilege(ctx))
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-            await self._send_lit_results(ctx, channel, results, username=username, display_num=display_num)
+            await self._send_art_results(ctx, channel, results, message="", username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
@@ -378,7 +356,6 @@ class CreationCommands(commands.Cog):
     @commands.command(name='dailies')
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
-
         try:
             results = self.da_rest.fetch_daily_deviations()
             filtered_results = await self._filter_results(ctx, results, channel)
