@@ -39,7 +39,7 @@ class DARSS:
             raise Exception(f"URL currently not accessible.")
         return response
 
-    def get_user_favs(self, username, num, offset=0, limit=25):
+    def get_user_favs(self, username, offset=0, num=24):
         # initial fetch
         # revisit this...
         response = self._fetch_all_user_faves_helper(username, offset)

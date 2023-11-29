@@ -316,7 +316,7 @@ class CreationCommands(commands.Cog):
                 results, links = self.da_rest.get_user_favs_by_collection(username, arg['collection'], offset,
                                                                           display_num)
             else:
-                results, links = self.da_rss.get_user_favs(username, display_num)
+                results, links = self.da_rss.get_user_favs(username, offset, display_num)
 
             if len(results) == 0 and username:
                 await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
