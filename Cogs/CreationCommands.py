@@ -80,23 +80,18 @@ class CreationCommands(commands.Cog):
         return channel
 
     @staticmethod
-    async def _filter_results(ctx, results, channel, result_type, username=None):
+    async def _filter_results(ctx, results, channel, username=None):
         if results:
             if channel.name == "nsfw":
-                results = list(filter(lambda result: result["is_mature"] and result[result_type] not in [None, "None"],
-                                      results))
+                results = list(filter(lambda result: result["is_mature"], results))
             elif channel.name != "bot-testing":
-                results = list(filter(lambda result: not result["is_mature"] and result[result_type] not in
-                                                     [None, "None"], results))
+                results = list(filter(lambda result: not result["is_mature"], results))
             elif channel.name == "bot-testing":
-                results = list(filter(lambda result: result[result_type] not in [None, "None"],
-                                      results))
+                results = list(filter(lambda result: result, results))
 
         if not results and username:
-            await channel.send(f"""Couldn't find any {"art" if 'src_image' in result_type else "lit"} for {username}! 
-                                Is their gallery private? 
-                               {"Use !art for image share" if 'src_snippet' in result_type else
-            "Use !lit for literature share"}""")
+            await channel.send(f"""Couldn't find any deviations for {username}! 
+                                Is their gallery private?""")
             ctx.command.reset_cooldown(ctx)
             return None
         return results
@@ -127,7 +122,7 @@ class CreationCommands(commands.Cog):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
 
-        results = await self._filter_results(ctx, in_results, channel, "src_image", username) if not usernames \
+        results = await self._filter_results(ctx, in_results, channel, username) if not usernames \
             else in_results
         if not results:
             return
@@ -141,7 +136,9 @@ class CreationCommands(commands.Cog):
         embeds = []
         titles = []
         for result in results[:display]:
-            embeds.append(BytesIO(requests.get(result['src_image']).content) if 'src_image' in result.keys() else
+            embeds.append(BytesIO(requests.get(result['src_image']).content) if ('src_image' in result.keys() and
+                                                                                 result['src_image'] != "None") else
+                          result if 'src_snippet' in result.keys() else
                           BytesIO(requests.get(result['media_content'][-1]['url']).content))
             titles.append(result['title'])
         amaztemp = Template(titles, embeds)
@@ -251,19 +248,19 @@ class CreationCommands(commands.Cog):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
-    def _fetch_based_on_args(self, username, version, arg, max_num):
+    def _fetch_based_on_args(self, username, arg, max_num):
         offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
         display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= max_num else max_num
         if arg:
             wants_random = 'random' in arg.keys()
             if 'pop' in arg.keys():
-                pop = self.da_rest.fetch_user_popular(username, version, offset, display_num)
+                pop = self.da_rest.fetch_user_popular(username, offset, display_num)
                 if not wants_random:
                     return pop, offset, display_num
                 random.shuffle(pop)
                 return pop, offset, display_num
             elif 'old' in arg.keys():
-                old = self.da_rest.fetch_user_old(username, version, offset, display_num)
+                old = self.da_rest.fetch_user_old(username, offset, display_num)
                 if not wants_random:
                     return old, offset, display_num
                 random.shuffle(old)
@@ -275,17 +272,17 @@ class CreationCommands(commands.Cog):
                 random.shuffle(gallery)
                 return gallery, offset, display_num
             elif 'tags' in arg.keys():
-                with_tags = self.da_rest.get_user_devs_by_tag(username, version, arg['tags'], offset, display_num)
+                with_tags = self.da_rest.get_user_devs_by_tag(username, arg['tags'], offset, display_num)
                 if not wants_random:
                     return with_tags, offset, display_num
                 random.shuffle(with_tags)
                 return with_tags, offset, display_num
             elif wants_random:
-                results = self.da_rest.fetch_entire_user_gallery(username, version)
+                results = self.da_rest.fetch_entire_user_gallery(username)
                 random.shuffle(results)
                 return results, offset, display_num
 
-        return self.da_rest.fetch_user_gallery(username, version, offset, display_num), offset, display_num
+        return self.da_rest.fetch_user_gallery(username, offset, display_num), offset, display_num
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -295,14 +292,14 @@ class CreationCommands(commands.Cog):
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
 
-            results, offset, display_num = self._fetch_based_on_args(username, "src_image", arg,
+            results, offset, display_num = self._fetch_based_on_args(username, arg,
                                                                      self._check_your_privilege(ctx))
 
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
-            filtered_results = await self._filter_results(ctx, results, channel, "src_image", username)
+            filtered_results = await self._filter_results(ctx, results, channel, username)
             thumbs = ", ".join(list(f"[{index + 1}]({image['url']})" for index, image in
                                     enumerate(filtered_results[:self._check_your_privilege(ctx)])))
             message = f'''Visit {{}}'s [gallery](http://www.deviantart.com/{username})! [{thumbs}]'''
@@ -385,10 +382,10 @@ class CreationCommands(commands.Cog):
         try:
             results = self.da_rest.fetch_daily_deviations()
             art = random.randint(0, 10) % 2 == 0
-            results = await self._filter_results(ctx, results, channel, "src_image" if art else "src_snippet")
+            results = await self._filter_results(ctx, results, channel)
             if not results and not art:
                 art = True
-                results = await self._filter_results(ctx, self.da_rest.fetch_daily_deviations(), channel, "src_image")
+                results = await self._filter_results(ctx, self.da_rest.fetch_daily_deviations(), channel)
             if not results:
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
