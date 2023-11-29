@@ -53,13 +53,29 @@ class DARest:
     @staticmethod
     def _filter_api_image_results(results):
         nl = '\n'
-        return [{'deviationid': result['deviationid'], 'url': result['url'], 'src_image': result['content']['src'] if
-                 'content' in result.keys() else result['preview']['src'] if 'preview' in result.keys() else "None",
-                 'src_snippet': result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl) if
-                 'text_content' in result.keys() else "None", 'is_mature': result['is_mature'],
-                 'stats': result['stats'], 'published_time': result['published_time'], 'title': result['title'],
-                 'author': result['author']['username']} for
-                result in results]
+        return [{'deviationid': result['deviationid'],
+                 'url':
+                     result['url'],
+                 'src_image':
+                     result['preview']['src'] if 'preview' in result.keys()
+                     else result['thumbs'][-1]['src'] if len(result['thumbs'])  # prefer thumb over content
+                     else result['content']['src'] if 'content' in result.keys()
+                     else "None",
+                 'src_snippet':
+                     result['text_content']['excerpt'][:1024].replace("'", "''").replace("<br />", nl)
+                     if 'text_content' in result.keys()
+                     else "None",
+                 'is_mature':
+                     result['is_mature'],
+                 'stats':
+                     result['stats'],
+                 'published_time':
+                     result['published_time'],
+                 'title':
+                     result['title'],
+                 'author':
+                     result['author']['username']}
+                for result in results]
 
     def fetch_user_popular(self, username, offset=0, display_num=24):
         deviant_row_id = self.db_actions.fetch_user_row_id(username)

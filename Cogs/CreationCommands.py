@@ -138,7 +138,7 @@ class CreationCommands(commands.Cog):
         embeds = []
         titles = []
         for result in results[:display]:
-            embeds.append(BytesIO(requests.post(result['src_image']).content) if ('src_image' in result.keys() and
+            embeds.append(BytesIO(requests.get(result['src_image']).content) if ('src_image' in result.keys() and
                                                                                   result['src_image'] != "None") else
                           result if 'src_snippet' in result.keys() else
                           BytesIO(requests.get(result['media_content'][-1]['url']).content))
