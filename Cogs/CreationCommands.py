@@ -83,18 +83,20 @@ class CreationCommands(commands.Cog):
     async def _filter_results(ctx, results, channel, username=None):
         if results:
             if channel.name == "nsfw":
-                results = list(filter(lambda result: result["is_mature"], results))
+                filtered_results = list(filter(lambda result: result["is_mature"], results))
+                if len(filtered_results) == 0:  # always return something.
+                    return results
             elif channel.name != "bot-testing":
-                results = list(filter(lambda result: not result["is_mature"], results))
+                filtered_results = list(filter(lambda result: not result["is_mature"], results))
             elif channel.name == "bot-testing":
-                results = list(filter(lambda result: result, results))
+                filtered_results = list(filter(lambda result: result, results))
 
-        if not results and username:
+        if not filtered_results and username:
             await channel.send(f"""Couldn't find any deviations for {username}! 
                                 Is their gallery private?""")
             ctx.command.reset_cooldown(ctx)
             return None
-        return results
+        return filtered_results
 
     def _manage_mentions(self, ctx, username, usernames):
         if not usernames:
@@ -245,7 +247,7 @@ class CreationCommands(commands.Cog):
                 random.shuffle(old)
                 return old, offset, display_num
             elif 'gallery' in arg.keys():
-                gallery = self.da_rest.get_user_gallery(username, arg['gallery'], offset, max_num)
+                gallery = self.da_rest.get_user_gallery(username, arg['gallery'], offset, display_num)
                 if not wants_random:
                     return gallery, offset, display_num
                 random.shuffle(gallery)
