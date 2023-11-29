@@ -166,7 +166,7 @@ class DARest:
         results = json.loads(response.content)['results']
         folder_id = [result['folderid'] for result in results if result['name'] == gallery_name][0]
         gallery_url = f"{API_URL}gallery/{folder_id}?access_token={self.access_token}&username={username}&" \
-                      f"limit={limit}&offset={offset}&with_session=false"
+                      f"limit={limit}&offset={offset}&with_session=false&mature_content=true"
         response = requests.get(gallery_url)
         deviations = json.loads(response.content)['results']
         if len(deviations):
