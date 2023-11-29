@@ -229,7 +229,7 @@ class CreationCommands(commands.Cog):
 
     def _fetch_based_on_args(self, username, arg, max_num):
         offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
-        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= max_num else max_num
+        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
         if arg:
             wants_random = 'random' in arg.keys()
             if 'pop' in arg.keys():
