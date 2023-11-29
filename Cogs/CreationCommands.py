@@ -153,7 +153,7 @@ class CreationCommands(commands.Cog):
         display_count = int(self._check_your_privilege(ctx))
         display = display_count if (not display_num or display_num >= display_count) else display_num
 
-        results = await self._filter_results(ctx, results, channel, "src_snippet", username) if not usernames \
+        results = await self._filter_results(ctx, results, channel, username) if not usernames \
             else results
         if not results:
             return
@@ -381,21 +381,17 @@ class CreationCommands(commands.Cog):
 
         try:
             results = self.da_rest.fetch_daily_deviations()
-            art = random.randint(0, 10) % 2 == 0
-            results = await self._filter_results(ctx, results, channel)
-            if not results and not art:
-                art = True
-                results = await self._filter_results(ctx, self.da_rest.fetch_daily_deviations(), channel)
-            if not results:
+            filtered_results = await self._filter_results(ctx, results, channel)
+            if not filtered_results:
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
-            random.shuffle(results)
+            random.shuffle(filtered_results)
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
             message = f'''From today's [Daily Deviations](https://www.deviantart.com/daily-deviations): 
 {", ".join(result_string)}'''
-            await self._send_art_results(ctx, channel, results, message, username=ctx.message.author.display_name) if \
-                art else await self._send_lit_results(ctx, channel, results)
+            await self._send_art_results(ctx, channel, filtered_results, message,
+                                         username=ctx.message.author.display_name)
         except Exception as ex:
             print(ex, flush=True)
             await channel.send(f"Something went wrong! {ex}")
