@@ -138,8 +138,8 @@ class CreationCommands(commands.Cog):
         embeds = []
         titles = []
         for result in results[:display]:
-            embeds.append(BytesIO(requests.get(result['src_image']).content) if ('src_image' in result.keys() and
-                                                                                 result['src_image'] != "None") else
+            embeds.append(BytesIO(requests.post(result['src_image']).content) if ('src_image' in result.keys() and
+                                                                                  result['src_image'] != "None") else
                           result if 'src_snippet' in result.keys() else
                           BytesIO(requests.get(result['media_content'][-1]['url']).content))
             titles.append(result['title'])
@@ -264,6 +264,10 @@ class CreationCommands(commands.Cog):
                 return results, offset, display_num
 
         return self.da_rest.fetch_user_gallery(username, offset, display_num), offset, display_num
+
+    @commands.command(name='why')
+    async def why_easter_egg(self, ctx):
+        await ctx.send("42")
 
     @commands.command(name='art')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
