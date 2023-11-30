@@ -179,7 +179,7 @@ class DARest:
             pattern = "(?e)(" + topic + "){e<=4}"
             closest_topic = regex.search(pattern, " ".join(self.topics.keys()))[1]
             print("no topic with this name", self.topics, closest_topic)
-            return None
+            return None, closest_topic
         response = requests.get(f"{API_URL}browse/topic?access_token={self.access_token}&"
                                 f"topic={self.topics[topic.lower()]}")
         decoded_content = response.content.decode("UTF-8")

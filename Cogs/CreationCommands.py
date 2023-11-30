@@ -178,8 +178,8 @@ class CreationCommands(commands.Cog):
                 return
 
             filtered_results = await self._filter_results(ctx, results, channel)
-            if not filtered_results:
-                await channel.send(f"Couldn't fetch that topic, try again.")
+            if not filtered_results[0]:
+                await channel.send(f"Couldn't fetch that topic, did you mean {filtered_results[1]}?")
                 return
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
@@ -399,6 +399,7 @@ class CreationCommands(commands.Cog):
             if not filtered_results:
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
+            # shuffle is breaking somehow.
             # random.shuffle(filtered_results)
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
