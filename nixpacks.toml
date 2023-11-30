@@ -2,6 +2,7 @@
 
 [phases.setup]
 aptPkgs = ['...', 'fontconfig']
+pkgs = ["...", "python311"]
 
 [phases.build]
 cmds = ['fc-cache', '...']
