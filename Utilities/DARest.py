@@ -174,7 +174,7 @@ class DARest:
         if not self.topics:
             self._list_topics()
 
-        canonical_name = self.topics[topic.lower()] if topic.lower in self.topics.keys() else None
+        canonical_name = self.topics[topic.lower()] if topic.lower() in self.topics.keys() else None
         if not canonical_name:
             pattern = "(?e)(" + topic + "){e<=4}"
             closest_topic = regex.search(pattern, " ".join(self.topics.keys()))[1]

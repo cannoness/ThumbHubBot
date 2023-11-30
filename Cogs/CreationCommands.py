@@ -399,7 +399,7 @@ class CreationCommands(commands.Cog):
             if not filtered_results:
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
-            random.shuffle(filtered_results)
+            # random.shuffle(filtered_results)
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
             message = f'''From today's [Daily Deviations](https://www.deviantart.com/daily-deviations): 
