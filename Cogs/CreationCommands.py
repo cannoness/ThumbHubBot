@@ -178,12 +178,12 @@ class CreationCommands(commands.Cog):
                 return
 
             filtered_results = await self._filter_results(ctx, results, channel)
-            if not filtered_results[0]:
+            if filtered_results[0] is None:
                 await channel.send(f"Couldn't fetch that topic, did you mean {filtered_results[1]}?")
                 return
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
-            message = f'''Recently added to topic {topic}:
+            message = f'''Recently added to topic {topic.title()}:
 {", ".join(result_string)}'''
             await self._send_art_results(ctx, channel, filtered_results, message,
                                          username=ctx.message.author.display_name)
