@@ -55,7 +55,6 @@ class DARest:
         return response[offset:display_num + offset]
 
     def _list_topics(self):
-        self._validate_token()
         response = requests.get(f"{API_URL}browse/topics?access_token={self.access_token}")
         next_set = json.loads(response.content.decode("UTF-8"))
         topic_dict = defaultdict(str)
@@ -171,6 +170,7 @@ class DARest:
         return self._filter_api_image_results(results)
 
     def get_topic(self, topic):
+        self._validate_token()
         if not self.topics:
             self._list_topics()
 

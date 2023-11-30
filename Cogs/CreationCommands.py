@@ -84,7 +84,7 @@ class CreationCommands(commands.Cog):
         if results:
             if channel.name == "nsfw":
                 filtered_results = list(filter(lambda result: result["is_mature"], results))
-                if len(filtered_results) < 4:  # always return something.
+                if not filtered_results or len(filtered_results) < 4:  # always return something.
                     sorted_nsfw = sorted(results, key=lambda result: result["is_mature"], reverse=True)
                     return sorted_nsfw
             elif channel.name != "bot-testing":
@@ -317,6 +317,10 @@ class CreationCommands(commands.Cog):
                 ctx.command.reset_cooldown(ctx)
                 return
             filtered_results = await self._filter_results(ctx, results, channel, username)
+            if not filtered_results:
+                await channel.send("No results found in that gallery, please try again.")
+                ctx.command.reset_cooldown(ctx)
+                return
             thumbs = ", ".join(list(f"[{index + 1}]({image['url']})" for index, image in
                                     enumerate(filtered_results[:self._check_your_privilege(ctx)])))
             message = f'''Visit {{}}'s [gallery](http://www.deviantart.com/{username})! [{thumbs}]'''
