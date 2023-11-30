@@ -1,10 +1,10 @@
 # nixpacks.toml
 
+[variables]
+NIXPACKS_PYTHON_VERSION = '3.11'
+
 [phases.setup]
 aptPkgs = ['...', 'fontconfig']
 
 [phases.build]
 cmds = ['fc-cache', '...']
-
-[variables]
-NIXPACKS_PYTHON_VERSION = '3.11'
