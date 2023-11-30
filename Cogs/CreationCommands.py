@@ -84,8 +84,9 @@ class CreationCommands(commands.Cog):
         if results:
             if channel.name == "nsfw":
                 filtered_results = list(filter(lambda result: result["is_mature"], results))
-                if len(filtered_results) == 0:  # always return something.
-                    return results
+                if len(filtered_results) < 4:  # always return something.
+                    sorted_nsfw = sorted(results, key=lambda result: result["is_mature"], reverse=True)
+                    return sorted_nsfw
             elif channel.name != "bot-testing":
                 filtered_results = list(filter(lambda result: not result["is_mature"], results))
             elif channel.name == "bot-testing":
@@ -139,7 +140,7 @@ class CreationCommands(commands.Cog):
         titles = []
         for result in results[:display]:
             embeds.append(BytesIO(requests.get(result['src_image']).content) if ('src_image' in result.keys() and
-                                                                                  result['src_image'] != "None") else
+                                                                                 result['src_image'] != "None") else
                           result if 'src_snippet' in result.keys() else
                           BytesIO(requests.get(result['media_content'][-1]['url']).content))
             titles.append(result['title'])
@@ -163,6 +164,36 @@ class CreationCommands(commands.Cog):
             ctx.command.reset_cooldown(ctx)
             return
         return username
+
+    @commands.command(name='topic')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def topics(self, ctx, topic):
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        if not channel:
+            return
+        try:
+            results = self.da_rest.get_topic(topic)
+            if not results:
+                await channel.send(f"{topic} doesn't appear to be available, please try again.")
+                return
+
+            filtered_results = await self._filter_results(ctx, results, channel)
+            if not filtered_results:
+                await channel.send(f"Couldn't fetch that topic, try again.")
+                return
+            result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
+                             enumerate(results[:self._check_your_privilege(ctx)])]
+            message = f'''Recently added to topic {topic}:
+{", ".join(result_string)}'''
+            await self._send_art_results(ctx, channel, filtered_results, message,
+                                         username=ctx.message.author.display_name)
+
+        except Exception as ex:
+            print(ex, flush=True)
+            await channel.send(f"Something went wrong! {ex}")
+
+            if channel.name == "bot-testing":
+                raise Exception(ex)
 
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)

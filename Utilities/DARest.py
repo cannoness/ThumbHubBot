@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from Utilities.DatabaseActions import DatabaseActions
 from Utilities.DARSS import DARSS
@@ -32,6 +33,7 @@ class DARest:
             pool_pre_ping=True)
         self.connection = engine.connect()
         self.access_token = self._acquire_access_token()
+        self.topics = None
 
     def _acquire_access_token(self):
         response = requests.get(
@@ -49,6 +51,23 @@ class DARest:
             response = self._filter_api_image_results(
                 self._gallery_fetch_helper(username, offset, display_num)['results'])
         return response[offset:display_num + offset]
+
+    def _list_topics(self):
+        self._validate_token()
+        response = requests.get(f"{API_URL}browse/topics?access_token={self.access_token}")
+        next_set = json.loads(response.content.decode("UTF-8"))
+        topic_dict = defaultdict(str)
+        has_more = next_set['has_more']
+        cursor = next_set["next_cursor"]
+        # there are only 30 offsets, so we only need to do this once and record the result.
+        while has_more:
+            for result in next_set['results']:
+                topic_dict[result['name'].lower()] = result['canonical_name']
+            has_more = next_set['has_more']
+            new_response = requests.get(f"{API_URL}browse/topics?access_token={self.access_token}&cursor={cursor}")
+            next_set = json.loads(new_response.content.decode("UTF-8"))
+            cursor = next_set['next_cursor'] if 'next_cursor' in next_set.keys() else None
+        self.topics = topic_dict
 
     @staticmethod
     def _filter_api_image_results(results):
@@ -149,6 +168,22 @@ class DARest:
         results = json.loads(decoded_content)['results']
         return self._filter_api_image_results(results)
 
+    def get_topic(self, topic):
+        if not self.topics:
+            self._list_topics()
+
+        canonical_name = self.topics[topic.lower()] if topic.lower in self.topics.keys() else None
+        if not canonical_name:
+            pattern = "(?e)(test){e<=4}"
+            closest_topic = re.search(pattern, " ".join(self.topics.keys()))[1]
+            print("no topic with this name", self.topics, closest_topic)
+            return None
+        response = requests.get(f"{API_URL}browse/topic?access_token={self.access_token}&"
+                                f"topic={self.topics[topic.lower()]}")
+        decoded_content = response.content.decode("UTF-8")
+        results = json.loads(decoded_content)['results']
+        return self._filter_api_image_results(results)
+
     def _gallery_fetch_helper(self, username, offset=0, display_num=24):
         self._validate_token()
         # only do this to check if the cache has to be updated...
@@ -180,7 +215,7 @@ class DARest:
         # add the gallery name to cache for quicker pulls next time
         response = requests.get(url)
         results = json.loads(response.content)['results']
-        folder_id = [result['folderid'] for result in results if result['name'] == gallery_name][0]
+        folder_id = [result['folderid'] for result in results if result['name'].lower() == gallery_name.lower()][0]
         gallery_url = f"{API_URL}gallery/{folder_id}?access_token={self.access_token}&username={username}&" \
                       f"limit={limit}&offset={offset}&with_session=false&mature_content=true"
         response = requests.get(gallery_url)
@@ -195,7 +230,7 @@ class DARest:
               f"true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
         response = requests.get(url)
         results = json.loads(response.content)['results']
-        folder_id = [result['folderid'] for result in results if result['name'] == collection_name][0]
+        folder_id = [result['folderid'] for result in results if result['name'].lower() == collection_name.lower()][0]
         collection_url = f"{API_URL}collections/{folder_id}?access_token={self.access_token}&username={username}&" \
                          f"limit={limit}&offset={offset}&with_session=false"
         response = requests.get(collection_url)
