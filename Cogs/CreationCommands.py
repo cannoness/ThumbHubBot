@@ -81,6 +81,7 @@ class CreationCommands(commands.Cog):
 
     @staticmethod
     async def _filter_results(ctx, results, channel, username=None):
+        filtered_results = None
         if results:
             if channel.name == "nsfw":
                 filtered_results = list(filter(lambda result: result["is_mature"], results))
@@ -92,9 +93,9 @@ class CreationCommands(commands.Cog):
             elif channel.name == "bot-testing":
                 filtered_results = list(filter(lambda result: result, results))
 
-        if not filtered_results and username:
+        if not (results or filtered_results) and username:
             await channel.send(f"""Couldn't find any deviations for {username}! 
-                                Is their gallery private?""")
+                                    Is their gallery private?""")
             ctx.command.reset_cooldown(ctx)
             return None
         return filtered_results
