@@ -173,13 +173,14 @@ class CreationCommands(commands.Cog):
             return
         try:
             results = self.da_rest.get_topic(topic)
-            if not results:
-                await channel.send(f"{topic} doesn't appear to be available, please try again.")
+            if results[0] is None:
+                await channel.send(f"{topic.title()} doesn't appear to be available, did you mean "
+                                   f"{results[1].title()}?")
                 return
 
             filtered_results = await self._filter_results(ctx, results, channel)
-            if filtered_results[0] is None:
-                await channel.send(f"Couldn't fetch that topic, did you mean {filtered_results[1]}?")
+            if not filtered_results:
+                await channel.send(f"Couldn't find a topic named {topic}")
                 return
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]

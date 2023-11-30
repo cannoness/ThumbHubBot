@@ -176,8 +176,8 @@ class DARest:
 
         canonical_name = self.topics[topic.lower()] if topic.lower() in self.topics.keys() else None
         if not canonical_name:
-            pattern = "(?e)(" + topic + "){e<=4}"
-            closest_topic = regex.search(pattern, " ".join(self.topics.keys()))[1]
+            pattern = "(?b)(<" + topic + ">\w+){e<=5}"
+            closest_topic = regex.search(pattern, ";".join(self.topics.keys()))[1]
             print("no topic with this name", self.topics, closest_topic)
             return None, closest_topic
         response = requests.get(f"{API_URL}browse/topic?access_token={self.access_token}&"
