@@ -1,6 +1,5 @@
 # bot.py
 import asyncio
-from time import sleep
 
 import discord
 from discord.ext import commands
@@ -29,5 +28,4 @@ async def main():
         await bot.start(TOKEN)
 
 
-sleep(3)
 asyncio.run(main())

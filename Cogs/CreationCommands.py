@@ -3,9 +3,6 @@ import random
 import re
 from collections import defaultdict
 from io import BytesIO
-from re import Match
-from time import sleep
-from typing import Callable, AnyStr
 
 import discord
 import requests
@@ -423,5 +420,4 @@ class CreationCommands(commands.Cog):
 
 
 async def setup(bot):
-    sleep(2)
     await bot.add_cog(CreationCommands(bot))
