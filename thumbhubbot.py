@@ -21,12 +21,12 @@ async def load_extensions():
         if filename.endswith(".py") and '__' not in filename:
             # cut off the .py from the file name
             await bot.load_extension(f"Cogs.{filename[:-3]}")
+            sleep(3)
 
 
 async def main():
     async with bot:
         await load_extensions()
-        sleep(3)
         await bot.start(TOKEN)
 
 asyncio.run(main())

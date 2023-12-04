@@ -4,6 +4,7 @@ import re
 from collections import defaultdict
 from io import BytesIO
 from re import Match
+from time import sleep
 from typing import Callable, AnyStr
 
 import discord
@@ -98,7 +99,7 @@ class CreationCommands(commands.Cog):
                                     Is their gallery private?""")
             ctx.command.reset_cooldown(ctx)
             return None
-        return filtered_resultscrea
+        return filtered_results
 
     def _manage_mentions(self, ctx, username, usernames):
         if not usernames:
@@ -422,4 +423,5 @@ class CreationCommands(commands.Cog):
 
 
 async def setup(bot):
+    sleep(2)
     await bot.add_cog(CreationCommands(bot))
