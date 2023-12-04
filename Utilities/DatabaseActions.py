@@ -11,14 +11,11 @@ import random
 class DatabaseActions:
     def __init__(self):
         load_dotenv()
-        self.pg_password = os.getenv("PGPASSWORD")
-        self.pg_url = os.getenv("PGHOST")
-        self.pg_user = os.getenv("PGUSER")
-        self.pg_db = os.getenv("PGDATABASE")
-        self.pg_port = os.getenv("PGPORT")
 
         engine = sqlalchemy.create_engine(
-            f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_url}:{self.pg_port}/{self.pg_db}")
+            os.getenv("DATABASE_PRIVATE_URL"),
+            pool_pre_ping=True
+        )
         self.connection = engine.connect()
 
     def store_da_name(self, discord_id, username):

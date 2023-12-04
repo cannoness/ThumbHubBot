@@ -98,7 +98,7 @@ class CreationCommands(commands.Cog):
                                     Is their gallery private?""")
             ctx.command.reset_cooldown(ctx)
             return None
-        return filtered_results
+        return filtered_resultscrea
 
     def _manage_mentions(self, ctx, username, usernames):
         if not usernames:

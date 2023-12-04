@@ -23,17 +23,7 @@ class DARest:
 
         self.db_actions = DatabaseActions()
         self.da_rss = DARSS()
-
-        self.pg_password = os.getenv("PGPASSWORD")
-        self.pg_url = os.getenv("PGHOST")
-        self.pg_user = os.getenv("PGUSER")
-        self.pg_db = os.getenv("PGDATABASE")
-        self.pg_port = os.getenv("PGPORT")
-
-        engine = sqlalchemy.create_engine(
-            f"postgresql://{self.pg_user}:{self.pg_password}@{self.pg_url}:{self.pg_port}/{self.pg_db}",
-            pool_pre_ping=True)
-        self.connection = engine.connect()
+        self.connection = self.db_actions.connection
         self.access_token = self._acquire_access_token()
         self.topics = None
 
