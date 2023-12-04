@@ -1,1 +1,1 @@
-worker: python3 thumbhubbot.py
+worker: sleep 3 && python3 thumbhubbot.py
