@@ -1,5 +1,7 @@
 # bot.py
 import asyncio
+from time import sleep
+
 import discord
 from discord.ext import commands
 import os
@@ -24,6 +26,7 @@ async def load_extensions():
 async def main():
     async with bot:
         await load_extensions()
+        sleep(3)
         await bot.start(TOKEN)
 
 asyncio.run(main())
