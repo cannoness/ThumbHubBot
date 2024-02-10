@@ -215,6 +215,14 @@ class CreationCommands(commands.Cog):
         username = await self._check_store(ctx)
         await self.lit(ctx, username, *args, channel=channel)
 
+    @commands.command(name='rank')
+    async def rank(self):
+        pass
+
+    @commands.command(name='levels')
+    async def rank(self):
+        pass
+
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):

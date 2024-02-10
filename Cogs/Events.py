@@ -30,8 +30,12 @@ class Events(commands.Cog):
             minutes, seconds = divmod(error.retry_after, 60)
             return await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, "
                                   f"try again after {int(minutes)}m {int(seconds)}s.", ephemeral=True)
-        print(error)
-        return await ctx.send(f"Another error was encountered!")
+        if isinstance(error, commands.errors.CommandOnCooldown):
+            await ctx.send(f"This command does not exist", ephemeral=True)
+
+        bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        bot_channel.send(f"Error encountered: {error}.")
+        return await ctx.send(f"Error was encountered! Logged to admins.")
 
     @commands.Cog.listener()
     async def on_message(self, message):
