@@ -13,7 +13,7 @@ class DatabaseActions:
         load_dotenv()
 
         engine = sqlalchemy.create_engine(
-            os.getenv("DATABASE_PRIVATE_URL"),
+            os.getenv("DATABASE_URL"),
             pool_pre_ping=True
         )
         self.connection = engine.connect()

@@ -39,37 +39,59 @@ class DARSS:
             raise Exception(f"URL currently not accessible.")
         return response
 
-    def get_user_favs(self, username, offset=0, num=24):
+    def get_user_favs(self, username, offset=0, num=24, randomized=False):
         # initial fetch
         # revisit this...
         response = self._fetch_all_user_faves_helper(username, offset)
         images = response.entries
-        # # This is going to get moved to !favs rnd
-        # while len(response['feed']['links']) >= 1 and len(images) < 100:
-        #     url = response['feed']['links'][-1]['href']
-        #     response = feedparser.parse(url)
-        #     images += response.entries
+        if randomized:
+            while len(response['feed']['links']) >= 1 and len(images) < 100:
+                url = response['feed']['links'][-1]['href']
+                response = feedparser.parse(url)
+                images += response.entries
 
         return self._rss_image_helper(images, num)
 
     def _rss_image_helper(self, images, num):
         results = self._shuffle_and_apply_filter(images)
-        string_links = self._generate_links(results, num)
+        string_links = self._generate_links(results)
         return results[:num], string_links
 
     @staticmethod
-    def _shuffle_and_apply_filter(images):
-        # commenting for now, but will  only use for rnd later.
-        # random.shuffle(images)
+    def _shuffle_and_apply_filter(images, randomized=False):
+        # commenting for now, but will only use for rnd later.
+        if randomized:
+            random.shuffle(images)
         results = list(filter(lambda image: 'media_content' in image.keys() and 'medium' in
                                             image['media_content'][-1].keys() and
                                             image['media_content'][-1]['medium'] == 'image' and
                                             image["rating"] == 'nonadult',
                               images))
-        return results
+
+        nl = '\n'
+        return [{'deviationid': result['deviationid'],
+                 'url':
+                     result['link'],
+                 'src_image':
+                     result['media_thumbnail'][-1]['url']
+                     if 'image' in result['media_content'][-1]['medium']
+                     else "None",
+                 'src_snippet':
+                     result['summary'][:1024].replace("'", "''").replace("<br />", nl)
+                     if 'image' not in result['media_content'][-1]['medium']
+                     else "None",
+                 'is_mature':
+                     False if 'nonadult' in result['rating'] else True,
+                 'published_time':
+                     result['published'],
+                 'title':
+                     result['title'],
+                 'author':
+                     result['media_credit'][0]['content']}
+                for result in results]
 
     @staticmethod
-    def _generate_links(results, num):
-        filtered_links = list(f"[[{index + 1}]({image['link']})] {{{image['media_credit'][0]['content']}}}"
-                              for index, image in enumerate(results[:num]))
+    def _generate_links(results):
+        filtered_links = [f"[[{index + 1}]({image['url']})] {{{image['author']}}}"
+                          for index, image in enumerate(results[:10], start=1)]
         return ", ".join(filtered_links)

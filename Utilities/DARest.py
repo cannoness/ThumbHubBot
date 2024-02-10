@@ -3,9 +3,7 @@ from collections import defaultdict
 from regex import regex
 
 from Utilities.DatabaseActions import DatabaseActions
-from Utilities.DARSS import DARSS
 import requests
-import sqlalchemy
 import json
 import os
 import datetime
@@ -22,7 +20,6 @@ class DARest:
         self.client = os.getenv("DA_CLIENT")
 
         self.db_actions = DatabaseActions()
-        self.da_rss = DARSS()
         self.connection = self.db_actions.connection
         self.access_token = self._acquire_access_token()
         self.topics = None
@@ -159,22 +156,46 @@ class DARest:
         results = json.loads(decoded_content)['results']
         return self._filter_api_image_results(results)
 
+    def _remove_ai_from_topic_results(self, topic, offset=0, use_tag=None):
+        response = requests.get(f"{API_URL}browse/topic?access_token={self.access_token}&"
+                                f"topic={topic}&offset={offset}") if not use_tag else \
+            requests.get(f"{API_URL}browse/tags?access_token={self.access_token}&tag={use_tag}")
+
+        decoded_content = response.content.decode("UTF-8")
+        content = json.loads(decoded_content)
+        results = content['results']
+        if not response.ok or not len(results):
+            return None, None, False
+        return results, content['next_offset'], content['has_more']
+
     def get_topic(self, topic):
         self._validate_token()
         if not self.topics:
             self._list_topics()
 
-        canonical_name = self.topics[topic.lower()] if topic.lower() in self.topics.keys() else None
-        if not canonical_name:
-            pattern = "(?b)(<" + topic + ">\w+){e<=5}"
-            closest_topic = regex.search(pattern, ";".join(self.topics.keys()))
-            print("no topic with this name", self.topics, closest_topic[1] if closest_topic else topic)
-            return None, closest_topic[1] if closest_topic else "to enter something else"
-        response = requests.get(f"{API_URL}browse/topic?access_token={self.access_token}&"
-                                f"topic={self.topics[topic.lower()]}")
-        decoded_content = response.content.decode("UTF-8")
-        results = json.loads(decoded_content)['results']
-        return self._filter_api_image_results(results)
+        not_ai = []
+        canonical_name = self.topics[topic.lower()] if topic.lower() in self.topics.keys() else \
+            topic.lower().replace(" ", "-")
+
+        offset = 0
+        has_more = True
+        tag = None
+        while len(not_ai) <= 6 and has_more:
+            results, offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset)
+            if not results:
+                tag = topic.replace(" ", "")
+                results, offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset, tag)
+            # check to see if the stuff the API spat out is AI or not.
+            for result in results:
+                if result['author']['type'] == "premium":
+                    continue
+                not_ai.append(result)
+            if not has_more:
+                break
+
+        if canonical_name not in self.topics.values():
+            self.topics[topic.lower()] = canonical_name
+        return [None, self._filter_api_image_results(results)] if tag else self._filter_api_image_results(results)
 
     def _gallery_fetch_helper(self, username, offset=0, display_num=24):
         self._validate_token()
