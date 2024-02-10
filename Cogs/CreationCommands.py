@@ -216,11 +216,11 @@ class CreationCommands(commands.Cog):
         await self.lit(ctx, username, *args, channel=channel)
 
     @commands.command(name='rank')
-    async def rank(self):
+    async def rank(self, ctx):
         pass
 
     @commands.command(name='levels')
-    async def rank(self):
+    async def levels(self, ctx):
         pass
 
     @commands.command(name='random')
