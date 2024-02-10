@@ -166,13 +166,12 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='topic')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def topics(self, ctx, topic, offset):
+    async def topics(self, ctx, topic, offset=0):
         channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
         if not channel:
             return
         try:
             results = self.da_rest.get_topic(topic, offset)
-            tags = False
             if results[0] is None:
                 results = results[1]
 
@@ -182,7 +181,7 @@ class CreationCommands(commands.Cog):
                 return
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
-            message = f'''Here are results for {topic.title()}:
+            message = f'''Here are some results for {topic.title()}:
 {", ".join(result_string)}'''
             await self._send_art_results(ctx, channel, filtered_results, message,
                                          username=ctx.message.author.display_name)
@@ -219,6 +218,42 @@ class CreationCommands(commands.Cog):
     @commands.command(name='levels')
     async def levels(self, ctx):
         pass
+
+    @commands.command(name='find')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def find_tags_like(self, ctx):
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        if not channel:
+            return
+        try:
+            # results = self.da_rest.get_topic(topic, offset)
+            await channel.send("Coming soon!")
+        except Exception as ex:
+            print(f"{ex} not implemented", flush=True)
+
+    @commands.command(name='popular')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def popular(self, ctx):
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        if not channel:
+            return
+        try:
+            # results = self.da_rest.get_topic(topic, offset)
+            await channel.send("Coming soon!")
+        except Exception as ex:
+            print(f"{ex} not implemented", flush=True)
+
+    @commands.command(name='new')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def new(self, ctx):
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        if not channel:
+            return
+        try:
+            # results = self.da_rest.get_topic(topic, offset)
+            await channel.send("Coming soon!")
+        except Exception as ex:
+            print(f"{ex} not implemented", flush=True)
 
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)

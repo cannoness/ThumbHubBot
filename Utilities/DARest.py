@@ -180,7 +180,7 @@ class DARest:
         has_more = True
         tag = None
         while len(not_ai) <= 6 and has_more:
-            results, offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset)
+            results, out_offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset)
             if not results:
                 tag = topic.replace(" ", "")
                 results, offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset, tag)
@@ -191,6 +191,7 @@ class DARest:
                 not_ai.append(result)
             if not has_more:
                 break
+            offset = out_offset
 
         if canonical_name not in self.topics.values():
             self.topics[topic.lower()] = canonical_name
