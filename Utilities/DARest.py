@@ -168,7 +168,7 @@ class DARest:
             return None, None, False
         return results, content['next_offset'], content['has_more']
 
-    def get_topic(self, topic):
+    def get_topic(self, topic, offset=0):
         self._validate_token()
         if not self.topics:
             self._list_topics()
@@ -177,7 +177,6 @@ class DARest:
         canonical_name = self.topics[topic.lower()] if topic.lower() in self.topics.keys() else \
             topic.lower().replace(" ", "-")
 
-        offset = 0
         has_more = True
         tag = None
         while len(not_ai) <= 6 and has_more:

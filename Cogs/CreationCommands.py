@@ -166,17 +166,15 @@ class CreationCommands(commands.Cog):
 
     @commands.command(name='topic')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def topics(self, ctx, topic):
+    async def topics(self, ctx, topic, offset):
         channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
         if not channel:
             return
         try:
-            results = self.da_rest.get_topic(topic)
+            results = self.da_rest.get_topic(topic, offset)
             tags = False
             if results[0] is None:
-                message = f"Topic '{topic.title()}' doesn't appear to be available. Showing tag results instead"
                 results = results[1]
-                tags = True
 
             filtered_results = await self._filter_results(ctx, results, channel)
             if not filtered_results:
@@ -184,8 +182,7 @@ class CreationCommands(commands.Cog):
                 return
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
-            message = f'''Recently added to topic {topic.title()}:
-{", ".join(result_string)}''' if not tags else f'''{message}: 
+            message = f'''Here are results for {topic.title()}:
 {", ".join(result_string)}'''
             await self._send_art_results(ctx, channel, filtered_results, message,
                                          username=ctx.message.author.display_name)
