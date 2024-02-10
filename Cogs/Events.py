@@ -34,7 +34,7 @@ class Events(commands.Cog):
             await ctx.send(f"This command does not exist", ephemeral=True)
 
         bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
-        bot_channel.send(f"Error encountered: {error}.")
+        await bot_channel.send(f"Error encountered: {error}.")
         return await ctx.send(f"Error was encountered! Logged to admins.")
 
     @commands.Cog.listener()
