@@ -176,10 +176,27 @@ class SpecialCommands(commands.Cog):
 
     @commands.hybrid_command(name="help", with_app_command=True)
     async def help(self, interaction, command: str = None, list_commands: bool = False) -> None:
+        admin = ['cpr', 'dm-server', 'fund-hubcoins', 'sync', 'rank', 'levels', 'help']
         if list_commands:
-            await interaction.interaction.response.send_message(self.bot.walk_commands())
-        await interaction.interaction.response.send_message(f'testing help command',
-                                                            ephemeral=True)
+            all_commands = [command.name for command in self.bot.walk_commands() if command.name not in admin]
+            command_list = ", ".join(sorted(all_commands))
+
+            embed = discord.Embed(
+                description="",
+                color=discord.Color.blurple(),
+                timestamp=datetime.datetime.utcnow()
+            )
+            embed.add_field(name='The following server commands are available',
+                            value=f"{command_list}",
+                            inline=False)
+            embed.add_field(name='\u200b',
+                            value=f"For usage options of a specific command, call /help again with that command name.",
+                            inline=False)
+
+            await interaction.interaction.response.send_message(embed=embed,
+                                                                ephemeral=True)
+        await interaction.interaction.followup.send(f'testing help command',
+                                                    ephemeral=True)
 
     @commands.hybrid_command(name="whois", with_app_command=True)
     async def whois(self, interaction, user: discord.User, anon: bool) -> None:
