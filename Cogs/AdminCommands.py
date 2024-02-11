@@ -69,11 +69,11 @@ class AdminCommands(commands.Cog):
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
             elif spec == "^":
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
+                ctx.bot.tree.clear_commands(guild=None)
                 [ctx.bot.tree.remove_command(c.name) for c in self.bot.tree.get_commands(guild=ctx.guild)]
-                ctx.bot.tree.copy_global_to(guild=ctx.guild)
-                synced = await ctx.bot.tree.sync(guild=ctx.guild)
+                synced = [c.name for c in self.bot.tree.get_commands(ctx.guild)]
             else:
-                synced = await ctx.bot.tree.sync()
+                synced = await ctx.bot.tree.sync(guild=ctx.guild)
 
             bcommands = [c.name for c in self.bot.tree.get_commands()]
             print(f"registered commands: {', '.join(bcommands)}")
