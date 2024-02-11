@@ -197,7 +197,7 @@ class SpecialCommands(commands.Cog):
                             value=f"For usage options of a specific command, call /help again with that command name.",
                             inline=False)
         elif command == 'art':
-            embed.description('Documentation for command "!art"')
+            embed.description = 'Documentation for command "!art"'
             embed.add_field(name='!art',
                             value=f"""!art deviantart-username
 Pulls the first n number of deviations from the All gallery of the given deviantart account username.
