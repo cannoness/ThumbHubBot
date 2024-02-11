@@ -26,7 +26,7 @@ class DARSS:
                 if len(images) < num:
                     images.append(results[0])
                 else:
-                    return self._rss_image_helper(images, num+2)
+                    return self._rss_image_helper(images, num+8)
         return None
 
     @staticmethod
