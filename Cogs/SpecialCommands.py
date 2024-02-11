@@ -198,21 +198,7 @@ class SpecialCommands(commands.Cog):
                             inline=False)
         elif command == 'art':
             embed.description = 'Documentation for command "!art"'
-            embed.add_field(name='!art deviantart-username',
-                            value=f"Pulls the first n number of deviations from the 'All' gallery of the provided "
-                                  f"deviantart account username.<br>"
-                                  f"<b>!art deviantart-username rnd</b><br>"
-                                  f"Pulls n random deviations for the given deviantart user."
-                                  f"<b>!art deviantart-username +offset</b><br>"
-                                  f"Pulls n deviations, starting with the offset number given. "
-                                  f"E.g. +1 would skip the first deviation in the gallery."
-                                  f"<b>!art deviant-username 1</b><br>"
-                                  f"Shows the first deviation in the user's gallery."
-                                  f"<b>!art deviant-username pop</b><br>"
-                                  f"Shows popular deviations of the deviant.*"
-                                  f"<b>!art deviant-username old</b><br>"
-                                  f"Shows old deviations of the deviant.*",
-                            inline=False)
+            embed.add_field(name="!art deviantart-username", value="Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.  <br><b>!art deviantart-username rnd</b> <br>Pulls n random deviations for the given deviantart user.  <b><br>!art deviantart-username +offset</b> <br>Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.  <b><br>!art deviant-username 1</b> <br>Shows the first deviation in the user's gallery.  <br><b>!art deviant-username pop</b> <br>Shows popular deviations of the deviant.*  <b><br>!art deviant-username old</b><br> Shows old deviations of the deviant.", inline=True)
             embed.set_footer(text="*Only works if the user is saved the ThumbHub store (see command "
                                   f"store-random-da-name")
 
