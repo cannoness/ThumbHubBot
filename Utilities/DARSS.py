@@ -21,7 +21,7 @@ class DARSS:
             if image_feed.status != 200:
                 print(image_feed.feed.summary, flush=True)
                 raise Exception(f"URL currently not accessible.")
-            results = image_feed.entries  # self._shuffle_and_apply_filter(image_feed.entries)
+            results = self._shuffle_and_apply_filter(image_feed.entries)
             if len(results):
                 if len(images) < num:
                     images.append(results[0])
@@ -49,11 +49,10 @@ class DARSS:
                 url = response['feed']['links'][-1]['href']
                 response = feedparser.parse(url)
                 images += response.entries
-
-        return self._rss_image_helper(images, num, randomized)
-
-    def _rss_image_helper(self, images, num, randomized=False):
         results = self._shuffle_and_apply_filter(images, randomized)
+        return self._rss_image_helper(results, num)
+
+    def _rss_image_helper(self, results, num):
         string_links = self._generate_links(results, num)
         return results[:num], string_links
 
