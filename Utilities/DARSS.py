@@ -21,12 +21,12 @@ class DARSS:
             if image_feed.status != 200:
                 print(image_feed.feed.summary, flush=True)
                 raise Exception(f"URL currently not accessible.")
-            results = self._shuffle_and_apply_filter(image_feed.entries)
+            results = image_feed.entries  # self._shuffle_and_apply_filter(image_feed.entries)
             if len(results):
                 if len(images) < num:
                     images.append(results[0])
                 else:
-                    return self._rss_image_helper(images, num)
+                    return self._rss_image_helper(images, num+2)
         return None
 
     @staticmethod
@@ -50,11 +50,11 @@ class DARSS:
                 response = feedparser.parse(url)
                 images += response.entries
 
-        return self._rss_image_helper(images, num)
+        return self._rss_image_helper(images, num, randomized)
 
-    def _rss_image_helper(self, images, num):
-        results = self._shuffle_and_apply_filter(images)
-        string_links = self._generate_links(results)
+    def _rss_image_helper(self, images, num, randomized=False):
+        results = self._shuffle_and_apply_filter(images, randomized)
+        string_links = self._generate_links(results, num)
         return results[:num], string_links
 
     @staticmethod
@@ -65,11 +65,10 @@ class DARSS:
         results = list(filter(lambda image: 'media_content' in image.keys() and 'medium' in
                                             image['media_content'][-1].keys() and
                                             image['media_content'][-1]['medium'] == 'image' and
-                                            image["rating"] == 'nonadult',
-                              images))
+                                            image["rating"] == 'nonadult', images))
 
         nl = '\n'
-        return [{'deviationid': result['deviationid'],
+        return [{'deviationid': result['id'],
                  'url':
                      result['link'],
                  'src_image':
@@ -88,10 +87,10 @@ class DARSS:
                      result['title'],
                  'author':
                      result['media_credit'][0]['content']}
-                for result in results]
+                for result in results if (True if result['summary'] != '' else False)]
 
     @staticmethod
-    def _generate_links(results):
-        filtered_links = [f"[[{index + 1}]({image['url']})] {{{image['author']}}}"
-                          for index, image in enumerate(results[:10], start=1)]
+    def _generate_links(results, at_least):
+        filtered_links = [f"[[{index}]({image['url']})] {{{image['author']}}}"
+                          for index, image in enumerate(results[:at_least], start=1)]
         return ", ".join(filtered_links)

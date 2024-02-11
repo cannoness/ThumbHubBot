@@ -255,6 +255,18 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
+    @commands.command(name='hot')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def hot(self, ctx):
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        if not channel:
+            return
+        try:
+            # results = self.da_rest.get_topic(topic, offset)
+            await channel.send("Coming soon!")
+        except Exception as ex:
+            print(f"{ex} not implemented", flush=True)
+
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
@@ -391,7 +403,7 @@ class CreationCommands(commands.Cog):
         priv_count = self._check_your_privilege(ctx)
         display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= priv_count else \
             priv_count
-
+        rnd = True if arg and 'random' in arg.keys() else False
         offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
 
         try:
@@ -399,7 +411,7 @@ class CreationCommands(commands.Cog):
                 results, links = self.da_rest.get_user_favs_by_collection(username, arg['collection'], offset,
                                                                           display_num)
             else:
-                results, links = self.da_rss.get_user_favs(username, offset, display_num)
+                results, links = self.da_rss.get_user_favs(username, offset, display_num, rnd)
 
             if len(results) == 0 and username:
                 await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
