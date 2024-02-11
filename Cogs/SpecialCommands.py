@@ -199,38 +199,29 @@ class SpecialCommands(commands.Cog):
         elif command == 'art':
             embed.description = 'Documentation for command "!art"'
             embed.add_field(name='!art deviantart-username',
-                            value=f"""
-Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.
-
-<b>!art deviantart-username rnd</b>
-Pulls n random deviations for the given deviantart user.
-
-<b>!art deviantart-username +offset</b>
-Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.
-
-<b>!art deviant-username 1</b>
-Shows the first deviation in the user's gallery.
-
-<b>!art deviant-username pop</b>
-Shows popular deviations of the deviant.*
-
-<b>!art deviant-username old</b>
-Shows old deviations of the deviant.*""",
+                            value=f"Pulls the first n number of deviations from the 'All' gallery of the provided "
+                                  f"deviantart account username.<br>"
+                                  f"<b>!art deviantart-username rnd</b><br>"
+                                  f"Pulls n random deviations for the given deviantart user."
+                                  f"<b>!art deviantart-username +offset</b><br>"
+                                  f"Pulls n deviations, starting with the offset number given. "
+                                  f"E.g. +1 would skip the first deviation in the gallery."
+                                  f"<b>!art deviant-username 1</b><br>"
+                                  f"Shows the first deviation in the user's gallery."
+                                  f"<b>!art deviant-username pop</b><br>"
+                                  f"Shows popular deviations of the deviant.*"
+                                  f"<b>!art deviant-username old</b><br>"
+                                  f"Shows old deviations of the deviant.*",
                             inline=False)
-
-            embed.add_field(name='\u200b',
-                            value=f"* Only works if the user is saved the ThumbHub store (see command "
-                                  f"store-random-da-name",
-                            inline=False)
+            embed.set_footer(text="*Only works if the user is saved the ThumbHub store (see command "
+                                  f"store-random-da-name")
 
         elif command == 'hubcoins':
             embed.description('Documentation for command "!hubcoins"')
             embed.add_field(name='!hubcoins',
-                            value=f"""
-See how many hubcoins you currently have.
-
-!hubcoins @user
-See how many hubcoins another user currently has.""",
+                            value=f"See how many hubcoins you currently have."
+                                  f"<b>!hubcoins @user</b><br>"
+                                  f"See how many hubcoins another user currently has.",
                             inline=False)
 
         await interaction.interaction.response.send_message(embed=embed, ephemeral=anon)
