@@ -179,7 +179,8 @@ class SpecialCommands(commands.Cog):
         admin = ['cpr', 'dm-server', 'fund-hubcoins', 'sync', 'rank', 'levels', 'help', 'spent-hubcoins']
 
         embed = discord.Embed(
-            description="",
+            title='ThumbHubBot Help Menu',
+            description='',
             color=discord.Color.blurple(),
             timestamp=datetime.datetime.utcnow()
         )
@@ -194,6 +195,10 @@ class SpecialCommands(commands.Cog):
                             inline=False)
             embed.add_field(name='\u200b',
                             value=f"For usage options of a specific command, call /help again with that command name.",
+                            inline=False)
+        elif command == 'hubcoins':
+            embed.add_field(name='!hubcoins',
+                            value=f"Usage:",
                             inline=False)
 
         await interaction.interaction.response.send_message(embed=embed, ephemeral=anon)
