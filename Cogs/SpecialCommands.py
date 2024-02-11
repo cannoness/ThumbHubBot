@@ -174,6 +174,21 @@ class SpecialCommands(commands.Cog):
                                                                 ephemeral=True)
             print(ex)
 
+    @commands.hybrid_command(name="help", with_app_command=True)
+    async def help(self, interaction, user: discord.User, message: str, anon: bool) -> None:
+        await interaction.interaction.response.send_message(f'testing help command',
+                                                            ephemeral=True)
+
+    @commands.hybrid_command(name="whois", with_app_command=True)
+    async def whois(self, interaction, user: discord.User, anon: bool) -> None:
+        await interaction.interaction.response.send_message(f'testing whois command',
+                                                            ephemeral=anon)
+
+    @commands.hybrid_command(name="stats", with_app_command=True)
+    async def stats(self, interaction, user: discord.User, anon: bool) -> None:
+        await interaction.interaction.response.send_message(f'testing stats command',
+                                                            ephemeral=anon)
+
 
 async def setup(bot):
     await bot.add_cog(SpecialCommands(bot))

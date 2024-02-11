@@ -12,7 +12,7 @@ TOKEN = os.getenv("TOKEN")
 
 intent = discord.Intents.all()
 
-bot = commands.Bot(command_prefix="!", intents=intent)
+bot = commands.Bot(command_prefix="!", intents=intent, help_command=None)
 
 
 async def load_extensions():
