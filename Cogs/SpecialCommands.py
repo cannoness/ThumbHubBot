@@ -197,8 +197,25 @@ class SpecialCommands(commands.Cog):
                             value=f"For usage options of a specific command, call /help again with that command name.",
                             inline=False)
         elif command == 'art':
-            embed.description = 'Documentation for command "!art"'
-            embed.add_field(name="!art deviantart-username", value="Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.  <br><b>!art deviantart-username rnd</b> <br>Pulls n random deviations for the given deviantart user.  <b><br>!art deviantart-username +offset</b> <br>Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.  <b><br>!art deviant-username 1</b> <br>Shows the first deviation in the user's gallery.  <br><b>!art deviant-username pop</b> <br>Shows popular deviations of the deviant.*  <b><br>!art deviant-username old</b><br> Shows old deviations of the deviant.", inline=True)
+            embed.description = f"""Documentation for command '!art'
+# !art deviantart-username
+Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.
+
+# !art deviantart-username rnd
+Pulls n random deviations for the given deviantart user.
+
+# !art deviantart-username +offset
+Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.
+
+# !art deviant-username 1
+Shows the first deviation in the user's gallery.
+
+# !art deviant-username pop
+Shows popular deviations of the deviant.*
+
+# !art deviant-username old
+Shows old deviations of the deviant.*"""
+
             embed.set_footer(text="*Only works if the user is saved the ThumbHub store (see command "
                                   f"store-random-da-name")
 
