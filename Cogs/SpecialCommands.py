@@ -175,7 +175,9 @@ class SpecialCommands(commands.Cog):
             print(ex)
 
     @commands.hybrid_command(name="help", with_app_command=True)
-    async def help(self, interaction, user: discord.User, message: str = None, anon: bool = True) -> None:
+    async def help(self, interaction, command: str = None, list_commands: bool = False) -> None:
+        if list_commands:
+            await interaction.interaction.response.send_message(self.bot.walk_commands())
         await interaction.interaction.response.send_message(f'testing help command',
                                                             ephemeral=True)
 
