@@ -69,10 +69,10 @@ class AdminCommands(commands.Cog):
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
             elif spec == "^":
                 ctx.bot.tree.clear_commands(guild=ctx.guild)
-                [ctx.bot.tree.remove_command(c.name) for c in self.bot.tree.get_commands()]
+                [ctx.bot.tree.remove_command(c.name) for c in self.bot.tree.get_commands(guild=ctx.guild)]
+                ctx.bot.tree.copy_global_to(guild=ctx.guild)
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
             else:
-                [ctx.bot.tree.remove_command(c.name) for c in self.bot.tree.get_commands()]
                 synced = await ctx.bot.tree.sync()
 
             bcommands = [c.name for c in self.bot.tree.get_commands()]
