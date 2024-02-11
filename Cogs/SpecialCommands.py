@@ -198,26 +198,26 @@ class SpecialCommands(commands.Cog):
                             inline=False)
         elif command == 'art':
             embed.description = f"""Documentation for command '!art'
-# !art deviantart-username
+## !art deviantart-username
 Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.
 
-# !art deviantart-username rnd
+## !art deviantart-username rnd
 Pulls n random deviations for the given deviantart user.
 
-# !art deviantart-username +offset
+## !art deviantart-username +offset
 Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.
 
-# !art deviant-username 1
+## !art deviant-username 1
 Shows the first deviation in the user's gallery.
 
-# !art deviant-username pop
+## !art deviant-username pop
 Shows popular deviations of the deviant.*
 
-# !art deviant-username old
+## !art deviant-username old
 Shows old deviations of the deviant.*"""
 
             embed.set_footer(text="*Only works if the user is saved the ThumbHub store (see command "
-                                  f"store-random-da-name")
+                                  f"store-random-da-name)")
 
         elif command == 'hubcoins':
             embed.description('Documentation for command "!hubcoins"')
