@@ -198,18 +198,35 @@ class SpecialCommands(commands.Cog):
                             inline=False)
         elif command == 'art':
             embed.description = 'Documentation for command "!art"'
-            embed.add_field(name='!art',
-                            value=f"""!art deviantart-username
-Pulls the first n number of deviations from the All gallery of the given deviantart account username.
+            embed.add_field(name='!art deviantart-username',
+                            value=f"""
+Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.
 
-!art deviantart-username rnd
-Pulls n random deviations .""",
+<b>!art deviantart-username rnd</b>
+Pulls n random deviations for the given deviantart user.
+
+<b>!art deviantart-username +offset</b>
+Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.
+
+<b>!art deviant-username 1</b>
+Shows the first deviation in the user's gallery.
+
+<b>!art deviant-username pop</b>
+Shows popular deviations of the deviant.*
+
+<b>!art deviant-username old</b>
+Shows old deviations of the deviant.*""",
+                            inline=False)
+
+            embed.add_field(name='\u200b',
+                            value=f"* Only works if the user is saved the ThumbHub store (see command "
+                                  f"store-random-da-name",
                             inline=False)
 
         elif command == 'hubcoins':
             embed.description('Documentation for command "!hubcoins"')
             embed.add_field(name='!hubcoins',
-                            value=f"""!hubcoins
+                            value=f"""
 See how many hubcoins you currently have.
 
 !hubcoins @user
