@@ -253,8 +253,8 @@ Basic structure for spending hubcoins. Amount is not necessary for reasons other
 **Feature; 100**: Purchase a feature (one art piece) in the ThumbHub Journal.
 **VIP; 500**: Purchase a week of VIP status. VIP status has all the perks of FT and more!
 **Spotlight 1000**: Purchase a full spotlight in ThumbHub! Reminder, there are a few CV's who follow our group.'''
-            embed.set_footer(text="Role colors are automatically assigned, but for other purchases, a Mod will confirm"
-                                  "your purchase.")
+            embed.set_footer(text="Role colors are automatically assigned, but for other purchases, a Mod will DM to"
+                                  "confirm details with you.")
 
         await interaction.interaction.response.send_message(embed=embed, ephemeral=anon)
         # await interaction.interaction.followup.send(f'testing help command', ephemeral=anon)
