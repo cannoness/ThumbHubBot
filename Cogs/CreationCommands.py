@@ -298,7 +298,7 @@ class CreationCommands(commands.Cog):
         if 'category /' in "\t".join(args):
             arg_dict['category'] = self._get_clean_arg(args, '/')
         if 'gallery' in "\t".join(args):
-            arg_dict['gallery'] = args[args.index("gallery") + 1]
+            arg_dict['gallery'] = args[args.index("gallery") + 1].lower()
         if '#' in "\t".join(args):
             arg_dict['tags'] = self._get_clean_arg(args, '#')
         if 'old' in args:
