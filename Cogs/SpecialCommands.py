@@ -186,7 +186,7 @@ class SpecialCommands(commands.Cog):
         )
         embed.set_thumbnail(url=self.bot.user.avatar.url)
 
-        if list_commands:
+        if list_commands or command is None:
             all_commands = [command.name for command in self.bot.walk_commands() if command.name not in admin]
             command_list = ", ".join(sorted(all_commands))
 
@@ -196,6 +196,7 @@ class SpecialCommands(commands.Cog):
             embed.add_field(name='\u200b',
                             value=f"For usage options of a specific command, call /help again with that command name.",
                             inline=False)
+
         elif command.lower() == 'art':
             embed.description = f"""Documentation for command '!art'
 
