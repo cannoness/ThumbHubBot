@@ -248,11 +248,11 @@ Basic structure for spending hubcoins. Amount is not necessary for reasons other
 `Rewards`
 **XP**: Trade one hubcoin for one rank XP. Please specify the amount.
 **Donate**: Donate hubcoins to another member. Please specify the amount.
-**Color, 100**: Change the color of your name in the server for a week! Specify a color name instead of amount. 
-**Feature**, 100: Purchase a feature (one art piece) in the ThumbHub Journal.
-**VIP, 500**: Purchase a week of VIP status. VIP status has all the perks of FT and more!
+**Color; 100**: Change the color of your name in the server for a week! Please specify a color name in place of amount. 
 [Color List](https://discord.com/channels/697493100519620640/712139217710612492/1133543297823019149).
-**Spotlight, 1000**: Purchase a full spotlight in ThumbHub! Reminder, there are a few CV's who follow our group.'''
+**Feature; 100**: Purchase a feature (one art piece) in the ThumbHub Journal.
+**VIP; 500**: Purchase a week of VIP status. VIP status has all the perks of FT and more!
+**Spotlight 1000**: Purchase a full spotlight in ThumbHub! Reminder, there are a few CV's who follow our group.'''
             embed.set_footer(text="Role colors are automatically assigned, but for other purchases, a Mod will confirm"
                                   "your purchase.")
 
