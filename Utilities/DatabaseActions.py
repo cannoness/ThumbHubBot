@@ -57,7 +57,7 @@ class DatabaseActions:
     def convert_cache_to_result(response):
         results = []
         for row in response.fetchall():
-            results.append(row._mapping)
+            results.append(dict(row._mapping))
         return results
 
     def add_coins(self, discord_id, username):

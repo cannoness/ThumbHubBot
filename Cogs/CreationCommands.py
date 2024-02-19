@@ -309,6 +309,12 @@ class CreationCommands(commands.Cog):
             arg_dict['collection'] = args[args.index("collection") + 1]
         return arg_dict
 
+    def __shuffle_list_of_dicts(self, input_list):
+        shuffled_indices = list(range(len(input_list)))
+        random.shuffle(shuffled_indices)
+        output_list = [input_list[index_] for index_ in shuffled_indices]
+        return output_list
+
     @staticmethod
     def _get_clean_arg(args, string):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
@@ -323,30 +329,25 @@ class CreationCommands(commands.Cog):
                 pop = self.da_rest.fetch_user_popular(username, offset, display_num)
                 if not wants_random:
                     return pop, offset, display_num
-                random.shuffle(pop)
-                return pop, offset, display_num
+                return self.__shuffle_list_of_dicts(pop), offset, display_num
             elif 'old' in arg.keys():
                 old = self.da_rest.fetch_user_old(username, offset, display_num)
                 if not wants_random:
                     return old, offset, display_num
-                random.shuffle(old)
-                return old, offset, display_num
+                return self.__shuffle_list_of_dicts(old), offset, display_num
             elif 'gallery' in arg.keys():
                 gallery = self.da_rest.get_user_gallery(username, arg['gallery'], offset, display_num)
                 if not wants_random:
                     return gallery, offset, display_num
-                random.shuffle(gallery)
-                return gallery, offset, display_num
+                return  self.__shuffle_list_of_dicts(gallery), offset, display_num
             elif 'tags' in arg.keys():
                 with_tags = self.da_rest.get_user_devs_by_tag(username, arg['tags'], offset, display_num)
                 if not wants_random:
                     return with_tags, offset, display_num
-                random.shuffle(with_tags)
-                return with_tags, offset, display_num
+                return  self.__shuffle_list_of_dicts(with_tags), offset, display_num
             elif wants_random:
                 results = self.da_rest.fetch_entire_user_gallery(username)
-                random.shuffle(results)
-                return results, offset, display_num
+                return self.__shuffle_list_of_dicts(results), offset, display_num
 
         return self.da_rest.fetch_user_gallery(username, offset, display_num), offset, display_num
 
@@ -361,7 +362,10 @@ class CreationCommands(commands.Cog):
             arg = self._parse_args(*args)
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
-
+            if '@' in username:
+                username = self.db_actions.fetch_da_username(int(username.replace("<", "")
+                                                                 .replace("@", "")
+                                                                 .replace(">", "")))
             results, offset, display_num = self._fetch_based_on_args(username, arg,
                                                                      self._check_your_privilege(ctx))
 
@@ -382,7 +386,7 @@ class CreationCommands(commands.Cog):
                                          display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Encountered exception {ex}. This has been recorded.")
+            await channel.send(f"Encountered exception. This has been recorded.")
             if channel.name == "bot-testing":
                 raise Exception(ex)
 
@@ -399,6 +403,10 @@ class CreationCommands(commands.Cog):
         if not channel:
             channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
 
+        if '@' in username:
+            username = self.db_actions.fetch_da_username(int(username.replace("<", "")
+                                                             .replace("@", "")
+                                                             .replace(">", "")))
         arg = self._parse_args(*args)
         priv_count = self._check_your_privilege(ctx)
         display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= priv_count else \
@@ -434,6 +442,10 @@ class CreationCommands(commands.Cog):
             arg = self._parse_args(*args)
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+            if '@' in username:
+                username = self.db_actions.fetch_da_username(int(username.replace("<", "")
+                                                                 .replace("@", "")
+                                                                 .replace(">", "")))
 
             results, offset, display_num = self._fetch_based_on_args(username, arg, self._check_your_privilege(ctx))
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
@@ -457,13 +469,12 @@ class CreationCommands(commands.Cog):
             if not filtered_results:
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
-            # shuffle is breaking somehow.
-            # random.shuffle(filtered_results)
+            shuffled_results = self.__shuffle_list_of_dicts(filtered_results)
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
             message = f'''From today's [Daily Deviations](https://www.deviantart.com/daily-deviations): 
 {", ".join(result_string)}'''
-            await self._send_art_results(ctx, channel, filtered_results, message,
+            await self._send_art_results(ctx, channel, shuffled_results, message,
                                          username=ctx.message.author.display_name)
         except Exception as ex:
             print(ex, flush=True)

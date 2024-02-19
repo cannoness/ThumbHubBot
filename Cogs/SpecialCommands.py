@@ -13,7 +13,7 @@ import datetime
 
 load_dotenv()
 GUILD_ID = int(os.getenv("GUILD_ID"))
-ART_LIT_CHANNEL = os.getenv("ART_LIT_CHANNEL")
+THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', 'Moderators', 'The Hub'}
