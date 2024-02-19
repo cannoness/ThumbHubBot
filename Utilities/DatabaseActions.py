@@ -4,6 +4,8 @@ import time
 import sqlalchemy
 import os
 import datetime
+
+from discord.ext import commands
 from dotenv import load_dotenv
 import random
 
@@ -21,25 +23,40 @@ class DatabaseActions:
     def store_da_name(self, discord_id, username):
         query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
-        self.connection.execute(query)
+        try:
+            self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
 
     def store_random_da_name(self, username):
         query = f"INSERT INTO deviant_usernames (ping_me, deviant_username) VALUES (false, '{username}') "
-        self.connection.execute(query)
+        try:
+            self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
 
     def do_not_ping_me(self, discord_id):
         query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, false) " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
-        self.connection.execute(query)
+        try:
+            self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
 
     def ping_me(self, discord_id):
         query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, true) " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
-        self.connection.execute(query)
+        try:
+            self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
 
     def fetch_da_username(self, discord_id):
         query = f"Select deviant_username from deviant_usernames where discord_id = {discord_id}"
-        result = self.connection.execute(query).fetchone()
+        try:
+            result = self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
         if result:
             query_results = "".join(result)
             return query_results
@@ -48,7 +65,10 @@ class DatabaseActions:
     def fetch_discord_id(self, username):
         query = f"Select discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " \
                 f"and ping_me = true"
-        result = self.connection.execute(query).fetchone()
+        try:
+            result = self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
         if result:
             return result[0]
         return None
@@ -65,7 +85,10 @@ class DatabaseActions:
         if username:
             query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' 
                     """
-            result = self.connection.execute(query)
+            try:
+                result = self.connection.execute(query).fetchone()
+            except Exception as ex:
+                raise commands.errors.ObjectNotFound(f"{ex}")
             possible_id = result.fetchone()
             if possible_id:
                 user_discord_id = possible_id[0]

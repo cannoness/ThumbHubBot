@@ -188,7 +188,7 @@ class CreationCommands(commands.Cog):
 
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Something went wrong! {ex}")
+            await channel.send(f"Something went wrong!")
 
             if channel.name == "bot-testing":
                 raise Exception(ex)
@@ -455,7 +455,7 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, results, message="", username=username, display_num=display_num)
         except Exception as ex:
             print(ex, flush=True)
-            await channel.send(f"Something went wrong! {ex}")
+            await channel.send(f"Something went wrong!")
             if channel.name == "bot-testing":
                 raise Exception(ex)
 
@@ -477,10 +477,9 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, shuffled_results, message,
                                          username=ctx.message.author.display_name)
         except Exception as ex:
-            print(ex, flush=True)
-            await channel.send(f"Something went wrong! {ex}")
-
+            await channel.send(f"Something went wrong!")
             if channel.name == "bot-testing":
+                await channel.send(f"Something went wrong!")
                 raise Exception(ex)
 
 
