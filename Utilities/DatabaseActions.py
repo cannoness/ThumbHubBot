@@ -86,10 +86,10 @@ class DatabaseActions:
             query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' 
                     """
             try:
-                result = self.connection.execute(query).fetchone()
+                result = self.connection.execute(query)
+                possible_id = result.fetchone()
             except Exception as ex:
                 raise commands.errors.ObjectNotFound(f"{ex}")
-            possible_id = result.fetchone()
             if possible_id:
                 user_discord_id = possible_id[0]
                 if user_discord_id == discord_id:
@@ -114,8 +114,11 @@ class DatabaseActions:
     def get_hubcoins(self, discord_id, column):
         # get current coins and return the count
         query = f""" SELECT {column} from hubcoins where discord_id = {discord_id} """
-        result = self.connection.execute(query)
-        coins = result.fetchone()
+        try:
+            result = self.connection.execute(query)
+            coins = result.fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
         if coins:
             return coins[0]
         else:

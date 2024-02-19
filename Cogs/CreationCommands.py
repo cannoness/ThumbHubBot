@@ -339,12 +339,12 @@ class CreationCommands(commands.Cog):
                 gallery = self.da_rest.get_user_gallery(username, arg['gallery'], offset, display_num)
                 if not wants_random:
                     return gallery, offset, display_num
-                return  self.__shuffle_list_of_dicts(gallery), offset, display_num
+                return self.__shuffle_list_of_dicts(gallery), offset, display_num
             elif 'tags' in arg.keys():
                 with_tags = self.da_rest.get_user_devs_by_tag(username, arg['tags'], offset, display_num)
                 if not wants_random:
                     return with_tags, offset, display_num
-                return  self.__shuffle_list_of_dicts(with_tags), offset, display_num
+                return self.__shuffle_list_of_dicts(with_tags), offset, display_num
             elif wants_random:
                 results = self.da_rest.fetch_entire_user_gallery(username)
                 return self.__shuffle_list_of_dicts(results), offset, display_num
