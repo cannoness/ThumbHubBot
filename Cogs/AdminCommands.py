@@ -1,3 +1,5 @@
+import os
+from json import loads
 from typing import Optional, Literal
 
 from discord.ext import commands
@@ -6,6 +8,11 @@ from discord.ext.commands import Context, Greedy
 from Utilities.DARest import DARest
 from Utilities.DatabaseActions import DatabaseActions
 import discord
+from dotenv import load_dotenv
+
+load_dotenv()
+ANNOUNCEMENTS_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+JSON_FILE = os.getenv("JSON_FILE")
 
 
 class AdminCommands(commands.Cog):
@@ -28,6 +35,24 @@ class AdminCommands(commands.Cog):
                 except Exception as ex:
                     print(ex)
                     continue
+
+    @commands.command(name='send-announcement-embed')
+    async def create_embed(self, ctx):
+        user_roles = [role.name for role in ctx.message.author.roles]
+        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+            return
+        else:
+            channel = self.bot.get_channel(int(ANNOUNCEMENTS_CHANNEL))
+            try:
+                with open(JSON_FILE, "r") as file:
+                    embed = discord.Embed().from_dict(loads(file.read()))
+                embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+                file = discord.File("dummy_img.jpg", filename="dummy_img.jpg")
+                embed.set_thumbnail(url="attachment://dummy_img.jpg")
+                allowed_mentions = discord.AllowedMentions(everyone=True)
+                await channel.send(allowed_mentions=allowed_mentions, file=file, embed=embed)
+            except Exception as ex:
+                raise Exception(ex)
 
     @commands.command(name='cpr')
     async def health_check(self, ctx):

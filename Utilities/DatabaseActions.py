@@ -24,14 +24,14 @@ class DatabaseActions:
         query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
                 f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
         try:
-            self.connection.execute(query).fetchone()
+            self.connection.execute(query)
         except Exception as ex:
             raise commands.errors.ObjectNotFound(f"{ex}")
 
     def store_random_da_name(self, username):
         query = f"INSERT INTO deviant_usernames (ping_me, deviant_username) VALUES (false, '{username}') "
         try:
-            self.connection.execute(query).fetchone()
+            self.connection.execute(query)
         except Exception as ex:
             raise commands.errors.ObjectNotFound(f"{ex}")
 
