@@ -248,7 +248,7 @@ class DARest:
                          f"limit={limit}&offset={offset}&with_session=false"
         response = requests.get(collection_url)
         if not response.ok:
-            print(response)
+            return None
         favorites = json.loads(response.content)['results']
         if len(favorites):
             results = self._filter_api_image_results(favorites)
