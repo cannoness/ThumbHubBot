@@ -22,10 +22,11 @@ class DatabaseActions:
 
     def store_da_name(self, discord_id, username):
         query = f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
-                f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username= excluded.deviant_username"
+                f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username=excluded.deviant_username"
         try:
             self.connection.execute(query)
         except Exception as ex:
+            print(ex, flush=True)
             raise commands.errors.ObjectNotFound(f"{ex}")
 
     def store_random_da_name(self, username):
@@ -213,7 +214,10 @@ class DatabaseActions:
 
     def fetch_user_row_id(self, username):
         query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' "
-        result = self.connection.execute(query).fetchone()
+        try:
+            result = self.connection.execute(query).fetchone()
+        except Exception as ex:
+            raise commands.errors.ObjectNotFound(f"{ex}")
         if result:
             return result[0]
         return None
