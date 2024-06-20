@@ -471,7 +471,7 @@ class CreationCommands(commands.Cog):
                 return
             shuffled_results = self.__shuffle_list_of_dicts(filtered_results)
             result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
-                             enumerate(results[:self._check_your_privilege(ctx)])]
+                             enumerate(shuffled_results[:self._check_your_privilege(ctx)])]
             message = f'''From today's [Daily Deviations](https://www.deviantart.com/daily-deviations): 
 {", ".join(result_string)}'''
             await self._send_art_results(ctx, channel, shuffled_results, message,
