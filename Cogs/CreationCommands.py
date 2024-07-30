@@ -19,7 +19,8 @@ MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers'}
+PRIVILEGED_ROLES = {'Frequent Thumbers', 'Veteran Thumbers'}
+VT_ROLE = {'Veteran Thumbers'}
 VIP = "The Hub VIP"
 COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth"}
 MOD_COUNT = 6
@@ -28,6 +29,7 @@ DEV_COUNT = 4
 DEFAULT_COOLDOWN = 1800
 PRIV_COOLDOWN = 900
 VIP_COOLDOWN = 600
+VT_COOLDOWN=360
 POST_RATE = 1
 
 
@@ -40,6 +42,8 @@ class Private:
         roles = {role.name for role in ctx.author.roles}
         if not COOLDOWN_WHITELIST.isdisjoint(roles):
             return None
+        elif not VT_ROLE.isdisjoint(roles):
+            discord.app_commands.Cooldown(POST_RATE, VT_COOLDOWN)
         elif not PRIVILEGED_ROLES.isdisjoint(roles):
             discord.app_commands.Cooldown(POST_RATE, PRIV_COOLDOWN)
         elif VIP in roles:
