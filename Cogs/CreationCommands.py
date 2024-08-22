@@ -18,11 +18,12 @@ load_dotenv()
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+THE_PEEPS = os.getenv("STREAMS_N_THINGS")
 THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers', 'Veteran Thumbers'}
+PRIVILEGED_ROLES = {'Frequent Thumbers', 'Veteran Thumbers', 'the peeps'}
 VT_ROLE = {'Veteran Thumbers'}
 VIP = "The Hub VIP"
-COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth"}
+COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth", 'the peeps'}
 MOD_COUNT = 6
 PRIV_COUNT = 6
 DEV_COUNT = 4
@@ -68,7 +69,10 @@ class CreationCommands(commands.Cog):
 
     def _set_channel(self, ctx, requested_channel):
         # added so we don't spam share during testing
-        if str(ctx.message.channel.id) in requested_channel:
+        user_roles = [role.name for role in ctx.message.author.roles]
+        if 'the peeps' in user_roles:
+            channel = ctx.message.channel
+        elif str(ctx.message.channel.id) in requested_channel:
             channel = ctx.message.channel
         elif ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
             channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
@@ -171,7 +175,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='topic')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def topics(self, ctx, topic, offset=0):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         if not channel:
             return
         try:
@@ -209,7 +213,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -226,7 +230,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='find')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def find_tags_like(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         if not channel:
             return
         try:
@@ -238,7 +242,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='popular')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def popular(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         if not channel:
             return
         try:
@@ -250,7 +254,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='new')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def new(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         if not channel:
             return
         try:
@@ -262,7 +266,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='hot')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def hot(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         if not channel:
             return
         try:
@@ -274,7 +278,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         try:
             display_count = self._check_your_privilege(ctx)
             results, links = self.da_rss.get_random_images(display_count)
@@ -365,7 +369,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
             if '@' in username:
                 username = self.db_actions.fetch_da_username(int(username.replace("<", "")
                                                                  .replace("@", "")
@@ -398,14 +402,14 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
         username = await self._check_store(ctx)
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS])
         await self.favs(ctx, username, *args, channel=channel)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, *args, channel=None):
         if not channel:
-            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
+            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS])
 
         if '@' in username:
             username = self.db_actions.fetch_da_username(int(username.replace("<", "")
@@ -445,7 +449,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
             if '@' in username:
                 username = self.db_actions.fetch_da_username(int(username.replace("<", "")
                                                                  .replace("@", "")
@@ -464,9 +468,9 @@ class CreationCommands(commands.Cog):
                 raise Exception(ex)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    @commands.command(name='dailies')
+    @commands.command(name='dds')
     async def get_dds(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS])
         try:
             results = self.da_rest.fetch_daily_deviations()
             filtered_results = await self._filter_results(ctx, results, channel)

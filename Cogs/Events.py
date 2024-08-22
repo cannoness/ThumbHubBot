@@ -5,10 +5,11 @@ from Utilities.DatabaseActions import DatabaseActions
 
 load_dotenv()
 THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
+THE_PEEPS = os.getenv("STREAMS_N_THINGS")
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers'}
+PRIVILEGED_ROLES = {'Frequent Thumbers', "Veteran Thumbers", "the peeps"}
 
 
 class Events(commands.Cog):
@@ -40,7 +41,7 @@ class Events(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:  # skip bot messages
             return
-        if message.channel.id in [int(THUMBHUB_CHANNEL), int(NSFW_CHANNEL)]:
+        if message.channel.id in [int(THUMBHUB_CHANNEL), int(THE_PEEPS), int(NSFW_CHANNEL)]:
             diminish_by = self.db_actions.diminish_coins_added(message.author.id)
             coins_to_add = 1 - 1*diminish_by
             self.db_actions.update_coins(message.author.id, coins_to_add)

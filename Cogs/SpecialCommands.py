@@ -14,15 +14,20 @@ import datetime
 load_dotenv()
 GUILD_ID = int(os.getenv("GUILD_ID"))
 THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
+THE_PEEPS = os.getenv("STREAMS_N_THINGS")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers', 'Moderators', 'The Hub'}
-VIP_ROLE = "THE HUB VIP"
-COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth"}
-PRIV_COUNT = 4
-DEV_COUNT = 2
-DEFAULT_COOLDOWN = 300
-VIP_COOLDOWN = 180
+PRIVILEGED_ROLES = {'Frequent Thumbers', 'Veteran Thumbers', 'the peeps'}
+VT_ROLE = {'Veteran Thumbers'}
+VIP = "The Hub VIP"
+COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth", 'the peeps'}
+MOD_COUNT = 6
+PRIV_COUNT = 6
+DEV_COUNT = 4
+DEFAULT_COOLDOWN = 1800
+PRIV_COOLDOWN = 900
+VIP_COOLDOWN = 600
+VT_COOLDOWN=360
 POST_RATE = 1
 
 
@@ -69,10 +74,13 @@ class SpecialCommands(commands.Cog):
         self.db_actions.store_random_da_name(username)
         await ctx.send(f"Storing DA username {username} without private.custom_cooldown.")
 
-    @commands.cooldown(POST_RATE, DEFAULT_COOLDOWN, commands.BucketType.user)
     @commands.command(name='roll')
-    async def roll_dice(self, ctx):
-        await ctx.send(f"{ctx.message.author.display_name} Rolling 1d20: {random.randint(1, 20)}")
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def roll_dice(self, ctx, die):
+        count, sides = die.split("d")
+        rolls = [random.randint(int(count), int(sides)) for _ in range(int(count))]
+        await ctx.send(f"{ctx.message.author.display_name} Rolling {count}d{sides}: "
+                       f"   {'   '.join(map(str, rolls))}")
 
     @commands.command(name='nomention')
     async def do_not_mention(self, ctx, user: discord.Member):
