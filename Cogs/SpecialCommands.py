@@ -77,10 +77,15 @@ class SpecialCommands(commands.Cog):
     @commands.command(name='roll')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def roll_dice(self, ctx, die):
+        if "d" not in die or len(die.split("d")) != 2:
+            await ctx.send(f"Usage: separate count of die and sides by lower case d, e.g. '1d20', '3d14'.")
+            return
         count, sides = die.split("d")
-        rolls = [random.randint(int(count), int(sides)) for _ in range(int(count))]
+        rolls = []
+        for _ in range(1, int(count)):
+            rolls.append(str(random.randint(1, int(sides))))
         await ctx.send(f"{ctx.message.author.display_name} Rolling {count}d{sides}: "
-                       f"   {'   '.join(map(str, rolls))}")
+                       f"   {'   '.join(rolls)}")
 
     @commands.command(name='nomention')
     async def do_not_mention(self, ctx, user: discord.Member):
