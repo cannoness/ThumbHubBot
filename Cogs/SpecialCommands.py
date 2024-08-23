@@ -82,8 +82,8 @@ class SpecialCommands(commands.Cog):
             return
         count, sides = die.split("d")
         rolls = []
-        for _ in range(1, int(count)):
-            rolls.append(str(random.randint(1, int(sides) + 1)))
+        for _ in range(1, int(count) + 1):
+            rolls.append(str(random.randint(1, int(sides))))
         await ctx.send(f"{ctx.message.author.display_name} Rolling {count}d{sides}: "
                        f"   {'   '.join(rolls)}")
 
