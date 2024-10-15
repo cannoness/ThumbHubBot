@@ -30,7 +30,7 @@ class DARest:
             print(response.content)
             raise Exception(f"CANNOT CONNECT: {response.content}")
         decoded_content = response.json()
-        return json.loads(decoded_content)['access_token']
+        return decoded_content['access_token']
 
     def fetch_user_gallery(self, username, offset=0, display_num=10):
         self._validate_token()
