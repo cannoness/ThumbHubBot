@@ -27,7 +27,7 @@ class DARest:
         response = requests.get(
             f"{AUTH_URL}client_id={self.client}&client_secret={self.secret}")
         if response.status_code != 200:
-            print(response.json())
+            print(response.content)
             raise Exception(f"CANNOT CONNECT: {response.content}")
         decoded_content = response.json()
         return json.loads(decoded_content)['access_token']
