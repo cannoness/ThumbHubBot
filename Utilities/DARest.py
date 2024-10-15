@@ -18,7 +18,6 @@ class DARest:
         load_dotenv()
         self.secret = os.getenv("DA_SECRET")
         self.client = os.getenv("DA_CLIENT")
-        print(self.client, self.secret, flush=True)
         self.db_actions = DatabaseActions()
         self.connection = self.db_actions.connection
         self.access_token = self._acquire_access_token()
@@ -28,7 +27,8 @@ class DARest:
         response = requests.get(
             f"{AUTH_URL}client_id={self.client}&client_secret={self.secret}")
         if response.status_code != 200:
-            raise Exception(f"CANNOT CONNECT: {response.json()}")
+            print(response.json())
+            raise Exception(f"CANNOT CONNECT: {response.content}")
         decoded_content = response.json()
         return json.loads(decoded_content)['access_token']
 
