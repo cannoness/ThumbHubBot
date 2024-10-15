@@ -18,7 +18,7 @@ class DARest:
         load_dotenv()
         self.secret = os.getenv("DA_SECRET")
         self.client = os.getenv("DA_CLIENT")
-
+        print(self.client, self.secret, flush=True)
         self.db_actions = DatabaseActions()
         self.connection = self.db_actions.connection
         self.access_token = self._acquire_access_token()
@@ -28,9 +28,8 @@ class DARest:
         response = requests.get(
             f"{AUTH_URL}client_id={self.client}&client_secret={self.secret}")
         if response.status_code != 200:
-            raise Exception(f"CANNOT CONNECT: {response}")
-        decoded_content = response.content.decode("UTF-8")
-
+            raise Exception(f"CANNOT CONNECT: {response.json()}")
+        decoded_content = response.json()
         return json.loads(decoded_content)['access_token']
 
     def fetch_user_gallery(self, username, offset=0, display_num=10):
