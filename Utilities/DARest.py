@@ -27,8 +27,10 @@ class DARest:
     def _acquire_access_token(self):
         response = requests.get(
             f"{AUTH_URL}client_id={self.client}&client_secret={self.secret}")
-
+        if response.status_code != 200:
+            raise Exception(f"CANNOT CONNECT: {response}")
         decoded_content = response.content.decode("UTF-8")
+
         return json.loads(decoded_content)['access_token']
 
     def fetch_user_gallery(self, username, offset=0, display_num=10):
