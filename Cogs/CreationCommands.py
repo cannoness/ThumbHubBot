@@ -93,9 +93,10 @@ class CreationCommands(commands.Cog):
                 filtered_results = list(filter(lambda result: result["is_mature"], results))
                 if not filtered_results or len(filtered_results) < 4:  # always return something.
                     sorted_nsfw = sorted(results, key=lambda result: result["is_mature"], reverse=True)
-                    if len(sorted_nsfw) > 4:
+                    if len(sorted_nsfw) >= 4:
                         return sorted_nsfw
-                    return list(filter(lambda result: result, results))  # if we tried everything else.
+                    else:
+                        return list(filter(lambda result: result, results))  # if we tried everything else.
             elif channel.name != "bot-testing":
                 filtered_results = list(filter(lambda result: not result["is_mature"], results))
             elif channel.name == "bot-testing":
