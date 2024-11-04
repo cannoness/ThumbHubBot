@@ -93,7 +93,9 @@ class CreationCommands(commands.Cog):
                 filtered_results = list(filter(lambda result: result["is_mature"], results))
                 if not filtered_results or len(filtered_results) < 4:  # always return something.
                     sorted_nsfw = sorted(results, key=lambda result: result["is_mature"], reverse=True)
-                    return sorted_nsfw
+                    if len(sorted_nsfw) > 4:
+                        return sorted_nsfw
+                    return list(filter(lambda result: result, results))  # if we tried everything else.
             elif channel.name != "bot-testing":
                 filtered_results = list(filter(lambda result: not result["is_mature"], results))
             elif channel.name == "bot-testing":
@@ -402,14 +404,14 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
         username = await self._check_store(ctx)
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         await self.favs(ctx, username, *args, channel=channel)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, *args, channel=None):
         if not channel:
-            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS])
+            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
 
         if '@' in username:
             username = self.db_actions.fetch_da_username(int(username.replace("<", "")
