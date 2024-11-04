@@ -428,7 +428,8 @@ class CreationCommands(commands.Cog):
         try:
             if arg and 'collection' in arg.keys():
                 results, links = self.da_rest.get_user_favs_by_collection(username, arg['collection'], offset,
-                                                                          display_num)
+                                                                          display_num,
+                                                                          "true" if channel.name == "nsfw" else "false")
             else:
                 results, links = self.da_rss.get_user_favs(username, offset, display_num, rnd)
 

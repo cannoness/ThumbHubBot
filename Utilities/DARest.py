@@ -66,7 +66,7 @@ class DARest:
                      result['url'],
                  'src_image':
                      result['preview']['src'] if 'preview' in result.keys()
-                     else result['thumbs'][-1]['src'] if len(result['thumbs'])  # prefer thumb over content
+                     else result['thumbs'][-1]['src'] if len(result['thumbs'])  # prefers thumb over content
                      else result['content']['src'] if 'content' in result.keys()
                      else "None",
                  'src_snippet':
@@ -219,8 +219,8 @@ class DARest:
                 self._add_user_gallery_to_cache(update_results, username)
         return decoded_content
 
-    def get_user_favs_by_collection(self, username, collection, offset=0, limit=24):
-        return self.get_favorite_collection(username, collection, offset, limit)
+    def get_user_favs_by_collection(self, username, collection, offset=0, limit=24, mature="false"):
+        return self.get_favorite_collection(username, collection, offset, limit, mature)
 
     def get_user_gallery(self, username, gallery_name, offset=0, limit=24):
         self._validate_token()
@@ -238,7 +238,7 @@ class DARest:
             return self._filter_api_image_results(deviations)
         return deviations
 
-    def get_favorite_collection(self, username, collection_name, offset=0, limit=24):
+    def get_favorite_collection(self, username, collection_name, offset=0, limit=24, mature="false"):
         self._validate_token()
         url = f"{API_URL}collections/folders?access_token={self.access_token}&username={username}&calculate_size=" \
               f"true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
@@ -246,7 +246,7 @@ class DARest:
         results = json.loads(response.content)['results']
         folder_id = [result['folderid'] for result in results if result['name'].lower() == collection_name.lower()][0]
         collection_url = f"{API_URL}collections/{folder_id}?access_token={self.access_token}&username={username}&" \
-                         f"limit={limit}&offset={offset}&with_session=false"
+                         f"limit={limit}&offset={offset}&with_session=false&mature_content={mature}"
         response = requests.get(collection_url)
         if not response.ok:
             return None

@@ -30,19 +30,19 @@ class DARSS:
         return None
 
     @staticmethod
-    def _fetch_all_user_faves_helper(username, offset=0):
+    def _fetch_all_user_faves_helper(username, offset=0, mature="false"):
         response = feedparser.parse(
-            f"{FAV_RSS_URL}{username}&offset={offset}")
+            f"{FAV_RSS_URL}{username}&offset={offset}&include_mature={mature}")
 
         if response.status != 200:
             print(response.feed.summary, flush=True)
             raise Exception(f"URL currently not accessible.")
         return response
 
-    def get_user_favs(self, username, offset=0, num=24, randomized=False):
+    def get_user_favs(self, username, offset=0, num=24, randomized=False, mature="false"):
         # initial fetch
         # revisit this...
-        response = self._fetch_all_user_faves_helper(username, offset)
+        response = self._fetch_all_user_faves_helper(username, offset, mature)
         images = response.entries
         if randomized:
             while len(response['feed']['links']) >= 1 and len(images) < 100:
@@ -61,10 +61,6 @@ class DARSS:
         # commenting for now, but will only use for rnd later.
         if randomized:
             random.shuffle(images)
-        results = list(filter(lambda image: 'media_content' in image.keys() and 'medium' in
-                                            image['media_content'][-1].keys() and
-                                            image['media_content'][-1]['medium'] == 'image' and
-                                            image["rating"] == 'nonadult', images))
 
         nl = '\n'
         return [{'deviationid': result['id'],
@@ -86,7 +82,7 @@ class DARSS:
                      result['title'],
                  'author':
                      result['media_credit'][0]['content']}
-                for result in results if (True if result['summary'] != '' else False)]
+                for result in images if (True if result['summary'] != '' else False)]
 
     @staticmethod
     def _generate_links(results, at_least):
