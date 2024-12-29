@@ -190,7 +190,7 @@ class CreationCommands(commands.Cog):
             if not filtered_results:
                 await channel.send(f"Couldn't find a topic named {topic}")
                 return
-            result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
+            result_string = [f"[[{index + 1}](<{image['url']}>)] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
             message = f'''Here are some results for {topic.title()}:
 {", ".join(result_string)}'''
@@ -389,7 +389,7 @@ class CreationCommands(commands.Cog):
                 await channel.send("No results found in that gallery, please try again.")
                 ctx.command.reset_cooldown(ctx)
                 return
-            thumbs = ", ".join(list(f"[{index + 1}]({image['url']})" for index, image in
+            thumbs = ", ".join(list(f"[{index + 1}](<{image['url']}>)" for index, image in
                                     enumerate(filtered_results[:self._check_your_privilege(ctx)])))
             message = f'''Visit {{}}'s [gallery](http://www.deviantart.com/{username})! [{thumbs}]'''
 
@@ -482,7 +482,7 @@ class CreationCommands(commands.Cog):
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
             shuffled_results = self.__shuffle_list_of_dicts(filtered_results)
-            result_string = [f"[[{index + 1}]({image['url']})] {image['author']}" for index, image in
+            result_string = [f"[[{index + 1}](<{image['url']}>)] {image['author']}" for index, image in
                              enumerate(shuffled_results[:self._check_your_privilege(ctx)])]
             message = f'''From today's [Daily Deviations](https://www.deviantart.com/daily-deviations): 
 {", ".join(result_string)}'''
