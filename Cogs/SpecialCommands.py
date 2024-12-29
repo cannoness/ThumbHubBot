@@ -162,7 +162,7 @@ class SpecialCommands(commands.Cog):
                                       f"with what was sent to report it; we will take care of it.", name="",
                                 inline=False)
 
-                embed.add_field(name="", value="[From the ThumbHub Team](https://discord.gg/yJberKm)", inline=False)
+                embed.add_field(name="", value="[From the ThumbHub Team](<https://discord.gg/yJberKm>)", inline=False)
                 embed.set_thumbnail(url=interaction.author.avatar) if not anon else \
                     embed.set_thumbnail(url="https://img.freepik.com/free-icon/anonymous_318-504704.jpg")
                 sent = await user.send(embed=embed)
