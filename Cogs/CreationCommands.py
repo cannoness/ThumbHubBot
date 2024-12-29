@@ -130,7 +130,7 @@ class CreationCommands(commands.Cog):
                         re.sub(r"{[^]]*\}", lambda x: x.group(0).replace(f"{{{username}}}", username), user))
             return ", ".join(mention_string)
 
-    async def _send_art_results(self, ctx, channel, in_results, message, username=None, usernames=None,
+    async def _send_art_results(self, ctx, channel: discord.TextChannel, in_results, message, username=None, usernames=None,
                                 display_num=None):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
@@ -159,7 +159,7 @@ class CreationCommands(commands.Cog):
         with BytesIO() as image_binary:
             thumbs.save(image_binary, 'PNG')
             image_binary.seek(0)
-            await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'))
+            await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'), embeds=None)
         self.db_actions.add_coins(ctx.message.author.id, username)
 
     @staticmethod
