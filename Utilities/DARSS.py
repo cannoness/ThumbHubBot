@@ -68,11 +68,11 @@ class DARSS:
                      result['link'],
                  'src_image':
                      result['media_thumbnail'][-1]['url']
-                     if 'image' in result['media_content'][-1]['medium']
+                     if 'medium' in result['media_content'][-1].keys() and 'image' in result['media_content'][-1]['medium']
                      else "None",
                  'src_snippet':
                      result['summary'][:1024].replace("'", "''").replace("<br />", nl)
-                     if 'image' not in result['media_content'][-1]['medium']
+                     if 'medium' in result['media_content'][-1].keys() and 'image' not in result['media_content'][-1]['medium']
                      else "None",
                  'is_mature':
                      False if 'nonadult' in result['rating'] else True,
