@@ -1,4 +1,6 @@
 import os
+import traceback
+
 from dotenv import load_dotenv
 from discord.ext import commands
 from Utilities.DatabaseActions import DatabaseActions
@@ -25,7 +27,8 @@ class Events(commands.Cog):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.command.reset_cooldown(ctx)
-            return await ctx.send(f"{error}")
+            tb = traceback.extract_tb()
+            return await ctx.send(f"{error.with_traceback(tb)}")
         if isinstance(error, commands.errors.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)
             return await ctx.send(f"This command is on cooldown for user {ctx.message.author.display_name}, "
