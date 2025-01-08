@@ -3,7 +3,6 @@ import random
 from dotenv import load_dotenv
 import feedparser
 
-
 RANDOM_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
 FAV_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=favby%3A"
 
@@ -68,11 +67,13 @@ class DARSS:
                      result['link'],
                  'src_image':
                      result['media_thumbnail'][-1]['url']
-                     if 'medium' in result['media_content'][-1].keys() and 'image' in result['media_content'][-1]['medium']
+                     if 'medium' in result['media_content'][-1].keys() and 'image' in result['media_content'][-1][
+                         'medium']
                      else "None",
                  'src_snippet':
                      result['summary'][:1024].replace("'", "''").replace("<br />", nl)
-                     if 'medium' in result['media_content'][-1].keys() and 'image' not in result['media_content'][-1]['medium']
+                     if 'medium' in result['media_content'][-1].keys() and 'image' not in result['media_content'][-1][
+                         'medium']
                      else "None",
                  'is_mature':
                      False if 'nonadult' in result['rating'] else True,
@@ -82,7 +83,8 @@ class DARSS:
                      result['title'],
                  'author':
                      result['media_credit'][0]['content']}
-                for result in images if (True if result['summary'] != '' else False)]
+                for result in images if
+                (True if result['summary'] != '' and 'media_content' in result.keys() else False)]
 
     @staticmethod
     def _generate_links(results, at_least):
