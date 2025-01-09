@@ -198,7 +198,7 @@ class DatabaseActions:
         return cursor.fetchall()
 
     def fetch_da_usernames(self, num):
-        query = f"Select deviant_username from deviant_usernames"
+        query = f"Select deviant_username from deviant_usernames where deviant_username is not null"
         query_results = ["".join(name_tuple) for name_tuple in self.connection.execute(query)]
         random.shuffle(query_results)
         return query_results[:num]
