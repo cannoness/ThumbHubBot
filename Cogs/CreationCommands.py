@@ -212,7 +212,7 @@ class CreationCommands(commands.Cog):
         if not channel:
             return
         username = await self._check_store(ctx)
-        await self.art(ctx, username, *args, channel=channel)
+        await self.art(ctx, username=username, *args, channel=channel)
 
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -374,12 +374,13 @@ class CreationCommands(commands.Cog):
             arg = self._parse_args(*args)
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
-            if '@' in username:
+            if isinstance(username, str) and '@' in username:
                 username = self.db_actions.fetch_username(int(username.replace("<", "")
                                                               .replace("@", "")
                                                               .replace(">", "")))
             results, offset, display_num = self._fetch_based_on_args(
-                username, arg,
+                username,
+                arg,
                 self._check_your_privilege(ctx),
                 no_cache=True if isinstance(username, int) else False
             )
