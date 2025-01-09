@@ -203,6 +203,19 @@ class DatabaseActions:
         random.shuffle(query_results)
         return query_results[:num]
 
+    def get_random_images(self, num):
+        query = f"""SELECT title, is_mature, url, src_image, src_snippet , deviant_username as author
+                    FROM deviant_usernames INNER JOIN deviations
+                    ON deviations.deviant_user_row = deviant_usernames.id order by random() limit {num} """
+        results = self.connection.execute(query).fetchall()
+        return results, self._generate_links(results, num)
+
+    @staticmethod
+    def _generate_links(results, at_least):
+        filtered_links = [f"[[{index}](<{image['url']}>)] {{{image['author']}}}"
+                          for index, image in enumerate(results[:at_least], start=1)]
+        return ", ".join(filtered_links)
+
     def user_last_cache_update(self, username):
         user_id_row = self.fetch_user_row_id(username)
         if not user_id_row:

@@ -285,7 +285,8 @@ class CreationCommands(commands.Cog):
         channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
         try:
             display_count = self._check_your_privilege(ctx)
-            results, links = self.da_rss.get_random_images(display_count)
+            results, links = self.db_actions.get_random_images(display_count)
+            # results, links = self.da_rss.get_random_images(display_count)
             message = f"{links}"
             usernames = [each for each in links.split(", ")]
 
