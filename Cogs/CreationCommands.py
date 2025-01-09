@@ -30,7 +30,7 @@ DEV_COUNT = 4
 DEFAULT_COOLDOWN = 1800
 PRIV_COOLDOWN = 900
 VIP_COOLDOWN = 600
-VT_COOLDOWN=360
+VT_COOLDOWN = 360
 POST_RATE = 1
 
 
@@ -130,7 +130,8 @@ class CreationCommands(commands.Cog):
                         re.sub(r"{[^]]*\}", lambda x: x.group(0).replace(f"{{{username}}}", username), user))
             return ", ".join(mention_string)
 
-    async def _send_art_results(self, ctx, channel: discord.TextChannel, in_results, message, username=None, usernames=None,
+    async def _send_art_results(self, ctx, channel: discord.TextChannel, in_results, message, username=None,
+                                usernames=None,
                                 display_num=None):
         display_count = self._check_your_privilege(ctx)
         display = display_count if (not display_num or display_num >= display_count) else display_num
@@ -153,13 +154,13 @@ class CreationCommands(commands.Cog):
                                                                                  result['src_image'] != "None") else
                           result if 'src_snippet' in result.keys() else
                           BytesIO(requests.get(result['media_content'][-1]['url']).content))
-            titles.append(result['title'])
+            titles.append(f"{result['title']}")
         amaztemp = Template(titles, embeds)
         thumbs = amaztemp.draw()
         with BytesIO() as image_binary:
             thumbs.save(image_binary, 'PNG')
             image_binary.seek(0)
-            await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'), embeds=None)
+            await channel.send(final_message, file=discord.File(image_binary, filename='thumbs.png'))
         self.db_actions.add_coins(ctx.message.author.id, username)
 
     @staticmethod
@@ -167,7 +168,7 @@ class CreationCommands(commands.Cog):
         return discord.Embed(url=f"http://{src}.com", description=message).set_image(url=url)
 
     async def _check_store(self, ctx):
-        username = self.db_actions.fetch_da_username(ctx.message.author.id)
+        username = self.db_actions.fetch_username(ctx.message.author.id)
         if not username:
             await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store u"
                            f"sing !store-da-name `username`")
@@ -331,18 +332,18 @@ class CreationCommands(commands.Cog):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
-    def _fetch_based_on_args(self, username, arg, max_num):
+    def _fetch_based_on_args(self, username, arg, max_num, no_cache=False):
         offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
         display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
         if arg:
             wants_random = 'random' in arg.keys()
             if 'pop' in arg.keys():
-                pop = self.da_rest.fetch_user_popular(username, offset, display_num)
+                pop = self.da_rest.fetch_user_popular(username, offset, display_num, no_cache)
                 if not wants_random:
                     return pop, offset, display_num
                 return self.__shuffle_list_of_dicts(pop), offset, display_num
             elif 'old' in arg.keys():
-                old = self.da_rest.fetch_user_old(username, offset, display_num)
+                old = self.da_rest.fetch_user_old(username, offset, display_num, no_cache)
                 if not wants_random:
                     return old, offset, display_num
                 return self.__shuffle_list_of_dicts(old), offset, display_num
@@ -352,7 +353,7 @@ class CreationCommands(commands.Cog):
                     return gallery, offset, display_num
                 return self.__shuffle_list_of_dicts(gallery), offset, display_num
             elif 'tags' in arg.keys():
-                with_tags = self.da_rest.get_user_devs_by_tag(username, arg['tags'], offset, display_num)
+                with_tags = self.da_rest.get_user_devs_by_tag(username, arg['tags'], offset, display_num, no_cache)
                 if not wants_random:
                     return with_tags, offset, display_num
                 return self.__shuffle_list_of_dicts(with_tags), offset, display_num
@@ -360,7 +361,7 @@ class CreationCommands(commands.Cog):
                 results = self.da_rest.fetch_entire_user_gallery(username)
                 return self.__shuffle_list_of_dicts(results), offset, display_num
 
-        return self.da_rest.fetch_user_gallery(username, offset, display_num), offset, display_num
+        return self.da_rest.fetch_user_gallery(username, offset, display_num, no_cache=no_cache), offset, display_num
 
     @commands.command(name='why')
     async def why_easter_egg(self, ctx):
@@ -374,11 +375,14 @@ class CreationCommands(commands.Cog):
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
             if '@' in username:
-                username = self.db_actions.fetch_da_username(int(username.replace("<", "")
-                                                                 .replace("@", "")
-                                                                 .replace(">", "")))
-            results, offset, display_num = self._fetch_based_on_args(username, arg,
-                                                                     self._check_your_privilege(ctx))
+                username = self.db_actions.fetch_username(int(username.replace("<", "")
+                                                              .replace("@", "")
+                                                              .replace(">", "")))
+            results, offset, display_num = self._fetch_based_on_args(
+                username, arg,
+                self._check_your_privilege(ctx),
+                no_cache=True if isinstance(username, int) else False
+            )
 
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
@@ -415,9 +419,9 @@ class CreationCommands(commands.Cog):
             channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
 
         if '@' in username:
-            username = self.db_actions.fetch_da_username(int(username.replace("<", "")
-                                                             .replace("@", "")
-                                                             .replace(">", "")))
+            username = self.db_actions.fetch_username(int(username.replace("<", "")
+                                                          .replace("@", "")
+                                                          .replace(">", "")))
         arg = self._parse_args(*args)
         priv_count = self._check_your_privilege(ctx)
         display_num = arg['show_only'] if arg and 'show_only' in arg.keys() and arg['show_only'] <= priv_count else \
@@ -455,11 +459,13 @@ class CreationCommands(commands.Cog):
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
             if '@' in username:
-                username = self.db_actions.fetch_da_username(int(username.replace("<", "")
-                                                                 .replace("@", "")
-                                                                 .replace(">", "")))
+                username = self.db_actions.fetch_username(int(username.replace("<", "")
+                                                              .replace("@", "")
+                                                              .replace(">", "")))
 
-            results, offset, display_num = self._fetch_based_on_args(username, arg, self._check_your_privilege(ctx))
+            results, offset, display_num = self._fetch_based_on_args(
+                username, arg, self._check_your_privilege(ctx), no_cache=True if isinstance(username, int) else False
+            )
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)

@@ -52,19 +52,20 @@ class DatabaseActions:
         except Exception as ex:
             raise commands.errors.ObjectNotFound(f"{ex}")
 
-    def fetch_da_username(self, discord_id):
-        query = f"Select deviant_username from deviant_usernames where discord_id = {discord_id}"
+    def fetch_username(self, discord_id):
+        query = f"Select id, deviant_username from deviant_usernames where discord_id = {discord_id}"
         try:
             result = self.connection.execute(query).fetchone()
+            if result._mapping["deviant_username"] is not None:
+                return result._mapping["deviant_username"]
+            return int(result._mapping["id"])
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
-        if result:
-            query_results = "".join(result)
-            return query_results
-        return None
+            raise commands.errors.ObjectNotFound(f"No DA user or user entry identified: {ex}")
 
     def fetch_discord_id(self, username):
         query = f"Select discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " \
+                f"and ping_me = true" if isinstance(username, str) else \
+            f"Select discord_id from deviant_usernames where id = {username} " \
                 f"and ping_me = true"
         try:
             result = self.connection.execute(query).fetchone()
@@ -85,7 +86,8 @@ class DatabaseActions:
         # get discord_id for username, if exists, make sure no cheaters
         if username:
             query = f""" SELECT discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' 
-                    """
+                    """ if isinstance(username, str) else \
+                f""" SELECT discord_id from deviant_usernames where id = {username} """
             try:
                 result = self.connection.execute(query)
                 possible_id = result.fetchone()
@@ -213,11 +215,13 @@ class DatabaseActions:
         return None
 
     def fetch_user_row_id(self, username):
-        query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' "
+        query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " if \
+            isinstance(username, str) else \
+            f"Select id from deviant_usernames where id = {username} "
         try:
             result = self.connection.execute(query).fetchone()
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f"Error fetching user row id {ex}")
         if result:
             return result[0]
         return None

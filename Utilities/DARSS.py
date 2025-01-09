@@ -80,7 +80,7 @@ class DARSS:
                  'published_time':
                      result['published'],
                  'title':
-                     result['title'],
+                     f"{result['title']}",
                  'author':
                      result['media_credit'][0]['content']}
                 for result in images if

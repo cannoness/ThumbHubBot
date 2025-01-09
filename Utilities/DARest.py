@@ -32,10 +32,10 @@ class DARest:
         decoded_content = response.json()
         return decoded_content['access_token']
 
-    def fetch_user_gallery(self, username, offset=0, display_num=10):
+    def fetch_user_gallery(self, username, offset=0, display_num=10, no_cache=False):
         self._validate_token()
-        if self.db_actions.user_last_cache_update(username):
-            response = self.fetch_entire_user_gallery(username)
+        if no_cache or self.db_actions.user_last_cache_update(username):
+            response = self.fetch_entire_user_gallery(username, no_cache)
         else:
             display_num = 10
             response = self._filter_api_image_results(
@@ -80,17 +80,17 @@ class DARest:
                  'published_time':
                      result['published_time'],
                  'title':
-                     result['title'],
+                     f"{result['title']}",
                  'author':
                      result['author']['username']}
                 for result in results]
 
-    def fetch_user_popular(self, username, offset=0, display_num=24):
-        deviant_row_id = self.db_actions.fetch_user_row_id(username)
+    def fetch_user_popular(self, username, offset=0, display_num=24, no_cache=False):
+        deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
-        if not self.db_actions.user_last_cache_update(username):
-            self.fetch_entire_user_gallery(username)
+        if not self.db_actions.user_last_cache_update(username) or no_cache:
+            self.fetch_entire_user_gallery(username, no_cache=no_cache)
         # use cache
         query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id}  
                 order by favs desc 
@@ -98,12 +98,12 @@ class DARest:
         response = self.connection.execute(query)
         return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
-    def fetch_user_old(self, username, offset=0, display_num=24):
-        deviant_row_id = self.db_actions.fetch_user_row_id(username)
+    def fetch_user_old(self, username, offset=0, display_num=24, no_cache=False):
+        deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
-        if not self.db_actions.user_last_cache_update(username):
-            self.fetch_entire_user_gallery(username)
+        if not self.db_actions.user_last_cache_update(username) or no_cache:
+            self.fetch_entire_user_gallery(username, no_cache)
         # use cache
         query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} 
                 order by date_created asc 
@@ -111,12 +111,12 @@ class DARest:
         response = self.connection.execute(query)
         return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
-    def get_user_devs_by_tag(self, username, tags, offset=0, display_num=24):
-        deviant_row_id = self.db_actions.fetch_user_row_id(username)
+    def get_user_devs_by_tag(self, username, tags, offset=0, display_num=24, no_cache=False):
+        deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
-        if not self.db_actions.user_last_cache_update(username):
-            self.fetch_entire_user_gallery(username)
+        if not self.db_actions.user_last_cache_update(username) or no_cache:
+            self.fetch_entire_user_gallery(username, no_cache)
         # use cache
         query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and
                         position('{tags}' in tags) > 0
@@ -125,10 +125,11 @@ class DARest:
         response = self.connection.execute(query)
         return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
-    def fetch_entire_user_gallery(self, username):
+    def fetch_entire_user_gallery(self, username, no_cache=False):
         if self.db_actions.user_last_cache_update(username):
-            self._gallery_fetch_helper(username)
-            deviant_row_id = self.db_actions.fetch_user_row_id(username)
+            if not no_cache:
+                self._gallery_fetch_helper(username)
+            deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
             # use cache
             query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}  
             order by date_created desc """

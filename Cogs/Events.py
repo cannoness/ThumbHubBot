@@ -1,5 +1,6 @@
 import os
 import traceback
+from types import TracebackType
 
 from dotenv import load_dotenv
 from discord.ext import commands
@@ -27,7 +28,7 @@ class Events(commands.Cog):
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.command.reset_cooldown(ctx)
-            tb = traceback.extract_tb()
+            tb = TracebackType.tb_next
             return await ctx.send(f"{error.with_traceback(tb)}")
         if isinstance(error, commands.errors.CommandOnCooldown):
             minutes, seconds = divmod(error.retry_after, 60)
