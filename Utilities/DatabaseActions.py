@@ -27,14 +27,14 @@ class DatabaseActions:
             self.connection.execute(query)
         except Exception as ex:
             print(ex, flush=True)
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f"Error while attempting to add user to the store {ex}")
 
     def store_random_da_name(self, username):
         query = f"INSERT INTO deviant_usernames (ping_me, deviant_username) VALUES (false, '{username}') "
         try:
             self.connection.execute(query)
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f"Error while adding external user to the store {ex}")
 
     def do_not_ping_me(self, discord_id):
         query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, false) " \
@@ -42,7 +42,7 @@ class DatabaseActions:
         try:
             self.connection.execute(query).fetchone()
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f" Error while disabling pings for user {ex}")
 
     def ping_me(self, discord_id):
         query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, true) " \
@@ -50,7 +50,7 @@ class DatabaseActions:
         try:
             self.connection.execute(query).fetchone()
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f"Error while allowing pings for user {ex}")
 
     def fetch_username(self, discord_id):
         query = f"Select id, deviant_username from deviant_usernames where discord_id = {discord_id}"
@@ -70,7 +70,7 @@ class DatabaseActions:
         try:
             result = self.connection.execute(query).fetchone()
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f"Error when attemping to fetch discord id {ex}")
         if result:
             return result[0]
         return None
@@ -92,7 +92,7 @@ class DatabaseActions:
                 result = self.connection.execute(query)
                 possible_id = result.fetchone()
             except Exception as ex:
-                raise commands.errors.ObjectNotFound(f"{ex}")
+                raise commands.errors.ObjectNotFound(f"Error while adding hubcoins {ex}")
             if possible_id:
                 user_discord_id = possible_id[0]
                 if user_discord_id == discord_id:
@@ -121,7 +121,7 @@ class DatabaseActions:
             result = self.connection.execute(query)
             coins = result.fetchone()
         except Exception as ex:
-            raise commands.errors.ObjectNotFound(f"{ex}")
+            raise commands.errors.ObjectNotFound(f"Error while finding hubcoin id for discord user {ex}")
         if coins:
             return coins[0]
         else:
