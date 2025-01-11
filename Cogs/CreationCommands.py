@@ -3,6 +3,7 @@ import random
 import re
 from collections import defaultdict
 from io import BytesIO
+from typing import Union
 
 import discord
 import requests
@@ -212,7 +213,7 @@ class CreationCommands(commands.Cog):
         if not channel:
             return
         username = await self._check_store(ctx)
-        await self.art(ctx, username=username, *args, channel=channel)
+        await self.art(ctx, username, *args, channel=channel)
 
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -298,7 +299,7 @@ class CreationCommands(commands.Cog):
                 raise Exception(ex)
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
 
-    def _parse_args(self, *args):
+    def _parse_args(self, *args) -> Union[defaultdict, None]:
         if len(args) == 0:
             return None
         arg_dict = defaultdict(None)
@@ -333,28 +334,28 @@ class CreationCommands(commands.Cog):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
-    def _fetch_based_on_args(self, username, arg, max_num, no_cache=False):
-        offset = arg['offset'] if arg and 'offset' in arg.keys() else 0
-        display_num = arg['show_only'] if arg and 'show_only' in arg.keys() else 24
-        if arg:
-            wants_random = 'random' in arg.keys()
-            if 'pop' in arg.keys():
+    def _fetch_based_on_args(self, username, parsed_args: defaultdict, max_num: int, no_cache: bool=False):
+        offset = parsed_args['offset'] if parsed_args and 'offset' in parsed_args.keys() else 0
+        display_num = parsed_args['show_only'] if parsed_args and 'show_only' in parsed_args.keys() else 24
+        if parsed_args:
+            wants_random = 'random' in parsed_args.keys()
+            if 'pop' in parsed_args.keys():
                 pop = self.da_rest.fetch_user_popular(username, offset, display_num, no_cache)
                 if not wants_random:
                     return pop, offset, display_num
                 return self.__shuffle_list_of_dicts(pop), offset, display_num
-            elif 'old' in arg.keys():
+            elif 'old' in parsed_args.keys():
                 old = self.da_rest.fetch_user_old(username, offset, display_num, no_cache)
                 if not wants_random:
                     return old, offset, display_num
                 return self.__shuffle_list_of_dicts(old), offset, display_num
-            elif 'gallery' in arg.keys():
-                gallery = self.da_rest.get_user_gallery(username, arg['gallery'], offset, display_num)
+            elif 'gallery' in parsed_args.keys():
+                gallery = self.da_rest.get_user_gallery(username, parsed_args['gallery'], offset, display_num)
                 if not wants_random:
                     return gallery, offset, display_num
                 return self.__shuffle_list_of_dicts(gallery), offset, display_num
-            elif 'tags' in arg.keys():
-                with_tags = self.da_rest.get_user_devs_by_tag(username, arg['tags'], offset, display_num, no_cache)
+            elif 'tags' in parsed_args.keys():
+                with_tags = self.da_rest.get_user_devs_by_tag(username, parsed_args['tags'], offset, display_num, no_cache)
                 if not wants_random:
                     return with_tags, offset, display_num
                 return self.__shuffle_list_of_dicts(with_tags), offset, display_num
@@ -372,7 +373,7 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username, *args, channel=None):
         try:
-            arg = self._parse_args(*args)
+            parsed_args = self._parse_args(*args)
             if not channel:
                 channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
             if isinstance(username, str) and '@' in username:
@@ -380,13 +381,15 @@ class CreationCommands(commands.Cog):
                                                               .replace("@", "")
                                                               .replace(">", "")))
             results, offset, display_num = self._fetch_based_on_args(
-                username,
-                arg,
-                self._check_your_privilege(ctx),
+                username=username,
+                parsed_args=parsed_args,
+                max_num=self._check_your_privilege(ctx),
                 no_cache=True if isinstance(username, int) else False
             )
 
-            if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
+            if not results and username and parsed_args and (
+                    'pop' in parsed_args.keys() or 'old' in parsed_args.keys()
+            ):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return
