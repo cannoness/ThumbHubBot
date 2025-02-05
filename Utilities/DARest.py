@@ -39,7 +39,7 @@ class DARest:
         else:
             display_num = 10
             response = self._filter_api_image_results(
-                self._gallery_fetch_helper(username, offset, display_num)['results'])
+                self._gallery_fetch_helper(username, offset, display_num, no_cache)['results'])
         return response[offset:display_num + offset]
 
     def _list_topics(self):
@@ -128,7 +128,7 @@ class DARest:
     def fetch_entire_user_gallery(self, username, no_cache=False):
         if self.db_actions.user_last_cache_update(username):
             if not no_cache:
-                self._gallery_fetch_helper(username)
+                self._gallery_fetch_helper(username, no_cache)
             deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
             # use cache
             query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}  
@@ -138,13 +138,13 @@ class DARest:
 
         # initial fetch
 
-        response = self._gallery_fetch_helper(username)
+        response = self._gallery_fetch_helper(username, no_cache)
         results = response['results']
 
         # build the rest of the gallery
         while response['has_more']:
             next_offset = response['next_offset']
-            response = self._gallery_fetch_helper(username, next_offset)
+            response = self._gallery_fetch_helper(username, next_offset, no_cache)
             results += response['results']
         in_store = self.db_actions.fetch_user_row_id(username)
         if in_store and not no_cache:
@@ -199,7 +199,7 @@ class DARest:
             self.topics[topic.lower()] = canonical_name
         return [None, self._filter_api_image_results(results)] if tag else self._filter_api_image_results(results)
 
-    def _gallery_fetch_helper(self, username, offset=0, display_num=24):
+    def _gallery_fetch_helper(self, username, offset=0, display_num=24, no_cache=False):
         self._validate_token()
         # only do this to check if the cache has to be updated...
         response = requests.get(
@@ -208,7 +208,7 @@ class DARest:
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
         last_updated = self.db_actions.user_last_cache_update(username)
-        if last_updated:
+        if last_updated and not no_cache:
             update_results = []
             needs_update = (datetime.date.today() - last_updated) >= datetime.timedelta(days=7)
             for date in decoded_content['results']:
