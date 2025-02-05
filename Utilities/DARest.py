@@ -126,9 +126,8 @@ class DARest:
         return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
 
     def fetch_entire_user_gallery(self, username, no_cache=False):
-        if self.db_actions.user_last_cache_update(username):
-            if not no_cache:
-                self._gallery_fetch_helper(username, no_cache)
+        if no_cache or self.db_actions.user_last_cache_update(username):
+            self._gallery_fetch_helper(username, no_cache)
             deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
             # use cache
             query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}  
