@@ -98,7 +98,7 @@ class CreationCommands(commands.Cog):
                         return sorted_nsfw
                     else:
                         return list(filter(lambda result: result, results))  # if we tried everything else.
-            elif channel.name != "bot-testing":
+            elif channel.name != "bot-testing" and channel.name != "nsfw":
                 filtered_results = list(filter(lambda result: not result["is_mature"], results))
             elif channel.name == "bot-testing":
                 filtered_results = list(filter(lambda result: result, results))
@@ -334,7 +334,7 @@ class CreationCommands(commands.Cog):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
-    def _fetch_based_on_args(self, username, parsed_args: defaultdict, max_num: int, no_cache: bool=False):
+    def _fetch_based_on_args(self, username, parsed_args: defaultdict, max_num: int, no_cache: bool = False):
         offset = parsed_args['offset'] if parsed_args and 'offset' in parsed_args.keys() else 0
         display_num = parsed_args['show_only'] if parsed_args and 'show_only' in parsed_args.keys() else 24
         if parsed_args:
@@ -355,7 +355,8 @@ class CreationCommands(commands.Cog):
                     return gallery, offset, display_num
                 return self.__shuffle_list_of_dicts(gallery), offset, display_num
             elif 'tags' in parsed_args.keys():
-                with_tags = self.da_rest.get_user_devs_by_tag(username, parsed_args['tags'], offset, display_num, no_cache)
+                with_tags = self.da_rest.get_user_devs_by_tag(username, parsed_args['tags'], offset, display_num,
+                                                              no_cache)
                 if not wants_random:
                     return with_tags, offset, display_num
                 return self.__shuffle_list_of_dicts(with_tags), offset, display_num

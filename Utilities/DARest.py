@@ -147,7 +147,7 @@ class DARest:
             response = self._gallery_fetch_helper(username, next_offset)
             results += response['results']
         in_store = self.db_actions.fetch_user_row_id(username)
-        if in_store:
+        if in_store and not no_cache:
             self._add_user_gallery_to_cache(results, username)
         return self._filter_api_image_results(results)
 
@@ -216,7 +216,7 @@ class DARest:
                     update_results.append(date)
                 else:
                     break  # don't keep going if you don't have to
-            if update_results:
+            if len(update_results) != 0:
                 self._add_user_gallery_to_cache(update_results, username)
         return decoded_content
 
