@@ -19,6 +19,7 @@ load_dotenv()
 MOD_CHANNEL = os.getenv("MOD_CHANNEL")
 NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
 BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
+BOT_TESTING_RANGE_CHANNEL = os.getenv("BOT_TESTING_RANGE_CHANNEL")
 THE_PEEPS = os.getenv("STREAMS_N_THINGS")
 THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
 PRIVILEGED_ROLES = {'Frequent Thumbers', 'Veteran Thumbers', 'the peeps'}
@@ -77,6 +78,8 @@ class CreationCommands(commands.Cog):
             channel = ctx.message.channel
         elif ctx.message.channel.id == int(BOT_TESTING_CHANNEL):
             channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        elif ctx.message.channel.id == int(BOT_TESTING_RANGE_CHANNEL):
+            channel = self.bot.get_channel(int(BOT_TESTING_RANGE_CHANNEL))
         else:
             channel = None
 
