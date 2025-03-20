@@ -183,7 +183,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='topic')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def topics(self, ctx, topic, offset=0):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         try:
@@ -212,7 +212,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -221,7 +221,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='mylit')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         username = await self._check_store(ctx)
@@ -238,7 +238,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='find')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def find_tags_like(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         try:
@@ -250,7 +250,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='popular')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def popular(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         try:
@@ -262,7 +262,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='new')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def new(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         try:
@@ -274,7 +274,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='hot')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def hot(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         if not channel:
             return
         try:
@@ -286,7 +286,7 @@ class CreationCommands(commands.Cog):
     @commands.command(name='random')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         try:
             display_count = self._check_your_privilege(ctx)
             results, links = self.db_actions.get_random_images(display_count)
@@ -379,7 +379,7 @@ class CreationCommands(commands.Cog):
         try:
             parsed_args = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
             if isinstance(username, str) and '@' in username:
                 username = self.db_actions.fetch_username(int(username.replace("<", "")
                                                               .replace("@", "")
@@ -418,14 +418,14 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
         username = await self._check_store(ctx)
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         await self.favs(ctx, username, *args, channel=channel)
 
     @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, *args, channel=None):
         if not channel:
-            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+            channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
 
         if '@' in username:
             username = self.db_actions.fetch_username(int(username.replace("<", "")
@@ -466,7 +466,7 @@ class CreationCommands(commands.Cog):
         try:
             arg = self._parse_args(*args)
             if not channel:
-                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS])
+                channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, NSFW_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
             if '@' in username:
                 username = self.db_actions.fetch_username(int(username.replace("<", "")
                                                               .replace("@", "")
@@ -489,7 +489,7 @@ class CreationCommands(commands.Cog):
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     @commands.command(name='dds')
     async def get_dds(self, ctx):
-        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS])
+        channel = self._set_channel(ctx, [THUMBHUB_CHANNEL, THE_PEEPS, BOT_TESTING_RANGE_CHANNEL])
         try:
             results = self.da_rest.fetch_daily_deviations()
             filtered_results = await self._filter_results(ctx, results, channel)
