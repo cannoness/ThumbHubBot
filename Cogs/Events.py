@@ -1,18 +1,8 @@
-import os
-import traceback
 from types import TracebackType
-
-from dotenv import load_dotenv
 from discord.ext import commands
-from Utilities.DatabaseActions import DatabaseActions
 
-load_dotenv()
-THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
-THE_PEEPS = os.getenv("STREAMS_N_THINGS")
-MOD_CHANNEL = os.getenv("MOD_CHANNEL")
-NSFW_CHANNEL = os.getenv("NSFW_CHANNEL")
-BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers', "Veteran Thumbers", "the peeps"}
+from thumbhubbot import CONFIG
+from Utilities.DatabaseActions import DatabaseActions
 
 
 class Events(commands.Cog):
@@ -37,7 +27,7 @@ class Events(commands.Cog):
         if isinstance(error, commands.errors.CommandNotFound):
             return await ctx.send(f"This command does not exist.", ephemeral=True)
 
-        bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        bot_channel = self.bot.get_channel(CONFIG.bot_channel)
         await bot_channel.send(f"Error encountered: {error}.")
         return await ctx.send(f"Error was encountered! Logged to admins.")
 
@@ -45,7 +35,7 @@ class Events(commands.Cog):
     async def on_message(self, message):
         if message.author.bot:  # skip bot messages
             return
-        if message.channel.id in [int(THUMBHUB_CHANNEL), int(THE_PEEPS), int(NSFW_CHANNEL)]:
+        if message.channel.id in [CONFIG.thumbhub_channel, CONFIG.the_peeps, int(CONFIG.nsfw_channel)]:
             diminish_by = self.db_actions.diminish_coins_added(message.author.id)
             coins_to_add = 1 - 1*diminish_by
             self.db_actions.update_coins(message.author.id, coins_to_add)

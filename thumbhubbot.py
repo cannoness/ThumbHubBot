@@ -1,16 +1,22 @@
 # bot.py
 import asyncio
-
-import discord
-from discord.ext import commands
 import os
+import discord
 
-from dotenv import load_dotenv
+from discord.ext import commands
 
-load_dotenv()
-TOKEN = os.getenv("TOKEN")
+from Settings.config import Config, ApiUrl, Cooldown, MaxImageCount, Role, RoleSet
+
+CONFIG = Config()
+APIURL = ApiUrl()
+COOLDOWN = Cooldown()
+MAXCOUNT = MaxImageCount()
+ROLE = Role()
+ROLESET = RoleSet()
 
 intent = discord.Intents.all()
+
+TOKEN = os.getenv("TOKEN")  # TODO: need to move this to secrets manager
 
 bot = commands.Bot(command_prefix="!", intents=intent, help_command=None)
 

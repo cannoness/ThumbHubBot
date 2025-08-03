@@ -1,7 +1,7 @@
 discord~=1.0.1
 requests~=2.32.2
 python-dotenv~=0.14.0
-sqlalchemy==1.4.45
+sqlalchemy>=2.0.0
 psycopg2
 datetime~=5.0
 feedparser~=6.0.10

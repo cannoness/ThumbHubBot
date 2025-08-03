@@ -1,18 +1,13 @@
-import os
+import discord
+
 from json import loads
 from typing import Optional, Literal
-
 from discord.ext import commands
 from discord.ext.commands import Context, Greedy
 
 from Utilities.DARest import DARest
 from Utilities.DatabaseActions import DatabaseActions
-import discord
-from dotenv import load_dotenv
-
-load_dotenv()
-ANNOUNCEMENTS_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
-JSON_FILE = os.getenv("JSON_FILE")
+from thumbhubbot import CONFIG, ROLESET, ROLE
 
 
 class AdminCommands(commands.Cog):
@@ -25,7 +20,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='dm-server')
     async def dm_server(self, ctx, message):
         user_roles = [role.name for role in ctx.message.author.roles]
-        if "The Hub" not in user_roles:
+        if ROLE.the_hub not in user_roles:
             return
         else:
             embed = discord.Embed(description=message)
@@ -39,12 +34,12 @@ class AdminCommands(commands.Cog):
     @commands.command(name='send-announcement-embed')
     async def create_embed(self, ctx):
         user_roles = [role.name for role in ctx.message.author.roles]
-        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+        if ROLESET.admins.isdisjoint(user_roles):
             return
         else:
-            channel = self.bot.get_channel(int(ANNOUNCEMENTS_CHANNEL))
+            channel = self.bot.get_channel(CONFIG.tannouncements_channel)
             try:
-                with open(JSON_FILE, "r") as file:
+                with open(CONFIG.json_file, "r") as file:
                     embed = discord.Embed().from_dict(loads(file.read()))
                 embed.set_author(name=self.bot.user.name, icon_url=self.bot.user.avatar.url)
                 file = discord.File("dummy_img.jpg", filename="dummy_img.jpg")
@@ -57,7 +52,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='cpr')
     async def health_check(self, ctx):
         user_roles = set([role.name for role in ctx.message.author.roles])
-        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+        if ROLESET.admins.isdisjoint(user_roles):
             return
         else:
             await ctx.message.channel.send("I AM STILL ALIVE (and doing science)")
@@ -65,7 +60,7 @@ class AdminCommands(commands.Cog):
     @commands.command(name='fund-hubcoins')
     async def fund_hubcoins(self, ctx, discord_id: discord.Member, amount):
         user_roles = set([role.name for role in ctx.message.author.roles])
-        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+        if ROLESET.admins.isdisjoint(user_roles):
             return
         else:
             self.db_actions.update_coins(discord_id.id, int(amount))
@@ -74,17 +69,18 @@ class AdminCommands(commands.Cog):
     @commands.command(name='spent-hubcoins')
     async def spent_hubcoins(self, ctx, discord_id: discord.Member):
         user_roles = set([role.name for role in ctx.message.author.roles])
-        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+        if ROLESET.admins.isdisjoint(user_roles):
             return
         else:
             coins = self.db_actions.get_hubcoins(discord_id.id, "spent_coins")
             await ctx.message.channel.send(f"{discord_id.display_name} has spent {coins} hubcoins total")
 
     @commands.command(name="sync")
-    async def sync(self, ctx: Context, guilds: Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None) \
-            -> None:
+    async def sync(
+            self, ctx: Context, guilds: Greedy[discord.Object], spec: Optional[Literal["~", "*", "^"]] = None
+    ) -> None:
         user_roles = set([role.name for role in ctx.message.author.roles])
-        if {"The Hub", "Moderators"}.isdisjoint(user_roles):
+        if ROLESET.admins.isdisjoint(user_roles):
             return
         if not guilds:
             if spec == "~":

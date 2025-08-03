@@ -1,34 +1,14 @@
 import math
-
-from Utilities.DatabaseActions import DatabaseActions
-from discord.ext import commands, tasks
-from Cogs.CreationCommands import Private
 import discord
-import os
 import random
-
-from dotenv import load_dotenv
 import datetime
 
+from discord.ext import commands, tasks
+from Cogs.CreationCommands import Private
 
-load_dotenv()
-GUILD_ID = int(os.getenv("GUILD_ID"))
-THUMBHUB_CHANNEL = os.getenv("THUMBHUB_CHANNEL")
-THE_PEEPS = os.getenv("STREAMS_N_THINGS")
-BOT_TESTING_CHANNEL = os.getenv("BOT_TESTING_CHANNEL")
-MOD_CHANNEL = os.getenv("MOD_CHANNEL")
-PRIVILEGED_ROLES = {'Frequent Thumbers', 'Veteran Thumbers', 'the peeps'}
-VT_ROLE = {'Veteran Thumbers'}
-VIP = "The Hub VIP"
-COOLDOWN_WHITELIST = {"Moderators", "The Hub", "Bot Sleuth", 'the peeps'}
-MOD_COUNT = 6
-PRIV_COUNT = 6
-DEV_COUNT = 4
-DEFAULT_COOLDOWN = 1800
-PRIV_COOLDOWN = 900
-VIP_COOLDOWN = 600
-VT_COOLDOWN=360
-POST_RATE = 1
+from thumbhubbot import CONFIG
+from Utilities.DatabaseActions import DatabaseActions
+from Settings import help_descriptions as help_desc
 
 
 class SpecialCommands(commands.Cog):
@@ -52,7 +32,7 @@ class SpecialCommands(commands.Cog):
                 await discord_id.remove_roles(role)
             self.db_actions.delete_role([ids[0] for ids in expiring_roles])
         self.db_actions.refresh_message_counts()
-        bot_channel = self.bot.get_channel(int(BOT_TESTING_CHANNEL))
+        bot_channel = self.bot.get_channel(CONFIG.bot_testing)
         if len(expiring_roles) > 0:
             await bot_channel.send(f"Resetting roles: {expiring_roles}")
 
@@ -60,7 +40,7 @@ class SpecialCommands(commands.Cog):
     async def before_daily_reset(self):
         print('waiting...')
         await self.bot.wait_until_ready()
-        self.guild = self.bot.get_guild(GUILD_ID)
+        self.guild = self.bot.get_guild(CONFIG.guild_id)
 
     @commands.command(name='store-da-name')
     async def store_name(self, ctx, username, discord_id: discord.Member = None):
@@ -124,7 +104,7 @@ class SpecialCommands(commands.Cog):
         if not amount:
             amount = reason_cost
         self.db_actions.spend_coins(ctx.message.author.id, amount)
-        mod_channel = self.bot.get_channel(int(MOD_CHANNEL))
+        mod_channel = self.bot.get_channel(CONFIG.mod_channel)
         # refactor this
         if "color" in reason:
             author = ctx.message.author
@@ -157,8 +137,9 @@ class SpecialCommands(commands.Cog):
                                       f"{interaction.author} :two_hearts:",
                                       color=discord.Color.from_rgb(245, 130, 216), description=f"{message}"
                                                                                                f"\n\u200b\n\u200b")
+
                 embed.add_field(value=f"If this message was inappropriate, please DM "
-                                      f"{interaction.message.guild.get_member(162740078031011840)} "
+                                      f"{interaction.message.guild.get_member(CONFIG.guild_admin)} "
                                       f"with what was sent to report it; we will take care of it.", name="",
                                 inline=False)
 
@@ -188,7 +169,9 @@ class SpecialCommands(commands.Cog):
             print(ex)
 
     @commands.hybrid_command(name="help", with_app_command=True)
-    async def help(self, interaction, command: str = None, list_commands: bool = False, anon: bool = True) -> None:
+    async def help(
+            self, interaction, command: str = None, list_commands: bool = False, anon: bool = True,
+        ) -> None:
         admin = ['cpr', 'dm-server', 'fund-hubcoins', 'sync', 'rank', 'levels', 'help', 'spent-hubcoins']
 
         embed = discord.Embed(
@@ -211,77 +194,28 @@ class SpecialCommands(commands.Cog):
                             inline=False)
 
         elif command.lower() == 'art':
-            embed.description = f"""Documentation for command '!art'
+            embed.description = help_desc.ART_DESCRIPTION
 
-`!art deviantart-username`
-Pulls the first n number of deviations from the 'All' gallery of the provided deviantart account username.
-
-`!art deviantart-username rnd`
-Pulls n random deviations for the given deviantart user.
-
-`!art deviantart-username +offset`
-Pulls n deviations, starting with the offset number given. E.g. +1 would skip the first deviation in the gallery.
-
-`!art deviant-username limit`
-Shows the only the number of deviations requested by limit. E.g. 1 would only show 1 deviation.
-
-`!art deviant-username #tag`
-Gets artwork with the given tag name.
-
-`!art deviant-username pop`
-Shows popular deviations.*
-
-`!art deviant-username old`
-Shows old deviations.*
-
-`!art deviant-username gallery "Gallery Name"`
-Shows the first five images in a gallery folder. Gallery name is no longer case sensitive.
-
-The commands can be combined in various ways, but limit MUST be last. 
-Examples:
-`!art user pop rnd +5 1`
-Shows the fifth random popular deviation from the user."""
-
-            embed.set_footer(text="*Only works if the user is saved the ThumbHub store (see command "
-                                  f"store-random-da-name)")
+            embed.set_footer(text=help_desc.ART_FOOTER)
 
         elif command.lower() == 'hubcoins':
-            embed.description = f'''Documentation for command "!hubcoins"
-`!hubcoins`
-See how many hubcoins you currently have."
-
-`!hubcoins @user`
-See how many hubcoins another user currently has.'''
-            embed.set_footer(text="For information on spending hubcoins, see help for 'spend-hubcoins'")
+            embed.description = help_desc.HUBCOINS_DESCRIPTION
+            embed.set_footer(text=help_desc.HUBCOINS_FOOTER)
 
         elif command.lower() == 'spend-hubcoins':
-            embed.description = f'''Documentation for command "!spend-hubcoins"
-`!spend-hubcoins reason amount`
-Basic structure for spending hubcoins. Amount is not necessary for reasons other than donating or redeeming XP.
-
-`Rewards`
-**XP**: Trade one hubcoin for one rank XP. Please specify the amount.
-**Donate**: Donate hubcoins to another member. Please specify the amount.
-**Color; 100**: Change the color of your name in the server for a week! Please specify a color name in place of amount. 
-[Color List](https://discord.com/channels/697493100519620640/712139217710612492/1133543297823019149).
-**Feature; 100**: Purchase a feature (one art piece) in the ThumbHub Journal.
-**VIP; 500**: Purchase a week of VIP status. VIP status has all the perks of FT and more!
-**Spotlight 1000**: Purchase a full spotlight in ThumbHub! Reminder, there are a few CV's who follow our group.'''
-            embed.set_footer(text="Role colors are automatically assigned, but for other purchases, a Mod will DM to"
-                                  "confirm details with you.")
+            embed.description = help_desc.SPEND_HUBCOINS_DESCRIPTION
+            embed.set_footer(text=help_desc.SPEND_HUBCOINS_FOOTER)
 
         await interaction.interaction.response.send_message(embed=embed, ephemeral=anon)
-        # await interaction.interaction.followup.send(f'testing help command', ephemeral=anon)
+        # await interaction.interaction.followup.send(f'testing help command, ephemeral=anon)
 
     @commands.hybrid_command(name="whois", with_app_command=True)
     async def whois(self, interaction, user: discord.User, anon: bool) -> None:
-        await interaction.interaction.response.send_message(f'testing whois command',
-                                                            ephemeral=anon)
+        await interaction.interaction.response.send_message(f'testing whois command', ephemeral=anon)
 
     @commands.hybrid_command(name="stats", with_app_command=True)
     async def stats(self, interaction, user: discord.User, anon: bool) -> None:
-        await interaction.interaction.response.send_message(f'testing stats command',
-                                                            ephemeral=anon)
+        await interaction.interaction.response.send_message(f'testing stats command', ephemeral=anon)
 
 
 async def setup(bot):

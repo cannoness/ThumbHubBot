@@ -1,23 +1,20 @@
-from collections import defaultdict
-
-from regex import regex
-
-from Utilities.DatabaseActions import DatabaseActions
 import requests
 import json
 import os
 import datetime
+
+from collections import defaultdict
 from dotenv import load_dotenv
 
-AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&"
-API_URL = "https://www.deviantart.com/api/v1/oauth2/"
+from Utilities.DatabaseActions import DatabaseActions
+from thumbhubbot import APIURL
 
 
 class DARest:
     def __init__(self):
         load_dotenv()
-        self.secret = os.getenv("DA_SECRET")
-        self.client = os.getenv("DA_CLIENT")
+        self.secret = os.getenv("DA_SECRET")  # TODO: move into secrets manager
+        self.client = os.getenv("DA_CLIENT")  # TODO: move into secrets manager
         self.db_actions = DatabaseActions()
         self.connection = self.db_actions.connection
         self.access_token = self._acquire_access_token()
@@ -25,7 +22,7 @@ class DARest:
 
     def _acquire_access_token(self):
         response = requests.get(
-            f"{AUTH_URL}client_id={self.client}&client_secret={self.secret}")
+            f"{APIURL.auth}client_id={self.client}&client_secret={self.secret}")
         if response.status_code != 200:
             print(response.content)
             raise Exception(f"CANNOT CONNECT: {response.content}")
@@ -43,7 +40,7 @@ class DARest:
         return response[offset:display_num + offset]
 
     def _list_topics(self):
-        response = requests.get(f"{API_URL}browse/topics?access_token={self.access_token}")
+        response = requests.get(f"{APIURL.api}browse/topics?access_token={self.access_token}")
         next_set = json.loads(response.content.decode("UTF-8"))
         topic_dict = defaultdict(str)
         has_more = next_set['has_more']
@@ -53,7 +50,7 @@ class DARest:
             for result in next_set['results']:
                 topic_dict[result['name'].lower()] = result['canonical_name']
             has_more = next_set['has_more']
-            new_response = requests.get(f"{API_URL}browse/topics?access_token={self.access_token}&cursor={cursor}")
+            new_response = requests.get(f"{APIURL.api}browse/topics?access_token={self.access_token}&cursor={cursor}")
             next_set = json.loads(new_response.content.decode("UTF-8"))
             cursor = next_set['next_cursor'] if 'next_cursor' in next_set.keys() else None
         self.topics = topic_dict
@@ -66,7 +63,7 @@ class DARest:
                      result['url'],
                  'src_image':
                      result['preview']['src'] if 'preview' in result.keys()
-                     else result['thumbs'][-1]['src'] if len(result['thumbs'])  # prefers thumb over content
+                     else result['thumbs'][-1]['src'] if len(result['thumbs'])  # prefers to use thumb over content
                      else result['content']['src'] if 'content' in result.keys()
                      else "None",
                  'src_snippet':
@@ -152,15 +149,15 @@ class DARest:
 
     def fetch_daily_deviations(self):
         self._validate_token()
-        response = requests.get(f"{API_URL}browse/dailydeviations?access_token={self.access_token}")
+        response = requests.get(f"{APIURL.api}browse/dailydeviations?access_token={self.access_token}")
         decoded_content = response.content.decode("UTF-8")
         results = json.loads(decoded_content)['results']
         return self._filter_api_image_results(results)
 
     def _remove_ai_from_topic_results(self, topic, offset=0, use_tag=None):
-        response = requests.get(f"{API_URL}browse/topic?access_token={self.access_token}&"
+        response = requests.get(f"{APIURL.api}browse/topic?access_token={self.access_token}&"
                                 f"topic={topic}&offset={offset}") if not use_tag else \
-            requests.get(f"{API_URL}browse/tags?access_token={self.access_token}&tag={use_tag}")
+            requests.get(f"{APIURL.api}browse/tags?access_token={self.access_token}&tag={use_tag}")
 
         decoded_content = response.content.decode("UTF-8")
         content = json.loads(decoded_content)
@@ -180,12 +177,15 @@ class DARest:
 
         has_more = True
         tag = None
+        results = None
         while len(not_ai) <= 6 and has_more:
             results, out_offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset)
             if not results:
                 tag = topic.replace(" ", "")
                 results, offset, has_more = self._remove_ai_from_topic_results(canonical_name, offset, tag)
-            # check to see if the stuff the API spat out is AI or not.
+                if not results:
+                    raise Exception(f"No results for topic {topic}")
+            # check to see if what the API spat out is AI or not.
             for result in results:
                 if result['author']['type'] == "premium":
                     continue
@@ -202,7 +202,7 @@ class DARest:
         self._validate_token()
         # only do this to check if the cache has to be updated...
         response = requests.get(
-            f"{API_URL}gallery/all?username={username}&limit=24&access_token="
+            f"{APIURL.api}gallery/all?username={username}&limit=24&access_token="
             f"{self.access_token}&offset={offset}&display_num={display_num}")
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
@@ -224,13 +224,13 @@ class DARest:
 
     def get_user_gallery(self, username, gallery_name, offset=0, limit=24):
         self._validate_token()
-        url = f"{API_URL}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
+        url = f"{APIURL.api}gallery/folders?access_token={self.access_token}&username={username}&calculate_size=true&" \
               f"ext_preload=false&filter_empty_folder=true&limit=25&with_session=false"
         # add the gallery name to cache for quicker pulls next time
         response = requests.get(url)
         results = json.loads(response.content)['results']
         folder_id = [result['folderid'] for result in results if result['name'].lower() == gallery_name.lower()][0]
-        gallery_url = f"{API_URL}gallery/{folder_id}?access_token={self.access_token}&username={username}&" \
+        gallery_url = f"{APIURL.api}gallery/{folder_id}?access_token={self.access_token}&username={username}&" \
                       f"limit={limit}&offset={offset}&with_session=false&mature_content=true"
         response = requests.get(gallery_url)
         deviations = json.loads(response.content)['results']
@@ -240,12 +240,12 @@ class DARest:
 
     def get_favorite_collection(self, username, collection_name, offset=0, limit=24, mature="false"):
         self._validate_token()
-        url = f"{API_URL}collections/folders?access_token={self.access_token}&username={username}&calculate_size=" \
-              f"true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
+        query_string = "calculate_size=true&ext_preload=true&limit=25&filter_empty_folder=true&with_session=false"
+        url = f"{APIURL.api}collections/folders?access_token={self.access_token}&username={username}&{query_string}"
         response = requests.get(url)
         results = json.loads(response.content)['results']
         folder_id = [result['folderid'] for result in results if result['name'].lower() == collection_name.lower()][0]
-        collection_url = f"{API_URL}collections/{folder_id}?access_token={self.access_token}&username={username}&" \
+        collection_url = f"{APIURL.api}collections/{folder_id}?access_token={self.access_token}&username={username}&" \
                          f"limit={limit}&offset={offset}&with_session=false&mature_content={mature}"
         response = requests.get(collection_url)
         if not response.ok:
@@ -264,7 +264,7 @@ class DARest:
         return ", ".join(filtered_links)
 
     def _validate_token(self):
-        response = requests.get(f"{API_URL}placebo?access_token={self.access_token}")
+        response = requests.get(f"{APIURL.api}placebo?access_token={self.access_token}")
         if 'success' not in json.loads(response.content)["status"]:
             self.access_token = self._acquire_access_token()
 
@@ -279,11 +279,11 @@ class DARest:
         uuid_list = [result['deviationid'] for result in results]
         # not ready to support lit yet.
         ext_data = self._filter_api_image_results(results)
-        # gotta chunk it...
+        # need to chunk it...
         response = []
         for chunk in range(0, len(uuid_list), 50):
             deviation_ids = "&".join([f"""deviationids%5B%5D='{dev_id}'""" for dev_id in uuid_list[chunk:chunk + 49]])
-            response += json.loads(requests.get(f"{API_URL}deviation/metadata?{deviation_ids}&"
+            response += json.loads(requests.get(f"{APIURL.api}deviation/metadata?{deviation_ids}&"
                                                 f"access_token={self.access_token}").content)['metadata']
         return response, ext_data
 

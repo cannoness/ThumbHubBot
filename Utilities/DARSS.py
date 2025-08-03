@@ -1,10 +1,10 @@
-from Utilities.DatabaseActions import DatabaseActions
-import random
-from dotenv import load_dotenv
 import feedparser
+import random
 
-RANDOM_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=by%3A"
-FAV_RSS_URL = "https://backend.deviantart.com/rss.xml?type=deviation&q=favby%3A"
+from dotenv import load_dotenv
+
+from Settings.config import APIUrls
+from Utilities.DatabaseActions import DatabaseActions
 
 
 class DARSS:
@@ -16,7 +16,7 @@ class DARSS:
         random_users = self.db_actions.fetch_da_usernames(10)
         images = []
         for user in random_users:
-            image_feed = feedparser.parse(f"{RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall")
+            image_feed = feedparser.parse(f"{APIUrls.RANDOM_RSS_URL}{user}+sort%3Atime+meta%3Aall")
             if image_feed.status != 200:
                 print(image_feed.feed.summary, flush=True)
                 raise Exception(f"URL currently not accessible.")
@@ -31,7 +31,7 @@ class DARSS:
     @staticmethod
     def _fetch_all_user_faves_helper(username, offset=0, mature="false"):
         response = feedparser.parse(
-            f"{FAV_RSS_URL}{username}&offset={offset}&include_mature={mature}")
+            f"{APIUrls.FAV_RSS_URL}{username}&offset={offset}&include_mature={mature}")
 
         if response.status != 200:
             print(response.feed.summary, flush=True)

@@ -1,13 +1,8 @@
 from io import BytesIO
-
-import requests
 from PIL import Image, ImageDraw, ImageFont  # Import PIL functions
-import os
-from dotenv import load_dotenv
 from sqlalchemy.engine import RowMapping
 
-load_dotenv()
-FONT = os.getenv("FONT")
+from thumbhubbot import CONFIG
 
 
 class Template:  # Your template
@@ -20,7 +15,7 @@ class Template:  # Your template
 
     def draw(self):
         img = Image.new(mode="RGBA", size=(1040, 200))
-        font = ImageFont.truetype(FONT, 20)  # Loads font
+        font = ImageFont.truetype(CONFIG.font, 20)  # Loads font
         imgdraw = ImageDraw.Draw(img)  # Create a canvas
         buffer = 20
         x_pos = 20
@@ -42,9 +37,9 @@ class Template:  # Your template
         pasted = Image.new(mode="RGB", size=(150, 150))  # Opens Selected Image
         text_draw = ImageDraw.Draw(pasted)
         wrapped_text = self._get_wrapped_text(f"{clip['src_snippet'][:190]}...",
-                                              ImageFont.truetype(FONT, 12), 130)
+                                              ImageFont.truetype(CONFIG.font, 12), 130)
         text_draw.text((10, 10), wrapped_text, (255, 255, 255),
-                       font=ImageFont.truetype(FONT, 12))
+                       font=ImageFont.truetype(CONFIG.FONT, 12))
         img.paste(self._gradient(pasted), (x_pos, y_pos))
 
     def _image_thumb(self, clip, x_pos, y_pos, img):

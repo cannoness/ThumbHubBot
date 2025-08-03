@@ -1,21 +1,20 @@
 import math
 import time
-
+import random
 import sqlalchemy
-import os
 import datetime
 
 from discord.ext import commands
 from dotenv import load_dotenv
-import random
+
+from thumbhubbot import APIURL
 
 
 class DatabaseActions:
     def __init__(self):
         load_dotenv()
-
         engine = sqlalchemy.create_engine(
-            os.getenv("DATABASE_URL"),
+            APIURL.pg_db.value,
             pool_pre_ping=True
         )
         self.connection = engine.connect()
