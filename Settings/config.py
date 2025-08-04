@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class RoleEnum(enum.Enum):
     MODERATORS = "Moderators"
     THE_HUB = "The Hub"
@@ -12,6 +13,7 @@ class RoleEnum(enum.Enum):
     FREQUENT_THUMBERS = "Frequent Thumbers"
     VETERAN_THUMBERS = "Veteran Thumbers"
     VIP = "The Hub VIP"
+
 
 class Role:
     _moderators = RoleEnum.MODERATORS.value
@@ -25,24 +27,31 @@ class Role:
     @property
     def moderators(self) -> str:
         return type(self)._moderators
+
     @property
     def the_hub(self) -> str:
         return RoleEnum.THE_HUB.value
+
     @property
     def bot_sleuth(self) -> str:
         return RoleEnum.BOT_SLEUTH.value
+
     @property
     def the_peeps(self) -> str:
         return RoleEnum.THE_PEEPS.value
+
     @property
     def frequent_thumbers(self) -> str:
         return RoleEnum.FREQUENT_THUMBERS.value
+
     @property
     def veteran_thumbers(self) -> str:
         return RoleEnum.VETERAN_THUMBERS.value
+
     @property
     def vip(self) -> str:
         return RoleEnum.VIP.value
+
 
 class CooldownEnum(enum.Enum):
     DEFAULT_COOLDOWN = 1800
@@ -51,63 +60,73 @@ class CooldownEnum(enum.Enum):
     VT_COOLDOWN = 360
     POST_RATE = 1
 
+
 class Cooldown:
     _default = CooldownEnum.DEFAULT_COOLDOWN.value
     _priv = CooldownEnum.PRIV_COOLDOWN.value
     _vip = CooldownEnum.VIP_COOLDOWN.value
     _vt = CooldownEnum.VT_COOLDOWN.value
     _post_rate = CooldownEnum.POST_RATE.value
+
     @property
     def default(self) -> int:
         return CooldownEnum.DEFAULT_COOLDOWN.value
+
     @property
     def priv(self) -> int:
         return CooldownEnum.PRIV_COOLDOWN.value
+
     @property
     def vip(self) -> int:
         return CooldownEnum.VIP_COOLDOWN.value
+
     @property
     def vt(self) -> int:
         return CooldownEnum.VT_COOLDOWN.value
+
     @property
     def post_rate(self) -> int:
         return CooldownEnum.POST_RATE.value
 
-class RoleSetEnum(enum.Enum):
-    ADMINISTRATIVE = {Role.moderators, Role.the_hub, Role.the_peeps}
-    PRIVILEGED = {Role.frequent_thumbers, Role.veteran_thumbers, Role.the_peeps}
-    COOLDOWN_WHITELIST = {Role.moderators, Role.the_hub, Role.bot_sleuth, Role.the_peeps}
 
 class RoleSet:
-    _administrative = RoleSetEnum.ADMINISTRATIVE.value
-    _privileged = RoleSetEnum.PRIVILEGED.value
-    _whitelist = RoleSetEnum.COOLDOWN_WHITELIST.value
+    _administrative =  {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value}
+    _privileged = {RoleEnum.FREQUENT_THUMBERS.value, RoleEnum.VETERAN_THUMBERS.value, RoleEnum.THE_PEEPS.value}
+    _whitelist = {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value,
+                          RoleEnum.BOT_SLEUTH.value}
 
     @property
     def admins(self) -> set:
         return self._administrative
+
     @property
     def privileged(self) -> set:
         return self._privileged
+
     @property
     def whitelist(self) -> set:
         return self._whitelist
+
 
 class MaxImageCountEnum(enum.Enum):
     MOD_COUNT = 6
     PRIV_COUNT = 6
     DEV_COUNT = 4
 
+
 class MaxImageCount:
     _mod = MaxImageCountEnum.MOD_COUNT.value
     _privileged = MaxImageCountEnum.PRIV_COUNT.value
     _deviants = MaxImageCountEnum.DEV_COUNT.value
+
     @property
     def mod(self) -> int:
         return self._mod
+
     @property
     def privileged(self) -> int:
         return self._privileged
+
     @property
     def deviants(self) -> int:
         return self._deviants
@@ -123,6 +142,7 @@ class ConfigEnum(enum.Enum):
     ANNOUNCEMENTS_CHANNEL = int(os.getenv("BOT_TESTING_CHANNEL"))
     GUILD_ID: int = int(os.getenv("GUILD_ID"))
     GUILD_ADMIN: int = int(os.getenv("GUILD_ADMIN_ID"))
+    LOCAL: int = os.getenv("LOCAL")
     JSON_FILE = os.getenv("JSON_FILE")
     FONT = os.getenv("FONT")
 
@@ -139,40 +159,56 @@ class Config:
     _guild_id: int = ConfigEnum.GUILD_ID.value
     _json_file: str = ConfigEnum.JSON_FILE.value
     _font: str = ConfigEnum.FONT.value
+    _local: bool = bool(ConfigEnum.LOCAL.value) if ConfigEnum.LOCAL.value is not None else False
 
     @property
     def bot_channel(self) -> int:
         return self._bot_channel
+
     @property
     def bot_testing_range_channel(self) -> int:
         return self._bot_testing_range_channel
+
     @property
     def mod_channel(self) -> int:
         return self._mod_channel
+
     @property
     def nsfw_channel(self) -> int:
         return self._nsfw_channel
+
     @property
     def the_peeps(self) -> int:
         return self._the_peeps
+
     @property
     def thumbhub_channel(self) -> int:
         return self._thumbhub_channel
+
     @property
     def announcements_channel(self) -> int:
         return self._announcements_channel
+
     @property
     def guild_id(self) -> int:
         return self._guild_id
+
     @property
     def guild_admin(self) -> int:
         return self._admin
+
+    @property
+    def local(self) -> bool:
+        return self._local
+
     @property
     def json_file(self) -> str:
         return self._json_file
+
     @property
     def font(self) -> str:
         return type(self)._font
+
 
 class ApiUrlEnum(enum.Enum):
     AUTH_URL = "https://www.deviantart.com/oauth2/token?grant_type=client_credentials&"
@@ -185,27 +221,32 @@ class ApiUrlEnum(enum.Enum):
 
 class ApiUrl:
     _auth = ApiUrlEnum.AUTH_URL.value
-    _api = ApiUrlEnum.AUTH_URL.value
+    _api = ApiUrlEnum.API_URL.value
     _da_url = ApiUrlEnum.DA_URL.value
-    _random_rss = ApiUrlEnum.AUTH_URL.value
-    _fav_rss = ApiUrlEnum.AUTH_URL.value
-    _pg_db = ApiUrlEnum.AUTH_URL.value
+    _random_rss = ApiUrlEnum.FAV_RSS_URL.value
+    _fav_rss = ApiUrlEnum.DA_URL.value
+    _pg_db = ApiUrlEnum.PG_DB_URL.value
 
     @property
     def auth(self) -> str:
         return self._auth
+
     @property
     def api(self) -> str:
         return self._api
+
     @property
     def da_url(self) -> str:
         return self._da_url
+
     @property
     def random_rss(self) -> str:
         return self._random_rss
+
     @property
     def fav_rss(self) -> str:
         return self._fav_rss
+
     @property
     def pg_db(self) -> str:
         return self._pg_db

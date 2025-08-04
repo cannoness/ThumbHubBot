@@ -15,8 +15,8 @@ class DARest:
         load_dotenv()
         self.secret = os.getenv("DA_SECRET")  # TODO: move into secrets manager
         self.client = os.getenv("DA_CLIENT")  # TODO: move into secrets manager
-        self.db_actions = DatabaseActions()
-        self.connection = self.db_actions.connection
+        self.db_actions = DatabaseActions
+        self.db_inst = self.db_actions()
         self.access_token = self._acquire_access_token()
         self.topics = None
 
@@ -31,8 +31,9 @@ class DARest:
 
     def fetch_user_gallery(self, username, offset=0, display_num=10, no_cache=False):
         self._validate_token()
-        if no_cache or self.db_actions.user_last_cache_update(username):
-            response = self.fetch_entire_user_gallery(username, no_cache)
+        cache_entry = self.db_actions.user_last_cache_update(username)
+        if no_cache or cache_entry is not None:
+            response = self.db_inst.fetch_entire_user_gallery(cache_entry.deviant_row_id)
         else:
             display_num = 10
             response = self._filter_api_image_results(
@@ -88,12 +89,9 @@ class DARest:
             return None
         if not self.db_actions.user_last_cache_update(username) or no_cache:
             self.fetch_entire_user_gallery(username, no_cache=no_cache)
-        # use cache
-        query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id}  
-                order by favs desc 
-                limit {display_num} """
-        response = self.connection.execute(query)
+        response = self.db_actions.fetch_pop_from_cache(deviant_row_id, display_num)
         return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
+
 
     def fetch_user_old(self, username, offset=0, display_num=24, no_cache=False):
         deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
@@ -101,39 +99,25 @@ class DARest:
             return None
         if not self.db_actions.user_last_cache_update(username) or no_cache:
             self.fetch_entire_user_gallery(username, no_cache)
-        # use cache
-        query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} 
-                order by date_created asc 
-                limit {display_num} """
-        response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
+        return self.db_inst.fetch_old_from_cache(deviant_row_id, display_num, offset)
+
 
     def get_user_devs_by_tag(self, username, tags, offset=0, display_num=24, no_cache=False):
         deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
         if not deviant_row_id:
             return None
         if not self.db_actions.user_last_cache_update(username) or no_cache:
-            self.fetch_entire_user_gallery(username, no_cache)
-        # use cache
-        query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and
-                        position('{tags}' in tags) > 0
-                        order by date_created desc 
-                        limit {display_num} """
-        response = self.connection.execute(query)
-        return self.db_actions.convert_cache_to_result(response)[offset:display_num + offset]
+            self.db_actions.fetch_entire_user_gallery(username, no_cache)
+        return self.db_inst.fetch_user_devs_by_tag(deviant_row_id, display_num, offset, tags)
+
 
     def fetch_entire_user_gallery(self, username, no_cache=False):
         if no_cache or self.db_actions.user_last_cache_update(username):
             self._gallery_fetch_helper(username, no_cache)
             deviant_row_id = username if no_cache else self.db_actions.fetch_user_row_id(username)
-            # use cache
-            query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}  
-            order by date_created desc """
-            response = self.connection.execute(query)
-            return self.db_actions.convert_cache_to_result(response)
+            return self.db_inst.fetch_entire_user_gallery(deviant_row_id)
 
         # initial fetch
-
         response = self._gallery_fetch_helper(username, no_cache)
         results = response['results']
 
@@ -146,6 +130,7 @@ class DARest:
         if in_store and not no_cache:
             self._add_user_gallery_to_cache(results, username)
         return self._filter_api_image_results(results)
+
 
     def fetch_daily_deviations(self):
         self._validate_token()
@@ -206,12 +191,12 @@ class DARest:
             f"{self.access_token}&offset={offset}&display_num={display_num}")
         decoded_content = json.loads(response.content.decode("UTF-8"))
         # check if existing cache should be updated, compare last updated to published_date
-        last_updated = self.db_actions.user_last_cache_update(username)
-        if last_updated and not no_cache:
+        cache = self.db_actions.user_last_cache_update(username)
+        if cache and not no_cache:
             update_results = []
-            needs_update = (datetime.date.today() - last_updated) >= datetime.timedelta(days=7)
+            needs_update = (datetime.date.today() - cache.last_updated) >= datetime.timedelta(days=7)
             for date in decoded_content['results']:
-                if datetime.date.fromtimestamp(int(date['published_time'])) >= last_updated or needs_update:
+                if datetime.date.fromtimestamp(int(date['published_time'])) >= cache.last_updated or needs_update:
                     update_results.append(date)
                 else:
                     break  # don't keep going if you don't have to

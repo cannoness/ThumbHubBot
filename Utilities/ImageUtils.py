@@ -39,7 +39,7 @@ class Template:  # Your template
         wrapped_text = self._get_wrapped_text(f"{clip['src_snippet'][:190]}...",
                                               ImageFont.truetype(CONFIG.font, 12), 130)
         text_draw.text((10, 10), wrapped_text, (255, 255, 255),
-                       font=ImageFont.truetype(CONFIG.FONT, 12))
+                       font=ImageFont.truetype(CONFIG.font, 12))
         img.paste(self._gradient(pasted), (x_pos, y_pos))
 
     def _image_thumb(self, clip, x_pos, y_pos, img):

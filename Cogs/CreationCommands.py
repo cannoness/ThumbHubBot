@@ -26,7 +26,7 @@ class Private:
         roles = {role.name for role in ctx.author.roles}
         if not ROLESET.whitelist.isdisjoint(roles):
             return None
-        elif not ROLESET.priv.isdisjoint(roles):
+        elif not ROLESET.privileged.isdisjoint(roles):
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.priv)
         elif not ROLE.vt in roles:
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.vt)
@@ -39,9 +39,9 @@ class Private:
 class CreationCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.da_rss = DARSS()
         self.da_rest = DARest()
         self.db_actions = DatabaseActions()
-        self.da_rss = DARSS()
 
     @staticmethod
     def _check_your_privilege(ctx):
@@ -53,7 +53,9 @@ class CreationCommands(commands.Cog):
     def _set_channel(self, ctx):
         # added so we don't spam share during testing
         user_roles = [role.name for role in ctx.message.author.roles]
-        if ROLE.the_peeps in user_roles:
+        if CONFIG.local:
+            channel = self.bot.get_channel(CONFIG.bot_channel)
+        elif ROLE.the_peeps in user_roles:
             channel = ctx.message.channel
         elif str(ctx.message.channel.id) in RESPONSE_CHANNELS:
             channel = ctx.message.channel
@@ -74,17 +76,17 @@ class CreationCommands(commands.Cog):
     async def _filter_results(ctx, results, channel, username=None):
         filtered_results = None
         if results:
-            if channel.name == CONFIG.nsfw_channel:
-                filtered_results = list(filter(lambda result: result["is_mature"], results))
+            if channel.id == CONFIG.nsfw_channel:
+                filtered_results = list(filter(lambda result: result["is_mature"] == True, results))
                 if not filtered_results or len(filtered_results) < 4:  # always return something.
-                    sorted_nsfw = sorted(results, key=lambda result: result["is_mature"], reverse=True)
+                    sorted_nsfw = sorted(results, key=lambda result: result["is_mature"] == True, reverse=True)
                     if len(sorted_nsfw) >= 4:
                         return sorted_nsfw
                     else:
                         return list(filter(lambda result: result, results))  # if we tried everything else.
-            elif channel.name != CONFIG.bot_channel and channel.name != CONFIG.nsfw_channel:
-                filtered_results = list(filter(lambda result: not result["is_mature"], results))
-            elif channel.name == CONFIG.bot_channel:
+            elif channel.id != CONFIG.bot_channel and channel.id != CONFIG.nsfw_channel:
+                filtered_results = list(filter(lambda result: result["is_mature"] == False, results))
+            elif channel.id == CONFIG.bot_channel:
                 filtered_results = list(filter(lambda result: result, results))
 
         if not (results or filtered_results) and username:
@@ -180,7 +182,7 @@ class CreationCommands(commands.Cog):
                 return
             result_string = [f"[[{index + 1}](<{image['url']}>)] {image['author']}" for index, image in
                              enumerate(results[:self._check_your_privilege(ctx)])]
-            message = f"Here are some results for {topic.title()}: {", ".join(result_string)}"
+            message = f"Here are some results for {topic.title()}: {', '.join(result_string)}"
             await self._send_art_results(ctx, channel, filtered_results, message,
                                          username=ctx.message.author.display_name)
 
@@ -262,6 +264,20 @@ class CreationCommands(commands.Cog):
         try:
             # results = self.da_rest.get_topic(topic, offset)
             await channel.send("Coming soon!")
+        except Exception as ex:
+            print(f"{ex} not implemented", flush=True)
+
+    @commands.command(name='tormund')
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def tormund(self, ctx):
+        channel = self._set_channel(ctx)
+        if not channel:
+            return
+        try:
+            shuffled_results = self.db_actions.get_tormund()
+            message = f'''Random Tormund:'''
+            await self._send_art_results(ctx, channel, shuffled_results, message,
+                                         username=ctx.message.author.display_name)
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
@@ -379,7 +395,7 @@ class CreationCommands(commands.Cog):
                 ctx.command.reset_cooldown(ctx)
                 return
             filtered_results = await self._filter_results(ctx, results, channel, username)
-            if not filtered_results:
+            if not filtered_results or len(filtered_results) == 0:
                 await channel.send("No results found in that gallery, please try again.")
                 ctx.command.reset_cooldown(ctx)
                 return
