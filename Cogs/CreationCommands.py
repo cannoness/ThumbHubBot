@@ -50,18 +50,6 @@ class CreationCommands(commands.Cog):
         mod_or_admin = not ROLESET.whitelist.isdisjoint(user_roles)
         return MAXCOUNT.privileged if privileged else MAXCOUNT.mod if mod_or_admin else MAXCOUNT.deviants
 
-    @staticmethod
-    def _cooldown_count(ctx):
-        roles = {role.name for role in ctx.author.roles}
-        if not ROLESET.privileged.isdisjoint(roles):
-            return COOLDOWN.priv
-        elif not ROLE.vt in roles:
-            return  COOLDOWN.vt
-        elif ROLE.vip in roles:
-            return COOLDOWN.vip
-        else:
-            return COOLDOWN.default
-
     def _set_channel(self, ctx):
         # added so we don't spam share during testing
         user_roles = [role.name for role in ctx.message.author.roles]
@@ -109,26 +97,26 @@ class CreationCommands(commands.Cog):
         return filtered_results
 
     # noinspection RegExpRedundantEscape
-    def _manage_mentions(self, ctx, username, usernames, display):
+    def _manage_mentions(self, ctx, username, usernames):
         if not usernames:
             ping_user = self.db_actions.fetch_discord_id(username) if username else None
             return ctx.message.guild.get_member(ping_user).mention if ping_user else username
         else:
             mention_string = []
-            for user in usernames[:display]:
+            for user in usernames:
                 pattern = r"{[^]]*\}"
-                da_username = re.findall(pattern, user)[0][1:-1]
-                ping_user = self.db_actions.fetch_discord_id(da_username)
+                username = re.findall(pattern, user)[0][1:-1]
+                ping_user = self.db_actions.fetch_discord_id(username)
                 discord_user = ctx.message.guild.get_member(ping_user)
                 if discord_user is not None:
-                    mention_string.append(re.sub(pattern, lambda x: x.group(0).replace(f"{{{da_username}}}",
+                    mention_string.append(re.sub(pattern, lambda x: x.group(0).replace(f"{{{username}}}",
                                                                                  discord_user.mention),
                                                  user) if discord_user is not None else mention_string.append(
-                        re.sub(pattern, lambda x: x.group(0).replace(f"{{{da_username}}}",
-                                                               da_username), user)))
+                        re.sub(pattern, lambda x: x.group(0).replace(f"{{{username}}}",
+                                                               username), user)))
                 else:
                     mention_string.append(
-                        re.sub(pattern, lambda x: x.group(0).replace(f"{{{da_username}}}", da_username), user))
+                        re.sub(pattern, lambda x: x.group(0).replace(f"{{{username}}}", username), user))
             return ", ".join(mention_string)
 
     async def _send_art_results(self, ctx, channel: discord.TextChannel, in_results, message, username=None,
@@ -142,7 +130,7 @@ class CreationCommands(commands.Cog):
         if not results:
             return
 
-        mention_string = self._manage_mentions(ctx, username, usernames, display)
+        mention_string = self._manage_mentions(ctx, username, usernames)
         if not usernames:
             final_message = message.format(mention_string)
         else:
@@ -208,11 +196,6 @@ class CreationCommands(commands.Cog):
     @commands.command(name='myart')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_art(self, ctx, *args):
-        if ctx.author.id in ctx.cog.art._buckets._cache:
-            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
-            raise commands.errors.CommandOnCooldown(
-                cooldown=cooldown, type=commands.BucketType.user, retry_after=1800 + (cooldown._window - cooldown._last)
-            )
         channel = self._set_channel(ctx)
         if not channel:
             return
@@ -387,14 +370,9 @@ class CreationCommands(commands.Cog):
     async def why_easter_egg(self, ctx):
         await ctx.send("42")
 
-    @commands.command(name='art', cooldown_after_parsing=True)
+    @commands.command(name='art')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username, *args, channel=None):
-        if ctx.author.id in ctx.cog.my_art._buckets._cache:
-            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
-            raise commands.errors.CommandOnCooldown(
-                cooldown=cooldown, type=commands.BucketType.user, retry_after=1800 + (cooldown._window - cooldown._last)
-            )
         try:
             parsed_args = self._parse_args(*args)
             if not channel:
@@ -433,28 +411,16 @@ class CreationCommands(commands.Cog):
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
 
-    @commands.command(name='myfavs', cooldown_after_parsing=True)
+    @commands.command(name='myfavs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
-        if ctx.author.id in ctx.cog.favs._buckets._cache:
-            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
-            raise commands.errors.CommandOnCooldown(
-                cooldown=cooldown, type=commands.BucketType.user,
-                retry_after=self._cooldown_count(ctx) + (cooldown._window - cooldown._last)
-            )
         username = await self._check_store(ctx)
         channel = self._set_channel(ctx)
         await self.favs(ctx, username, *args, channel=channel)
 
-    @commands.command(name='favs', cooldown_after_parsing=True)
+    @commands.command(name='favs')
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, *args, channel=None):
-        if ctx.author.id in ctx.cog.my_favs._buckets._cache:
-            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
-            raise commands.errors.CommandOnCooldown(
-                cooldown=cooldown, type=commands.BucketType.user,
-                retry_after=self._cooldown_count(ctx) + (cooldown._window - cooldown._last)
-            )
         if not channel:
             channel = self._set_channel(ctx)
 
@@ -475,10 +441,8 @@ class CreationCommands(commands.Cog):
                 results, links = self.da_rest.get_user_favs_by_collection(
                     username, arg['collection'], offset, display_num, nsfw
                 )
-            elif rnd:
-                results, links = self.da_rss.randomized_user_favs(username, offset)
             else:
-                results, links = self.da_rss.get_user_favs(username, offset)
+                results, links = self.da_rss.get_user_favs(username, offset, display_num, rnd)
 
             if len(results) == 0 and username:
                 await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
