@@ -148,7 +148,6 @@ class ConfigEnum(enum.Enum):
 
 
 class Config:
-    print(ConfigEnum.LOCAL.value, flush=True)
     _admin: int = ConfigEnum.GUILD_ADMIN.value
     _bot_channel: int = ConfigEnum.BOT_TESTING_CHANNEL.value
     _mod_channel: int = ConfigEnum.MOD_CHANNEL.value
