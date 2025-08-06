@@ -80,7 +80,8 @@ class CreationCommands(commands.Cog):
                 filtered_results = list(filter(lambda result: result["is_mature"] == True, results))
                 if not filtered_results or len(filtered_results) < 4:  # always return something.
                     sorted_nsfw = sorted(
-                        results, key=lambda result: result["is_mature"] == "True" or result["is_mature"] == True,
+                        results, key=lambda result: result["is_mature"] == "True" or result["is_mature"] == True
+                        or result["is_mature"] == "true",
                         reverse=True
                     )
                     if len(sorted_nsfw) >= 4:
@@ -89,7 +90,8 @@ class CreationCommands(commands.Cog):
                         return list(filter(lambda result: result, results))  # if we tried everything else.
             elif channel.id != CONFIG.bot_channel and channel.id != CONFIG.nsfw_channel:
                 filtered_results = list(filter(
-                    lambda result: result["is_mature"] == "False" or result["is_mature"] == False, results
+                    lambda result: result["is_mature"] == "False" or result["is_mature"] == "false" or
+                                   (isinstance(result["is_mature"], bool) and result["is_mature"] is False), results
                 ))
             elif channel.id == CONFIG.bot_channel:
                 filtered_results = list(filter(lambda result: result, results))
