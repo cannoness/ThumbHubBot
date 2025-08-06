@@ -375,19 +375,22 @@ def initial_add_to_cache(results, row_id):
         #         f"title=excluded.title, tags=excluded.tags, is_mature=excluded.is_mature, src_image=excluded.src_image, " \
         #         f"src_snippet=excluded.src_snippet"
 
-        deviation_insert = insert(creations.Creations).values(
-            deviant_user_row=row_id, url=result['url'], src_image=result['src_image'], src_snippet=clean_snippet,
-            title=clean_title, favs=result['stats']['favourites'], tags=tags, date_created=formatted_dt,
-            is_mature=result['is_mature']
-        )
-        deviation_insert.on_conflict_do_update(
-            constraint="url", set_=dict(
-                favs=deviation_insert.excluded.favs, title=deviation_insert.excluded.title,
-                tags=deviation_insert.excluded.tags, is_mature=deviation_insert.excluded.is_mature,
-                src_image=deviation_insert.excluded.src_image, src_snippet=deviation_insert.excluded.src_snippet
-            )
-        )
-        _session_execute(deviation_insert)
+        with env.BotSessionLocal() as db:
+            in_cache = db.scalars(select(creations.Creations).where(
+                creations.Creations.url == result['url']
+            )).first()
+            if in_cache:
+
+                in_cache.favorites = result['stats']['favourites']
+                db.commit()
+            else:
+                deviation_insert = creations.Creations(
+                    deviant_user_row=row_id, url=result['url'], src_image=result['src_image'], src_snippet=clean_snippet,
+                    title=clean_title, favs=result['stats']['favourites'], tags=tags, date_created=formatted_dt,
+                    is_mature=result['is_mature']
+                )
+                db.add(deviation_insert)
+                db.commit()
         update_da_cache(row_id)
 
 
