@@ -5,6 +5,7 @@ import time
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func, desc, update, asc, select
+from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import now, random as sqrandom
 
 from Utilities.database.postgres import env
@@ -387,8 +388,14 @@ def initial_add_to_cache(results, row_id):
 def update_da_cache(row_id):
     # query = (f"INSERT INTO cache_updated_date (deviant_row_id) VALUES ({row_id}) ON CONFLICT "
     #          f"(deviant_row_id) DO UPDATE SET last_updated = now()")
-    cache_update = insert(cache.Cache).values(
-        deviant_row_id=row_id
-    )
-    cache_update.on_conflict_do_update(constraint="deviant_row_id", set_=dict(last_updated=now()))
-    _session_execute(cache_update)
+    with env.BotSessionLocal() as db:
+        in_cache = db.scalars(select(cache.Cache).where(
+            cache.Cache.deviant_row_id == row_id
+        )).first()
+        if in_cache:
+            add_query = update(cache.Cache).values(last_updated=now()).where(
+                hubcoins.Hubcoins.deviant_row_id == row_id)
+            return db.execute(add_query)
+
+        db.add(cache.Cache(deviant_row_id=row_id))
+        db.commit()
