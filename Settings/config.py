@@ -13,6 +13,7 @@ class RoleEnum(enum.Enum):
     FREQUENT_THUMBERS = "Frequent Thumbers"
     VETERAN_THUMBERS = "Veteran Thumbers"
     VIP = "The Hub VIP"
+    DEVIANTS = "Deviants"
 
 
 class Role:
@@ -23,6 +24,7 @@ class Role:
     _frequent_thumbers = RoleEnum.FREQUENT_THUMBERS.value
     _veteran_thumbers = RoleEnum.VETERAN_THUMBERS.value
     _vip = RoleEnum.VIP.value
+    _deviants = RoleEnum.DEVIANTS.value
 
     @property
     def moderators(self) -> str:
@@ -30,27 +32,31 @@ class Role:
 
     @property
     def the_hub(self) -> str:
-        return RoleEnum.THE_HUB.value
+        return self._the_hub
 
     @property
     def bot_sleuth(self) -> str:
-        return RoleEnum.BOT_SLEUTH.value
+        return self._bot_sleuth
 
     @property
     def the_peeps(self) -> str:
-        return RoleEnum.THE_PEEPS.value
+        return self._the_peeps
 
     @property
     def frequent_thumbers(self) -> str:
-        return RoleEnum.FREQUENT_THUMBERS.value
+        return self._frequent_thumbers
 
     @property
     def veteran_thumbers(self) -> str:
-        return RoleEnum.VETERAN_THUMBERS.value
+        return self._veteran_thumbers
 
     @property
     def vip(self) -> str:
-        return RoleEnum.VIP.value
+        return self._vip
+
+    @property
+    def deviants(self) -> str:
+        return self._deviants
 
 
 class CooldownEnum(enum.Enum):
@@ -70,28 +76,28 @@ class Cooldown:
 
     @property
     def default(self) -> int:
-        return CooldownEnum.DEFAULT_COOLDOWN.value
+        return self._default
 
     @property
     def priv(self) -> int:
-        return CooldownEnum.PRIV_COOLDOWN.value
+        return self._priv
 
     @property
     def vip(self) -> int:
-        return CooldownEnum.VIP_COOLDOWN.value
+        return self._vip
 
     @property
     def vt(self) -> int:
-        return CooldownEnum.VT_COOLDOWN.value
+        return self._vt
 
     @property
     def post_rate(self) -> int:
-        return CooldownEnum.POST_RATE.value
+        return self._post_rate
 
 
 class RoleSet:
     _administrative =  {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value}
-    _privileged = {RoleEnum.FREQUENT_THUMBERS.value, RoleEnum.VETERAN_THUMBERS.value, RoleEnum.THE_PEEPS.value}
+    _privileged = {RoleEnum.VETERAN_THUMBERS.value, RoleEnum.THE_PEEPS.value}
     _whitelist = {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value,
                           RoleEnum.BOT_SLEUTH.value}
 

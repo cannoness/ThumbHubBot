@@ -28,7 +28,7 @@ class Private:
             return None
         elif not ROLESET.privileged.isdisjoint(roles):
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.priv)
-        elif not ROLE.vt in roles:
+        elif not ROLE.veteran_thumbers in roles:
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.vt)
         elif ROLE.vip in roles:
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.vip)

@@ -285,15 +285,15 @@ def get_all_expiring_roles():
     # query = f""" SELECT * from role_assignment_date"""
     with env.BotSessionLocal() as db:
         rows = db.scalars(select(cache.RoleColorAssignment)).all()
-    current_time = datetime.datetime.now()
-    compare_against = time.mktime(current_time.timetuple())
-    roles_expiring = []
-    for row in rows:
-        timestamp = row.last_added_timestamp
-        comparison = time.mktime(timestamp.timetuple())
-        if abs(comparison - compare_against) > 604800:
-            roles_expiring.append([row.discord_id, row.role_color])
-    return roles_expiring
+        current_time = datetime.datetime.now()
+        compare_against = time.mktime(current_time.timetuple())
+        roles_expiring = []
+        for row in rows:
+            timestamp = row.last_added_timestamp
+            comparison = time.mktime(timestamp.timetuple())
+            if abs(comparison - compare_against) > 604800:
+                roles_expiring.append([row.discord_id, row.role_color])
+        return roles_expiring
 
 
 def refresh_message_counts():
@@ -306,14 +306,20 @@ def diminish_coins_added(deviant_id):
     #             ON CONFLICT (deviant_id)
     #             DO UPDATE set message_count = diminishing_returns_table.message_count + 1
     #             RETURNING message_count """
-    diminish_query = insert(dr.DiminishingReturns).values(deviant_id=deviant_id)
-    diminish_query.on_conflict_do_update(
-        constraint="deviant_id", set_=dict(message_count=diminish_query.excluded.message_count + 1)
-    )
-    diminish_by = _session_execute(diminish_query).first()
+
+    with env.BotSessionLocal() as db:
+        diminished = db.scalars(select(dr.DiminishingReturns).filter_by(deviant_id=deviant_id)).first()
+        if diminished:
+            diminished.message_count = diminished.message_count + 1
+            db.commit()
+        else:
+            diminished = dr.DiminishingReturns(deviant_id=deviant_id, message_count=1)
+            db.add(diminished)
+            db.commit()
+        diminished_by = diminished.message_count
     max_percent_reduction = 0.95
     k = 0.043
-    return round(max_percent_reduction * (1 - math.exp(-k * diminish_by[0])), 6)
+    return round(max_percent_reduction * (1 - math.exp(-k * diminished_by)), 6)
 
 
 def fetch_da_usernames(num):
@@ -394,7 +400,7 @@ def update_da_cache(row_id):
         )).first()
         if in_cache:
             add_query = update(cache.Cache).values(last_updated=now()).where(
-                hubcoins.Hubcoins.deviant_row_id == row_id)
+                hubcoins.Hubcoins.discord_id == row_id)
             return db.execute(add_query)
 
         db.add(cache.Cache(deviant_row_id=row_id))
