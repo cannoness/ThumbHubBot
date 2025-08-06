@@ -223,8 +223,8 @@ class ApiUrl:
     _auth = ApiUrlEnum.AUTH_URL.value
     _api = ApiUrlEnum.API_URL.value
     _da_url = ApiUrlEnum.DA_URL.value
-    _random_rss = ApiUrlEnum.FAV_RSS_URL.value
-    _fav_rss = ApiUrlEnum.DA_URL.value
+    _random_rss = ApiUrlEnum.RANDOM_RSS_URL.value
+    _fav_rss = ApiUrlEnum.FAV_RSS_URL.value
     _pg_db = ApiUrlEnum.PG_DB_URL.value
 
     @property

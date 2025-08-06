@@ -320,9 +320,8 @@ def fetch_da_usernames(num):
     with env.BotSessionLocal() as db:
         da_usernames = db.scalars(select(users.Hubbers.deviant_username).where(
             users.Hubbers.deviant_username is not None)).all()
-    query_results = ["".join(name_tuple) for name_tuple in da_usernames]
-    random.shuffle(query_results)
-    return query_results[:num]
+        random.shuffle(da_usernames)
+        return da_usernames[:num]
 
 
 def get_random_images(num):

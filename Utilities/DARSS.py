@@ -16,7 +16,9 @@ class DARSS:
         random_users = self.db_actions.fetch_da_usernames(10)
         images = []
         for user in random_users:
-            image_feed = feedparser.parse(f"{APIURL.random_rss}{user}+sort%3Atime+meta%3Aall")
+            address = f"{APIURL.random_rss}{user}+sort%3Atime+meta%3Aall"
+            print(address,flush=True)
+            image_feed = feedparser.parse(address)
             if image_feed.status != 200:
                 print(image_feed.feed.summary, flush=True)
                 raise Exception(f"URL currently not accessible.")
@@ -30,25 +32,27 @@ class DARSS:
 
     @staticmethod
     def _fetch_all_user_faves_helper(username, offset=0, mature="false"):
-        response = feedparser.parse(
-            f"{APIURL.fav_rss}{username}&offset={offset}&include_mature={mature}")
-
+        response = feedparser.parse(f"{APIURL.fav_rss}{username}&offset={offset}&include_mature={mature}")
         if response.status != 200:
             print(response.feed.summary, flush=True)
-            raise Exception(f"URL currently not accessible.")
-        return response
+            raise Exception(f"Favs URL currently not accessible for this user.")
+        return response.entries
 
-    def get_user_favs(self, username, offset=0, num=24, randomized=False, mature="false"):
-        # initial fetch
-        # revisit this...
-        response = self._fetch_all_user_faves_helper(username, offset, mature)
-        images = response.entries
-        if randomized:
-            while len(response['feed']['links']) >= 1 and len(images) < 100:
-                url = response['feed']['links'][-1]['href']
-                response = feedparser.parse(url)
-                images += response.entries
-        results = self._shuffle_and_apply_filter(images, randomized)
+    def get_user_favs(self, username, offset=0, num=24, mature="false"):
+        images = self._fetch_all_user_faves_helper(username, offset, mature)
+        results = self._shuffle_and_apply_filter(images)
+        return self._rss_image_helper(results, num)
+
+    def randomized_user_favs(self, username, offset=0, num=24, mature="false"):
+        images = []
+        response = feedparser.parse(f"{APIURL.fav_rss}{username}&offset={offset}&include_mature={mature}")
+        while len(images) < 100:
+            images += response.entries
+            if len(response['feed']['links']) == 0:
+                break
+            url = response['feed']['links'][-1]['href']
+            response = feedparser.parse(url)
+        results = self._shuffle_and_apply_filter(images, True)
         return self._rss_image_helper(results, num)
 
     def _rss_image_helper(self, results, num):
