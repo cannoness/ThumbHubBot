@@ -53,11 +53,11 @@ class CreationCommands(commands.Cog):
     def _set_channel(self, ctx):
         # added so we don't spam share during testing
         user_roles = [role.name for role in ctx.message.author.roles]
-        if CONFIG.local is not None and CONFIG.local is True:
+        if CONFIG.local is True:
             channel = self.bot.get_channel(CONFIG.bot_channel)
         elif ROLE.the_peeps in user_roles:
             channel = ctx.message.channel
-        elif str(ctx.message.channel.id) in RESPONSE_CHANNELS:
+        elif ctx.message.channel.id in RESPONSE_CHANNELS:
             channel = ctx.message.channel
         elif ctx.message.channel.id == CONFIG.bot_channel:
             channel = self.bot.get_channel(CONFIG.bot_channel)
@@ -79,13 +79,18 @@ class CreationCommands(commands.Cog):
             if channel.id == CONFIG.nsfw_channel:
                 filtered_results = list(filter(lambda result: result["is_mature"] == True, results))
                 if not filtered_results or len(filtered_results) < 4:  # always return something.
-                    sorted_nsfw = sorted(results, key=lambda result: result["is_mature"] == True, reverse=True)
+                    sorted_nsfw = sorted(
+                        results, key=lambda result: result["is_mature"] == "True" or result["is_mature"] == True,
+                        reverse=True
+                    )
                     if len(sorted_nsfw) >= 4:
                         return sorted_nsfw
                     else:
                         return list(filter(lambda result: result, results))  # if we tried everything else.
             elif channel.id != CONFIG.bot_channel and channel.id != CONFIG.nsfw_channel:
-                filtered_results = list(filter(lambda result: result["is_mature"] == False, results))
+                filtered_results = list(filter(
+                    lambda result: result["is_mature"] == "False" or result["is_mature"] == False, results
+                ))
             elif channel.id == CONFIG.bot_channel:
                 filtered_results = list(filter(lambda result: result, results))
 
