@@ -142,12 +142,13 @@ class ConfigEnum(enum.Enum):
     ANNOUNCEMENTS_CHANNEL = int(os.getenv("BOT_TESTING_CHANNEL"))
     GUILD_ID: int = int(os.getenv("GUILD_ID"))
     GUILD_ADMIN: int = int(os.getenv("GUILD_ADMIN_ID"))
-    LOCAL: int = os.getenv("LOCAL")
+    LOCAL: int = os.getenv("LOCAL") or False
     JSON_FILE = os.getenv("JSON_FILE")
     FONT = os.getenv("FONT")
 
 
 class Config:
+    print(ConfigEnum.LOCAL.value, flush=True)
     _admin: int = ConfigEnum.GUILD_ADMIN.value
     _bot_channel: int = ConfigEnum.BOT_TESTING_CHANNEL.value
     _mod_channel: int = ConfigEnum.MOD_CHANNEL.value
@@ -223,8 +224,8 @@ class ApiUrl:
     _auth = ApiUrlEnum.AUTH_URL.value
     _api = ApiUrlEnum.API_URL.value
     _da_url = ApiUrlEnum.DA_URL.value
-    _random_rss = ApiUrlEnum.FAV_RSS_URL.value
-    _fav_rss = ApiUrlEnum.DA_URL.value
+    _random_rss = ApiUrlEnum.RANDOM_RSS_URL.value
+    _fav_rss = ApiUrlEnum.FAV_RSS_URL.value
     _pg_db = ApiUrlEnum.PG_DB_URL.value
 
     @property
