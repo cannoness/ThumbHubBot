@@ -400,7 +400,7 @@ def update_da_cache(row_id):
         )).first()
         if in_cache:
             add_query = update(cache.Cache).values(last_updated=now()).where(
-                hubcoins.Hubcoins.discord_id == row_id)
+                cache.Cache.deviant_row_id == row_id)
             return db.execute(add_query)
 
         db.add(cache.Cache(deviant_row_id=row_id))
