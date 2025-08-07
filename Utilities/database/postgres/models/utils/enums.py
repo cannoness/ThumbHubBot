@@ -8,6 +8,7 @@ class Category(Enum):
     LITERATURE = 3
     TRADITIONALART = 4
 
+
 class RoleColor(Enum):  # TODO: Fill out.
     MINT_MOD = "Mint (mod)"
     RED_FT = "Red (FT)"

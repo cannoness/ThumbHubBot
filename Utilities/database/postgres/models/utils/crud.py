@@ -5,7 +5,6 @@ import time
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func, desc, update, asc, select
-from sqlalchemy.orm import Session
 from sqlalchemy.sql.functions import now, random as sqrandom
 
 from Utilities.database.postgres import env
@@ -46,11 +45,14 @@ def daily_clear():
 def store_da_name(discord_id, username):
     # f"INSERT INTO deviant_usernames (discord_id, deviant_username) VALUES ({discord_id}, '{username}') " \
     #         f"ON CONFLICT (discord_id) DO UPDATE SET deviant_username=excluded.deviant_username"
-    new_hubber = insert(users.Hubbers).values(discord_id=discord_id, username=username)
-    new_hubber.on_conflict_do_update(
-        constraint="discord_id", set_=dict(deviant_username=new_hubber.excluded.deviant_username)
-    )
-    _session_execute(new_hubber)
+    with env.BotSessionLocal() as db:
+        new_hubber = users.Hubbers(discord_id=discord_id, deviant_username=username)
+        new_hubber_exists = db.scalars(select(users.Hubbers).filter_by(discord_id=discord_id)).first()
+        if new_hubber_exists:
+            new_hubber_exists.deviant_username = username
+            return db.commit()
+        db.add(new_hubber)
+        return db.commit()
 
 
 def store_random_da_name(username):
@@ -88,14 +90,13 @@ def fetch_username(discord_id):
     #     return result._mapping["deviant_username"]
     # return int(result._mapping["id"])
     with env.BotSessionLocal() as db:
-        selected_user = db.scalars(select(users.Hubbers).where(
-            users.Hubbers.discord_id == discord_id and users.Hubbers.ping_me == False
-        )).first()
+        selected_user = db.scalars(select(users.Hubbers).filter_by(discord_id=discord_id)).first()
     if selected_user is None:
         return None
     if selected_user.deviant_username is not None:
         return selected_user.deviant_username
     return selected_user.id
+
 
 def fetch_pop_from_cache(deviant_row_id, display_num):
     # query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id}
@@ -118,8 +119,9 @@ def fetch_entire_user_gallery(deviant_row_id):
         return db.scalars(select(creations.Creations).where(
             creations.Creations.deviant_user_row == deviant_row_id
         ).order_by(
-                desc(creations.Creations.date_created)
+            desc(creations.Creations.date_created)
         )).all()
+
 
 def fetch_user_devs_by_tag(deviant_row_id, display_num, tags):
     # query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and
@@ -137,18 +139,20 @@ def fetch_user_devs_by_tag(deviant_row_id, display_num, tags):
             display_num
         )).all()
 
+
 def fetch_old_from_cache(deviant_row_id, display_num):
     # query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id}
     #         order by date_created asc
     #         limit {display_num} """
     with env.BotSessionLocal() as db:
         return db.scalars(select(creations.Creations).filter(
-                creations.Creations.deviant_user_row == deviant_row_id
-            ).order_by(
-                asc(creations.Creations.date_created)
-            ).limit(
-                display_num
-            )).all()
+            creations.Creations.deviant_user_row == deviant_row_id
+        ).order_by(
+            asc(creations.Creations.date_created)
+        ).limit(
+            display_num
+        )).all()
+
 
 def get_tormund():
     with env.BotSessionLocal() as db:
@@ -161,7 +165,8 @@ def get_tormund():
         )).all()
         return results
 
-def fetch_discord_id(username):
+
+def fetch_discord_id(username: str):
     # query = f"Select discord_id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " \
     #         f"and ping_me = true" if isinstance(username, str) else \
     #     f"Select discord_id from deviant_usernames where id = {username} " \
@@ -184,8 +189,8 @@ def add_coins(discord_id, username):
 
         with env.BotSessionLocal() as db:
             possible_id = db.scalars(select(users.Hubbers).where(
-                    func.lower(users.Hubbers.deviant_username) == username.lower()
-                )).first() if isinstance(username, str) else \
+                func.lower(users.Hubbers.deviant_username) == username.lower()
+            )).first() if isinstance(username, str) else \
                 db.scalars(select(users.Hubbers).where(
                     users.Hubbers.id == username
                 )).first()
@@ -216,9 +221,7 @@ def get_hubcoins(discord_id, column):
     # get current coins and return the count
     # query = f""" SELECT {column} from hubcoins where discord_id = {discord_id} """
     with env.BotSessionLocal() as db:
-        coins = db.scalars(select(hubcoins.Hubcoins).where(
-            hubcoins.Hubcoins.discord_id == discord_id
-        )).first()
+        coins = db.scalars(select(hubcoins.Hubcoins).filter_by(discord_id=discord_id)).first()
         if coins is not None:
             return getattr(coins, column, 0)
         else:
@@ -228,11 +231,14 @@ def get_hubcoins(discord_id, column):
             return 0
 
 
-def update_coins(discord_id, amount):
+def update_coins(discord_id: int, amount: int):
     coins = get_hubcoins(discord_id, "hubcoins")
     # add_query = f""" UPDATE hubcoins set hubcoins = {coins + amount} where discord_id = {discord_id} """
-    add_query = update(hubcoins.Hubcoins).values(hubcoins=coins + amount).where(
-        hubcoins.Hubcoins.discord_id == discord_id)
+    add_query = update(hubcoins.Hubcoins).values(
+        hubcoins=coins + amount
+    ).where(
+        hubcoins.Hubcoins.discord_id == discord_id
+    )
     _session_execute(add_query)
     if amount < 0:
         # spent_query = f""" UPDATE hubcoins set spent_coins = spent_coins - {amount} where discord_id = {
@@ -247,7 +253,7 @@ def get_role_added(discord_id, column):
     # get current coins and return the count
     # query = f""" SELECT {column} from role_assignment_date where discord_id = {discord_id} """
     with env.BotSessionLocal() as db:
-        row = db.scalars(select(cache.RoleColorAssignment).filter_by(
+        row = db.scalars(select(cache.RoleColorAssignment).filter(
             cache.RoleColorAssignment.discord_id == discord_id
         )).first()
         return row.get(column, 0)
@@ -272,7 +278,7 @@ def add_role_timer(discord_id, role_color):
         )).first()
 
 
-def delete_role(discord_ids):
+def delete_role(discord_ids: list[int]):
     # query = f""" DELETE from role_assignment_date where discord_id in ({", ".join(discord_ids)}) """
     with env.BotSessionLocal() as db:
         rows = db.scalars(select(cache.RoleColorAssignment).filter(
@@ -331,7 +337,7 @@ def fetch_da_usernames(num):
         return da_usernames[:num]
 
 
-def get_random_images(num):
+def get_n_random_creations(num):
     # query = f"""SELECT title, is_mature, url, src_image, src_snippet , deviant_username as author
     #             FROM deviant_usernames INNER JOIN deviations
     #             ON deviations.deviant_user_row = deviant_usernames.id order by random() limit {num} """
@@ -344,54 +350,63 @@ def get_random_images(num):
         return results, _generate_links(results, num)
 
 
-def user_last_cache_update(username):
-    user_id_row = fetch_user_row_id(username)
+def hubber_has_new_creations(username, decoded_results) -> bool:
+    cache_entry = user_last_cache_update(username)
+    needs_update = (datetime.date.today() - cache_entry.last_updated) >= datetime.timedelta(days=7)
+    for date in decoded_results:
+        if datetime.date.fromtimestamp(int(date['published_time'])) >= cache_entry.last_updated or needs_update:
+            return True
+    return False
+
+
+def user_last_cache_update(username) -> cache.Cache.last_updated:
+    user_id_row = fetch_hubber_row_id(username)
     if not user_id_row:
         return None
     with env.BotSessionLocal() as db:
         # query = f"""SELECT last_updated from cache_updated_date where deviant_row_id = {user_id_row}"""
-        last_updated = db.scalars(select(cache.Cache).filter_by(deviant_row_id=user_id_row)).first()
-    return last_updated
+        cache_entry = db.scalars(select(cache.Cache).filter_by(deviant_row_id=user_id_row)).first()
+    return cache_entry
 
 
-def fetch_user_row_id(username):
+def fetch_hubber_row_id(username: str | int):
     # query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " if \
     #     isinstance(username, str) else \
     #     f"Select id from deviant_usernames where id = {username} "
     with env.BotSessionLocal() as db:
         result = db.scalars(select(users.Hubbers.id).where(
             func.lower(users.Hubbers.deviant_username) == username.lower()
-        )).first() \
-            if isinstance(username, str) else \
-            db.scalars(select(users.Hubbers.id).filter_by(id=username)).first()
-    return result
+        )).first()
+        if result is None:
+            return username
+        return result
 
 
 def initial_add_to_cache(results, row_id):
-    for result in results:
-        clean_snippet, clean_title, formatted_dt, tags = format_cache_result(result)
-        # query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \
-        #         f"date_created, is_mature) VALUES {values_list} ON CONFLICT (url) DO UPDATE set favs=excluded.favs, " \
-        #         f"title=excluded.title, tags=excluded.tags, is_mature=excluded.is_mature, src_image=excluded.src_image, " \
-        #         f"src_snippet=excluded.src_snippet"
 
-        with env.BotSessionLocal() as db:
+    with env.BotSessionLocal() as db:
+        for result in results:
+            clean_snippet, clean_title, formatted_dt, tags = format_cache_result(result)
+            # query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \
+            #     f"date_created, is_mature) VALUES {values_list} ON CONFLICT (url) DO UPDATE set favs=excluded.favs, "
+            #     f"title=excluded.title, tags=excluded.tags, is_mature=excluded.is_mature, "
+            #     f"src_image=excluded.src_image, src_snippet=excluded.src_snippet"
             in_cache = db.scalars(select(creations.Creations).where(
                 creations.Creations.url == result['url']
             )).first()
             if in_cache:
 
                 in_cache.favorites = result['stats']['favourites']
-                db.commit()
             else:
                 deviation_insert = creations.Creations(
-                    deviant_user_row=row_id, url=result['url'], src_image=result['src_image'], src_snippet=clean_snippet,
+                    deviant_user_row=row_id, url=result['url'], src_image=result['src_image'],
+                    src_snippet=clean_snippet,
                     title=clean_title, favs=result['stats']['favourites'], tags=tags, date_created=formatted_dt,
                     is_mature=result['is_mature']
                 )
                 db.add(deviation_insert)
-                db.commit()
-        update_da_cache(row_id)
+        db.commit()
+    update_da_cache(row_id)
 
 
 def update_da_cache(row_id):
@@ -402,9 +417,17 @@ def update_da_cache(row_id):
             cache.Cache.deviant_row_id == row_id
         )).first()
         if in_cache:
-            add_query = update(cache.Cache).values(last_updated=now()).where(
-                cache.Cache.deviant_row_id == row_id)
-            return db.execute(add_query)
-
-        db.add(cache.Cache(deviant_row_id=row_id))
+            in_cache.last_updated = now()
+        else:
+            db.add(cache.Cache(deviant_row_id=row_id))
         db.commit()
+
+
+def get_random_creations_by_hubber(deviant_user_row):
+    with env.BotSessionLocal() as db:
+        results = db.scalars(select(creations.Creations).filter_by(
+            deviant_user_row=deviant_user_row
+        ).order_by(
+            sqrandom()
+        )).all()
+        return results

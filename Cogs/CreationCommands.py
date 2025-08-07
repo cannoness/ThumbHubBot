@@ -1,5 +1,4 @@
 import re
-import random
 import discord
 import requests
 
@@ -12,6 +11,7 @@ from Utilities.DARest import DARest
 from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
 from Utilities.ImageUtils import Template
+from Utilities.utilities import helpers
 from thumbhubbot import COOLDOWN, MAXCOUNT, CONFIG, ROLESET, ROLE, APIURL
 
 RESPONSE_CHANNELS = [CONFIG.thumbhub_channel, CONFIG.nsfw_channel, CONFIG.the_peeps, CONFIG.bot_testing_range_channel]
@@ -28,7 +28,7 @@ class Private:
             return None
         elif not ROLESET.privileged.isdisjoint(roles):
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.priv)
-        elif not ROLE.veteran_thumbers in roles:
+        elif ROLE.veteran_thumbers not in roles:
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.vt)
         elif ROLE.vip in roles:
             discord.app_commands.Cooldown(COOLDOWN.post_rate, COOLDOWN.vip)
@@ -73,26 +73,41 @@ class CreationCommands(commands.Cog):
         return channel
 
     @staticmethod
+    def _cooldown_count(ctx):
+        roles = {role.name for role in ctx.author.roles}
+
+        if not ROLESET.privileged.isdisjoint(roles):
+            return COOLDOWN.priv
+        elif ROLE.vt in roles:
+            return COOLDOWN.vt
+        elif ROLE.vip in roles:
+            return COOLDOWN.vip
+        else:
+            return COOLDOWN.default
+
+    @staticmethod
     async def _filter_results(ctx, results, channel, username=None):
         filtered_results = None
         if results:
             if channel.id == CONFIG.nsfw_channel:
-                filtered_results = list(filter(lambda result: result["is_mature"] == True, results))
+                filtered_results = list(filter(lambda result: result["is_mature"] is True, results))
                 if not filtered_results or len(filtered_results) < 4:  # always return something.
                     sorted_nsfw = sorted(
-                        results, key=lambda result: result["is_mature"] == "True" or result["is_mature"] == True
-                        or result["is_mature"] == "true",
-                        reverse=True
+                        results,
+                        key=lambda result:
+                        result["is_mature"] == "True" or result["is_mature"] is True or result["is_mature"] == "true",
+                        reverse=False
                     )
                     if len(sorted_nsfw) >= 4:
                         return sorted_nsfw
                     else:
                         return list(filter(lambda result: result, results))  # if we tried everything else.
             elif channel.id != CONFIG.bot_channel and channel.id != CONFIG.nsfw_channel:
-                filtered_results = list(filter(
-                    lambda result: result["is_mature"] == "False" or result["is_mature"] == "false" or
-                                   (isinstance(result["is_mature"], bool) and result["is_mature"] is False), results
-                ))
+                filtered_results = list(
+                    filter(
+                        lambda result: result["is_mature"] == "False" or result["is_mature"] == "false" or
+                                       (isinstance(result["is_mature"], bool) and result["is_mature"] is False), results
+                    ))
             elif channel.id == CONFIG.bot_channel:
                 filtered_results = list(filter(lambda result: result, results))
 
@@ -104,23 +119,23 @@ class CreationCommands(commands.Cog):
         return filtered_results
 
     # noinspection RegExpRedundantEscape
-    def _manage_mentions(self, ctx, username, usernames):
+    def _manage_mentions(self, ctx, username, usernames, display):
         if not usernames:
             ping_user = self.db_actions.fetch_discord_id(username) if username else None
             return ctx.message.guild.get_member(ping_user).mention if ping_user else username
         else:
             mention_string = []
-            for user in usernames:
+            for user in usernames[:display]:
                 pattern = r"{[^]]*\}"
                 username = re.findall(pattern, user)[0][1:-1]
                 ping_user = self.db_actions.fetch_discord_id(username)
                 discord_user = ctx.message.guild.get_member(ping_user)
                 if discord_user is not None:
                     mention_string.append(re.sub(pattern, lambda x: x.group(0).replace(f"{{{username}}}",
-                                                                                 discord_user.mention),
+                                                                                       discord_user.mention),
                                                  user) if discord_user is not None else mention_string.append(
                         re.sub(pattern, lambda x: x.group(0).replace(f"{{{username}}}",
-                                                               username), user)))
+                                                                     username), user)))
                 else:
                     mention_string.append(
                         re.sub(pattern, lambda x: x.group(0).replace(f"{{{username}}}", username), user))
@@ -137,7 +152,7 @@ class CreationCommands(commands.Cog):
         if not results:
             return
 
-        mention_string = self._manage_mentions(ctx, username, usernames)
+        mention_string = self._manage_mentions(ctx, username, usernames, display)
         if not usernames:
             final_message = message.format(mention_string)
         else:
@@ -146,10 +161,13 @@ class CreationCommands(commands.Cog):
         embeds = []
         titles = []
         for result in results[:display]:
-            embeds.append(BytesIO(requests.get(result['src_image']).content) if ('src_image' in result.keys() and
-                                                                                 result['src_image'] != "None") else
+            embeds.append(BytesIO(requests.get(result['src_image'], timeout=CONFIG.global_timeout).content) if (
+                    'src_image' in result.keys() and
+                    result['src_image'] != "None") else
                           result if 'src_snippet' in result.keys() else
-                          BytesIO(requests.get(result['media_content'][-1]['url']).content))
+                          BytesIO(
+                              requests.get(result['media_content'][-1]['url'], timeout=CONFIG.global_timeou).content)
+                          )
             titles.append(f"{result['title']}")
         amaztemp = Template(titles, embeds)
         thumbs = amaztemp.draw()
@@ -169,10 +187,10 @@ class CreationCommands(commands.Cog):
             await ctx.send(f"Username not found in store for user {ctx.message.author.mention}, please add to store"
                            f"with: `!store-da-name da-username @discord-username` ")
             ctx.command.reset_cooldown(ctx)
-            return
+            return None
         return username
 
-    @commands.command(name='topic')
+    @commands.command(name='topic', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def topics(self, ctx, topic, offset=0):
         channel = self._set_channel(ctx)
@@ -200,16 +218,7 @@ class CreationCommands(commands.Cog):
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
 
-    @commands.command(name='myart')
-    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    async def my_art(self, ctx, *args):
-        channel = self._set_channel(ctx)
-        if not channel:
-            return
-        username = await self._check_store(ctx)
-        await self.art(ctx, username, *args, channel=channel)
-
-    @commands.command(name='mylit')
+    @commands.command(name='mylit', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_lit(self, ctx, *args):
         channel = self._set_channel(ctx)
@@ -218,15 +227,15 @@ class CreationCommands(commands.Cog):
         username = await self._check_store(ctx)
         await self.lit(ctx, username, *args, channel=channel)
 
-    @commands.command(name='rank')
+    @commands.command(name='rank', cooldown_after_parsing=True)
     async def rank(self, ctx):
         pass
 
-    @commands.command(name='levels')
+    @commands.command(name='levels', cooldown_after_parsing=True)
     async def levels(self, ctx):
         pass
 
-    @commands.command(name='find')
+    @commands.command(name='find', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def find_tags_like(self, ctx):
         channel = self._set_channel(ctx)
@@ -238,7 +247,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
-    @commands.command(name='popular')
+    @commands.command(name='popular', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def popular(self, ctx):
         channel = self._set_channel(ctx)
@@ -250,7 +259,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
-    @commands.command(name='new')
+    @commands.command(name='new', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def new(self, ctx):
         channel = self._set_channel(ctx)
@@ -262,7 +271,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
-    @commands.command(name='hot')
+    @commands.command(name='hot', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def hot(self, ctx):
         channel = self._set_channel(ctx)
@@ -274,7 +283,7 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
-    @commands.command(name='tormund')
+    @commands.command(name='tormund', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def tormund(self, ctx):
         channel = self._set_channel(ctx)
@@ -288,13 +297,13 @@ class CreationCommands(commands.Cog):
         except Exception as ex:
             print(f"{ex} not implemented", flush=True)
 
-    @commands.command(name='random')
+    @commands.command(name='random', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def random(self, ctx):
         channel = self._set_channel(ctx)
         try:
             display_count = self._check_your_privilege(ctx)
-            results, links = self.db_actions.get_random_images(display_count)
+            results, links = self.db_actions.get_n_random_creations(display_count)
             message = f"{links}"
             usernames = [each for each in links.split(", ")]
 
@@ -330,56 +339,70 @@ class CreationCommands(commands.Cog):
             arg_dict['collection'] = args[args.index("collection") + 1]
         return arg_dict
 
-    def __shuffle_list_of_dicts(self, input_list):
-        shuffled_indices = list(range(len(input_list)))
-        random.shuffle(shuffled_indices)
-        output_list = [input_list[index_] for index_ in shuffled_indices]
-        return output_list
-
     @staticmethod
     def _get_clean_arg(args, string):
         index = [idx for idx, arg in enumerate(args) if string in arg][0]
         return args[index][1:]
 
-    def _fetch_based_on_args(self, username, parsed_args: defaultdict, max_num: int, no_cache: bool = False):
+    def _fetch_based_on_args(self, username, parsed_args: defaultdict, no_cache: bool = False):
         offset = parsed_args['offset'] if parsed_args and 'offset' in parsed_args.keys() else 0
         display_num = parsed_args['show_only'] if parsed_args and 'show_only' in parsed_args.keys() else 24
         if parsed_args:
             wants_random = 'random' in parsed_args.keys()
             if 'pop' in parsed_args.keys():
-                pop = self.da_rest.fetch_user_popular(username, offset, display_num, no_cache)
+                pop = self.da_rest.fetch_user_popular(username, offset, display_num)
                 if not wants_random:
                     return pop, offset, display_num
-                return self.__shuffle_list_of_dicts(pop), offset, display_num
+                return helpers.shuffle_list_of_dicts(pop), offset, display_num
             elif 'old' in parsed_args.keys():
-                old = self.da_rest.fetch_user_old(username, offset, display_num, no_cache)
+                old = self.da_rest.fetch_user_old(username, offset, display_num)
                 if not wants_random:
                     return old, offset, display_num
-                return self.__shuffle_list_of_dicts(old), offset, display_num
+                return helpers.shuffle_list_of_dicts(old), offset, display_num
             elif 'gallery' in parsed_args.keys():
                 gallery = self.da_rest.get_user_gallery(username, parsed_args['gallery'], offset, display_num)
                 if not wants_random:
                     return gallery, offset, display_num
-                return self.__shuffle_list_of_dicts(gallery), offset, display_num
+                return helpers.shuffle_list_of_dicts(gallery), offset, display_num
             elif 'tags' in parsed_args.keys():
-                with_tags = self.da_rest.get_user_devs_by_tag(username, parsed_args['tags'], offset, display_num,
-                                                              no_cache)
+                with_tags = self.da_rest.get_user_devs_by_tag(username, parsed_args['tags'], offset, display_num)
                 if not wants_random:
                     return with_tags, offset, display_num
-                return self.__shuffle_list_of_dicts(with_tags), offset, display_num
+                return helpers.shuffle_list_of_dicts(with_tags), offset, display_num
             elif wants_random:
-                results = self.da_rest.fetch_entire_user_gallery(username)
-                return self.__shuffle_list_of_dicts(results), offset, display_num
+                results = self.da_rest.fetch_user_random(username)
+                return results, offset, display_num
 
-        return self.da_rest.fetch_user_gallery(username, offset, display_num, no_cache=no_cache), offset, display_num
+        return self.da_rest.fetch_user_gallery(username, offset, display_num), offset, display_num
 
-    @commands.command(name='why')
+    @commands.command(name='why', cooldown_after_parsing=True)
     async def why_easter_egg(self, ctx):
         await ctx.send("42")
 
-    @commands.command(name='art')
+    @commands.command(name='myart', cooldown_after_parsing=True)
+    @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
+    async def my_art(self, ctx, *args):
+        if ctx.author.id in ctx.cog.art._buckets._cache:
+            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
+            raise commands.errors.CommandOnCooldown(
+                cooldown=cooldown, type=commands.BucketType.user, retry_after=1800 + (cooldown._window - cooldown._last)
+            )
+        channel = self._set_channel(ctx)
+        if not channel:
+            return
+        username = await self._check_store(ctx)
+        if username is None:
+            raise NameError(username)
+        await self.art(ctx, username, *args, channel=channel)
+
+    @commands.command(name='art', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def art(self, ctx, username, *args, channel=None):
+        if ctx.author.id in ctx.cog.my_art._buckets._cache:
+            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
+            raise commands.errors.CommandOnCooldown(
+                cooldown=cooldown, type=commands.BucketType.user, retry_after=1800 + (cooldown._window - cooldown._last)
+            )
         try:
             parsed_args = self._parse_args(*args)
             if not channel:
@@ -391,7 +414,6 @@ class CreationCommands(commands.Cog):
             results, offset, display_num = self._fetch_based_on_args(
                 username=username,
                 parsed_args=parsed_args,
-                max_num=self._check_your_privilege(ctx),
                 no_cache=True if isinstance(username, int) else False
             )
 
@@ -418,16 +440,28 @@ class CreationCommands(commands.Cog):
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
 
-    @commands.command(name='myfavs')
+    @commands.command(name='myfavs', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def my_favs(self, ctx, *args):
+        if ctx.author.id in ctx.cog.favs._buckets._cache:
+            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
+            raise commands.errors.CommandOnCooldown(
+                cooldown=cooldown, type=commands.BucketType.user,
+                retry_after=self._cooldown_count(ctx) + (cooldown._window - cooldown._last)
+            )
         username = await self._check_store(ctx)
         channel = self._set_channel(ctx)
         await self.favs(ctx, username, *args, channel=channel)
 
-    @commands.command(name='favs')
+    @commands.command(name='favs', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def favs(self, ctx, username, *args, channel=None):
+        if ctx.author.id in ctx.cog.my_favs._buckets._cache:
+            cooldown = ctx.cog.my_favs._buckets._cache[ctx.author.id]
+            raise commands.errors.CommandOnCooldown(
+                cooldown=cooldown, type=commands.BucketType.user,
+                retry_after=self._cooldown_count(ctx) + (cooldown._window - cooldown._last)
+            )
         if not channel:
             channel = self._set_channel(ctx)
 
@@ -448,8 +482,10 @@ class CreationCommands(commands.Cog):
                 results, links = self.da_rest.get_user_favs_by_collection(
                     username, arg['collection'], offset, display_num, nsfw
                 )
+            elif rnd:
+                results, links = self.da_rss.randomized_user_favs(username, offset)
             else:
-                results, links = self.da_rss.get_user_favs(username, offset, display_num, rnd)
+                results, links = self.da_rss.get_user_favs(username, offset)
 
             if len(results) == 0 and username:
                 await channel.send(f"Couldn't find any faves for {username}! Do they have any favorites?")
@@ -465,7 +501,7 @@ class CreationCommands(commands.Cog):
                 raise Exception(ex)
             await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
 
-    @commands.command(name='lit')
+    @commands.command(name='lit', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
     async def lit(self, ctx, username, *args, channel=None):
         try:
@@ -478,7 +514,7 @@ class CreationCommands(commands.Cog):
                                                               .replace(">", "")))
 
             results, offset, display_num = self._fetch_based_on_args(
-                username, arg, self._check_your_privilege(ctx), no_cache=True if isinstance(username, int) else False
+                username, arg, no_cache=True if isinstance(username, int) else False
             )
             if not results and username and arg and ('pop' in arg.keys() or 'old' in arg.keys()):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
@@ -492,7 +528,7 @@ class CreationCommands(commands.Cog):
                 raise Exception(ex)
 
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
-    @commands.command(name='dds')
+    @commands.command(name='dds', cooldown_after_parsing=True)
     async def get_dds(self, ctx):
         channel = self._set_channel(ctx)
         try:
@@ -501,7 +537,7 @@ class CreationCommands(commands.Cog):
             if not filtered_results:
                 await channel.send(f"Couldn't fetch dailies, try again.")
                 return
-            shuffled_results = self.__shuffle_list_of_dicts(filtered_results)
+            shuffled_results = helpers.shuffle_list_of_dicts(filtered_results)
             result_string = [f"[[{index + 1}](<{image['url']}>)] {image['author']}" for index, image in
                              enumerate(shuffled_results[:self._check_your_privilege(ctx)])]
             message = f'''From today's [Daily Deviations](<{APIURL.da_url}daily-deviations>): 

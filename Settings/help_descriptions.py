@@ -1,4 +1,4 @@
-HUBCOINS_DESCRIPTION =  f'''Documentation for command "!hubcoins"
+HUBCOINS_DESCRIPTION = f'''Documentation for command "!hubcoins"
 `!hubcoins`
 See how many hubcoins you currently have."
 
@@ -54,4 +54,4 @@ Examples:
 `!art user pop rnd +5 1`
 Shows the fifth random popular deviation from the user."""
 
-ART_FOOTER = "*Only works if the user is saved the ThumbHub store (see command store-random-da-name)"
+ART_FOOTER = "*Only works if the user is saved the ThumbHub store (see command store-outside-da-name)"

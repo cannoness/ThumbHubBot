@@ -1,5 +1,5 @@
 from typing import List
-from datetime import datetime
+from datetime import datetime, UTC
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, BIGINT, TEXT, DateTime
 from sqlalchemy.orm import relationship, Mapped, mapped_column
@@ -19,7 +19,7 @@ class Creations(BotBase):  # TODO: Migrate to merge with uploads.
     tags: Mapped[str] = Column(TEXT)
     gallery: Mapped[str] = Column(TEXT)
     is_mature: Mapped[bool] = Column(Boolean)
-    date_created: Mapped[DateTime] = Column(DateTime, default=datetime.utcnow)
+    date_created: Mapped[DateTime] = Column(DateTime, default=datetime.now(UTC))
     deviant_user_row: Mapped[int] = Column(BIGINT, ForeignKey("deviant_usernames.id"))
     category: Mapped[enums.Category] = mapped_column(default=enums.Category.UNCATEGORIZED)
     url: Mapped[str] = Column(TEXT)

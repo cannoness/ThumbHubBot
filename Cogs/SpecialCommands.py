@@ -16,6 +16,7 @@ class SpecialCommands(commands.Cog):
         self.bot = bot
         self.guild = None
         self.db_actions = DatabaseActions()
+        self.random = random.SystemRandom()
 
         self.daily_reset.start()
 
@@ -49,7 +50,7 @@ class SpecialCommands(commands.Cog):
         self.db_actions.store_da_name(discord_id.id, username)
         await ctx.send(f"Storing or updating DA username {username} for user {discord_id.display_name}")
 
-    @commands.command(name='store-random-da-name')
+    @commands.command(name='store-outside-da-name')
     async def store_random_name(self, ctx, username):
         self.db_actions.store_random_da_name(username)
         await ctx.send(f"Storing DA username {username} without private.custom_cooldown.")
@@ -63,7 +64,7 @@ class SpecialCommands(commands.Cog):
         count, sides = die.split("d")
         rolls = []
         for _ in range(1, int(count) + 1):
-            rolls.append(str(random.randint(1, int(sides))))
+            rolls.append(str(self.random.randint(1, int(sides))))
         await ctx.send(f"{ctx.message.author.display_name} Rolling {count}d{sides}: "
                        f"   {'   '.join(rolls)}")
 
@@ -95,7 +96,7 @@ class SpecialCommands(commands.Cog):
         reason_cost = 1 if 'xp' in reason else 100 if ("feature" in reason or "color" in reason) else 500 \
             if "vip" in reason else 1000 if "spotlight" in reason else 1 if "donate" in reason else None
         if not reason_cost or current_coins < reason_cost:
-            await ctx.channel.send(f"Sorry, you need {int(reason_cost)-int(current_coins)} more hubcoins to perform "
+            await ctx.channel.send(f"Sorry, you need {int(reason_cost) - int(current_coins)} more hubcoins to perform "
                                    f"this action.") if \
                 reason_cost else await ctx.channel.send(f"Invalid spend reason supplied! You may spend on 'xp', "
                                                         f"'feature', 'vip', 'color', 'spotlight' or 'donate'."
@@ -109,7 +110,7 @@ class SpecialCommands(commands.Cog):
         if "color" in reason:
             author = ctx.message.author
             current_roles = [role.name for role in ctx.message.author.roles]
-            color = message[-1].title() if not message[-1].isdigit() else " ".join(message[1:len(message)-1]).title()
+            color = message[-1].title() if not message[-1].isdigit() else " ".join(message[1:len(message) - 1]).title()
             role = "mod" if "Moderators" in current_roles else "FT" if "Frequent Thumbers" in current_roles else "Dev"
             desired_color = f'{color} ({role})'
             role = discord.utils.get(author.guild.roles, name=desired_color)
@@ -133,8 +134,8 @@ class SpecialCommands(commands.Cog):
             coins = self.db_actions.get_hubcoins(interaction.author.id, "hubcoins")
             if int(coins) >= 1:
                 embed = discord.Embed(title=":two_hearts: Someone has sent you a Joy Card! :two_hearts:" if anon else
-                                      f":two_hearts: You have been sent a Joy Card from ThumbHub Member "
-                                      f"{interaction.author} :two_hearts:",
+                                            f":two_hearts: You have been sent a Joy Card from ThumbHub Member "
+                                            f"{interaction.author} :two_hearts:",
                                       color=discord.Color.from_rgb(245, 130, 216), description=f"{message}"
                                                                                                f"\n\u200b\n\u200b")
 
@@ -159,7 +160,7 @@ class SpecialCommands(commands.Cog):
                           f"{'anonymously' if anon else ''}")
             else:
                 await interaction.interaction.response.send_message(f'You currently have {coins} hubcoins and need '
-                                                                    f'{1-int(coins)} more to send a card',
+                                                                    f'{1 - int(coins)} more to send a card',
                                                                     ephemeral=True)
         except Exception as ex:
             await interaction.interaction.response.send_message(f"We're sorry, this message could not be sent. "
@@ -171,14 +172,14 @@ class SpecialCommands(commands.Cog):
     @commands.hybrid_command(name="help", with_app_command=True)
     async def help(
             self, interaction, command: str = None, list_commands: bool = False, anon: bool = True,
-        ) -> None:
+    ) -> None:
         admin = ['cpr', 'dm-server', 'fund-hubcoins', 'sync', 'rank', 'levels', 'help', 'spent-hubcoins']
 
         embed = discord.Embed(
             title='ThumbHubBot Help Menu',
             description='',
             color=discord.Color.blurple(),
-            timestamp=datetime.datetime.utcnow()
+            timestamp=datetime.datetime.now(datetime.UTC)
         )
         embed.set_thumbnail(url=self.bot.user.avatar.url)
 
@@ -211,11 +212,15 @@ class SpecialCommands(commands.Cog):
 
     @commands.hybrid_command(name="whois", with_app_command=True)
     async def whois(self, interaction, user: discord.User, anon: bool) -> None:
-        await interaction.interaction.response.send_message(f'testing whois command', ephemeral=anon)
+        await interaction.interaction.response.send_message(
+            f'testing whois command for {user.display_name}', ephemeral=anon
+        )
 
     @commands.hybrid_command(name="stats", with_app_command=True)
     async def stats(self, interaction, user: discord.User, anon: bool) -> None:
-        await interaction.interaction.response.send_message(f'testing stats command', ephemeral=anon)
+        await interaction.interaction.response.send_message(
+            f'testing stats command for {user.display_name}', ephemeral=anon
+        )
 
 
 async def setup(bot):

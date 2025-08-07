@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, Mapped
 
 from Utilities.database.postgres.env import BotBase
 
+
 class Hubbers(BotBase):
     __tablename__ = "deviant_usernames"
 
@@ -20,7 +21,7 @@ class SiteUser(BotBase):
     discord_userdata: Mapped[str] = Column(TEXT)
     deviantart_username: Mapped[str] = Column(String(128), unique=True, index=True)
     username: Mapped[str] = Column(String(128), unique=True, index=True)
-    hashed_password : Mapped[str]= Column(String(1024))
+    hashed_password: Mapped[str] = Column(String(1024))
     is_active: Mapped[bool] = Column(Boolean, default=True)
 
 
@@ -34,4 +35,3 @@ class LinkedAccounts(BotBase):
     deviant_username: Mapped[str] = Column(String(128), unique=True, index=True)
     tumblr_user: Mapped[str] = Column(String(128), unique=True, index=True)
     owner: Mapped[SiteUser] = relationship("SiteUser")
-

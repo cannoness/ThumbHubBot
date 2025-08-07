@@ -96,10 +96,10 @@ class Cooldown:
 
 
 class RoleSet:
-    _administrative =  {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value}
+    _administrative = {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value}
     _privileged = {RoleEnum.VETERAN_THUMBERS.value, RoleEnum.THE_PEEPS.value}
     _whitelist = {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value,
-                          RoleEnum.BOT_SLEUTH.value}
+                  RoleEnum.BOT_SLEUTH.value}
 
     @property
     def admins(self) -> set:
@@ -151,6 +151,7 @@ class ConfigEnum(enum.Enum):
     LOCAL: int = os.getenv("LOCAL") or False
     JSON_FILE = os.getenv("JSON_FILE")
     FONT = os.getenv("FONT")
+    TIMEOUT: int = 60
 
 
 class Config:
@@ -166,6 +167,7 @@ class Config:
     _json_file: str = ConfigEnum.JSON_FILE.value
     _font: str = ConfigEnum.FONT.value
     _local: bool = bool(ConfigEnum.LOCAL.value) if ConfigEnum.LOCAL.value is not None else False
+    _global_timeout: int = ConfigEnum.TIMEOUT.value
 
     @property
     def bot_channel(self) -> int:
@@ -214,6 +216,10 @@ class Config:
     @property
     def font(self) -> str:
         return type(self)._font
+
+    @property
+    def global_timeout(self) -> int:
+        return type(self)._global_timeout
 
 
 class ApiUrlEnum(enum.Enum):

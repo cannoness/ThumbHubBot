@@ -1,5 +1,5 @@
 
-from sqlalchemy import  Column, ForeignKey, Integer,  BIGINT
+from sqlalchemy import Column, ForeignKey, Integer,  BIGINT
 
 from Utilities.database.postgres.env import BotBase
 

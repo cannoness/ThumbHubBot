@@ -24,6 +24,7 @@ class SiteUser(BaseModel):
     username: str
     is_active: bool
 
+
 class UserPrivate(SiteUser):
     hashed_password: str
 

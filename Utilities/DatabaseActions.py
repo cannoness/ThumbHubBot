@@ -15,17 +15,19 @@ class DatabaseActions:
         # query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id}
         #         order by favs desc
         #         limit {display_num} """
+
         return crud.fetch_pop_from_cache(deviant_row_id, display_num)
 
     def fetch_entire_user_gallery(self, deviant_row_id):
         response = crud.fetch_entire_user_gallery(deviant_row_id)
         return self.convert_cache_to_result(response)
 
-    def fetch_user_devs_by_tag(self, deviant_row_id, display_num, offset, tags):
+    def fetch_user_devs_by_tag(self, username, display_num, offset, tags):
         # query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and
         #                 position('{tags}' in tags) > 0
         #                 order by date_created desc
         #                 limit {display_num} """
+        deviant_row_id = self.fetch_hubber_row_id(username)
         response = crud.fetch_user_devs_by_tag(deviant_row_id, display_num, tags)
         return self.convert_cache_to_result(response)[offset:display_num + offset]
 
@@ -91,7 +93,6 @@ class DatabaseActions:
         except Exception as ex:
             raise commands.errors.ObjectNotFound(f"Error when attemping to fetch discord id {ex}")
 
-
     def get_tormund(self):
         tormunds = crud.get_tormund()
         return self.convert_cache_to_result(tormunds)
@@ -126,9 +127,8 @@ class DatabaseActions:
         except Exception as ex:
             raise commands.errors.ObjectNotFound(f"Error while finding hubcoin id for discord user {ex}")
 
-
     @classmethod
-    def update_coins(cls, discord_id:int, amount: int):
+    def update_coins(cls, discord_id: int, amount: int):
         # coins = self.get_hubcoins(discord_id, "hubcoins")
         # add_query = f""" UPDATE hubcoins set hubcoins = {coins + amount} where discord_id = {discord_id} """
         # self.connection.execute(add_query)
@@ -165,7 +165,7 @@ class DatabaseActions:
         return crud.add_role_timer(discord_id, role_color)
 
     @classmethod
-    def delete_role(cls, discord_ids: int):
+    def delete_role(cls, discord_ids: list[int]):
         # query = f""" DELETE from role_assignment_date where discord_id in ({", ".join(discord_ids)}) """
         # self.connection.execute(query)
         return crud.delete_role(discord_ids)
@@ -209,18 +209,22 @@ class DatabaseActions:
     def fetch_da_usernames(cls, num: int):
         # query = f"Select deviant_username from deviant_usernames where deviant_username is not null"
         # query_results = ["".join(name_tuple) for name_tuple in self.connection.execute(query)]
-        # random.shuffle(query_results)
         # return query_results[:num]
         return crud.fetch_da_usernames(num)
 
-    def get_random_images(self, num: int):
+    def get_n_random_creations(self, num: int):
         # query = f"""SELECT title, is_mature, url, src_image, src_snippet , deviant_username as author
         #             FROM deviant_usernames INNER JOIN deviations
         #             ON deviations.deviant_user_row = deviant_usernames.id order by random() limit {num} """
         # results = self.connection.execute(query).fetchall()
         # return results, self._generate_links(results, num)
-        results, links = crud.get_random_images(num)
+        results, links = crud.get_n_random_creations(num)
         return self.convert_cache_to_result(results), links
+
+    def get_random_creations_by_hubber(self, username):
+        deviant_user_row = crud.fetch_hubber_row_id(username)
+        random_images = crud.get_random_creations_by_hubber(deviant_user_row)
+        return self.convert_cache_to_result(random_images)
 
     @classmethod
     def user_last_cache_update(cls, username: str):
@@ -236,37 +240,30 @@ class DatabaseActions:
         return crud.user_last_cache_update(username)
 
     @classmethod
-    def fetch_user_row_id(cls, username: str):
-        # query = f"Select id from deviant_usernames where lower(deviant_username) = '{username.lower()}' " if \
-        #     isinstance(username, str) else \
-        #     f"Select id from deviant_usernames where id = {username} "
-        # try:
-        #     result = self.connection.execute(query).fetchone()
-        # except Exception as ex:
-        #     raise commands.errors.ObjectNotFound(f"Error fetching user row id {ex}")
-        # if result:
-        #     return result[0]
-        # return None
-
-        return crud.fetch_user_row_id(username)
+    def fetch_hubber_row_id(cls, username: str):
+        return crud.fetch_hubber_row_id(username)
 
     @classmethod
     def initial_add_to_cache(cls, results: List[dict], row_id: int):
-        # nl = '\n'
         # values_list = ", ".join([f""" ({row_id}, '{result['url']}','{result['src_image']}','{result['src_snippet']
         #                         .replace("<br />", nl).replace("%","%%")}', '{result['title'].replace("'", "")
         #                         .replace("%","%%")}', {result['stats']['favourites']}, '{', '.join([tag['tag_name']
         #                                                                                             for tag in
         #                                                                       result['tags']]) if 'tags' in
         #                                                                                           result.keys() else
-        #                         None}', to_date('{datetime.datetime.fromtimestamp(int(result['published_time']))
-        #                         .strftime('%Y%m%d')}', 'YYYYMMDD'), '{result['is_mature']}') """ for result in results])
-        # query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, " \
-        #         f"date_created, is_mature) VALUES {values_list} ON CONFLICT (url) DO UPDATE set favs=excluded.favs, " \
-        #         f"title=excluded.title, tags=excluded.tags, is_mature=excluded.is_mature, src_image=excluded.src_image, " \
-        #         f"src_snippet=excluded.src_snippet"
+        #                        None}', to_date('{datetime.datetime.fromtimestamp(int(result['published_time']))
+        #                        strftime('%Y%m%d')}', 'YYYYMMDD'), '{result['is_mature']}') """ for result in results])
+        # query = f"INSERT INTO deviations (deviant_user_row, url, src_image, src_snippet, title, favs, tags, "
+        #       f"date_created, is_mature) VALUES {values_list} ON CONFLICT (url) DO UPDATE set favs=excluded.favs, "
+        #       f"title=excluded.title, tags=excluded.tags, is_mature=excluded.is_mature, src_image=excluded.src_image,"
+        #       f" src_snippet=excluded.src_snippet"
         # self.connection.execute(query)
         # query = f"INSERT INTO cache_updated_date (deviant_row_id) VALUES ({row_id}) ON CONFLICT " \
         #         f"(deviant_row_id) DO UPDATE SET last_updated = now()"
         # self.connection.execute(query)
         crud.initial_add_to_cache(results, row_id)
+
+    @classmethod
+    def hubber_has_new_creations(cls, username, decoded_results):
+        return crud.hubber_has_new_creations(username, decoded_results)
+

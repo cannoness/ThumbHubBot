@@ -23,7 +23,7 @@ class Template:  # Your template
         for index, thumb in enumerate(self.images):
             if isinstance(thumb, BytesIO):
                 self._image_thumb(thumb, x_pos, y_pos, img)
-            elif type(thumb) == RowMapping or type(thumb) == dict:
+            elif isinstance(thumb, RowMapping) or type(thumb) is dict:
                 self._text_thumb(thumb, x_pos, y_pos, img)
 
             imgdraw.text((x_pos, self.title_y_pos),
