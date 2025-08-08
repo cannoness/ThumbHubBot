@@ -2,10 +2,14 @@
 import asyncio
 import os
 import discord
+import logging
 
 from discord.ext import commands
 
 from Settings.config import Config, ApiUrl, Cooldown, MaxImageCount, Role, RoleSet
+
+
+LOGGER = logging.Logger(__name__, level=logging.INFO)
 
 CONFIG = Config()
 APIURL = ApiUrl()

@@ -6,7 +6,7 @@ import datetime
 from discord.ext import commands, tasks
 from Cogs.CreationCommands import Private
 
-from thumbhubbot import CONFIG
+from thumbhubbot import CONFIG, LOGGER
 from Utilities.DatabaseActions import DatabaseActions
 from Settings import help_descriptions as help_desc
 
@@ -39,7 +39,7 @@ class SpecialCommands(commands.Cog):
 
     @daily_reset.before_loop
     async def before_daily_reset(self):
-        print('waiting...')
+        LOGGER.debug('waiting...')
         await self.bot.wait_until_ready()
         self.guild = self.bot.get_guild(CONFIG.guild_id)
 
@@ -134,8 +134,8 @@ class SpecialCommands(commands.Cog):
             coins = self.db_actions.get_hubcoins(interaction.author.id, "hubcoins")
             if int(coins) >= 1:
                 embed = discord.Embed(title=":two_hearts: Someone has sent you a Joy Card! :two_hearts:" if anon else
-                                            f":two_hearts: You have been sent a Joy Card from ThumbHub Member "
-                                            f"{interaction.author} :two_hearts:",
+                f":two_hearts: You have been sent a Joy Card from ThumbHub Member "
+                f"{interaction.author} :two_hearts:",
                                       color=discord.Color.from_rgb(245, 130, 216), description=f"{message}"
                                                                                                f"\n\u200b\n\u200b")
 
@@ -156,8 +156,8 @@ class SpecialCommands(commands.Cog):
                     coins = self.db_actions.get_hubcoins(interaction.message.author.id, "hubcoins")
                     await interaction.interaction.followup.send(f"Grats! You have {coins} hubcoins remaining!",
                                                                 ephemeral=True)
-                    print(f"Sent by {interaction.author.display_name} to {user.display_name} "
-                          f"{'anonymously' if anon else ''}")
+                    LOGGER.debug(f"Sent by {interaction.author.display_name} to {user.display_name} "
+                                 f"{'anonymously' if anon else ''}")
             else:
                 await interaction.interaction.response.send_message(f'You currently have {coins} hubcoins and need '
                                                                     f'{1 - int(coins)} more to send a card',
@@ -167,7 +167,7 @@ class SpecialCommands(commands.Cog):
                                                                 f"This person may not be accepting messages from "
                                                                 f"non-friends or have the bot blocked.",
                                                                 ephemeral=True)
-            print(ex)
+            LOGGER.error(ex)
 
     @commands.hybrid_command(name="help", with_app_command=True)
     async def help(

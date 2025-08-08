@@ -12,7 +12,7 @@ from Utilities.DARSS import DARSS
 from Utilities.DatabaseActions import DatabaseActions
 from Utilities.ImageUtils import Template
 from Utilities.utilities import helpers
-from thumbhubbot import COOLDOWN, MAXCOUNT, CONFIG, ROLESET, ROLE, APIURL
+from thumbhubbot import COOLDOWN, MAXCOUNT, CONFIG, ROLESET, ROLE, APIURL, LOGGER
 
 RESPONSE_CHANNELS = [CONFIG.thumbhub_channel, CONFIG.nsfw_channel, CONFIG.the_peeps, CONFIG.bot_testing_range_channel]
 
@@ -212,7 +212,7 @@ class CreationCommands(commands.Cog):
                                          username=ctx.message.author.display_name)
 
         except Exception as ex:
-            print(ex, flush=True)
+            LOGGER.error(ex, stack_info=True)
             await channel.send(f"Something went wrong!")
 
             if channel.name == CONFIG.bot_channel:
@@ -245,7 +245,7 @@ class CreationCommands(commands.Cog):
             # results = self.da_rest.get_topic(topic, offset)
             await channel.send("Coming soon!")
         except Exception as ex:
-            print(f"{ex} not implemented", flush=True)
+            LOGGER.error(f"{ex} not implemented")
 
     @commands.command(name='popular', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -257,7 +257,7 @@ class CreationCommands(commands.Cog):
             # results = self.da_rest.get_topic(topic, offset)
             await channel.send("Coming soon!")
         except Exception as ex:
-            print(f"{ex} not implemented", flush=True)
+            LOGGER.error(f"{ex} not implemented")
 
     @commands.command(name='new', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -269,7 +269,7 @@ class CreationCommands(commands.Cog):
             # results = self.da_rest.get_topic(topic, offset)
             await channel.send("Coming soon!")
         except Exception as ex:
-            print(f"{ex} not implemented", flush=True)
+            LOGGER.error(f"{ex} not implemented")
 
     @commands.command(name='hot', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -281,7 +281,7 @@ class CreationCommands(commands.Cog):
             # results = self.da_rest.get_topic(topic, offset)
             await channel.send("Coming soon!")
         except Exception as ex:
-            print(f"{ex} not implemented", flush=True)
+            LOGGER.error(f"{ex} not implemented")
 
     @commands.command(name='tormund', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -295,7 +295,7 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, shuffled_results, message,
                                          username=ctx.message.author.display_name)
         except Exception as ex:
-            print(f"{ex} not implemented", flush=True)
+            LOGGER.error(f"{ex} not implemented")
 
     @commands.command(name='random', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)
@@ -309,7 +309,7 @@ class CreationCommands(commands.Cog):
 
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
-            print(ex, flush=True)
+            LOGGER.error(ex, stack_info=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
@@ -435,7 +435,7 @@ class CreationCommands(commands.Cog):
             await self._send_art_results(ctx, channel, filtered_results, message, username=username,
                                          display_num=display_num)
         except Exception as ex:
-            print(ex, flush=True)
+            LOGGER.error(ex, stack_info=True)
             await channel.send(f"Encountered exception. This has been recorded.")
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
@@ -495,7 +495,7 @@ class CreationCommands(commands.Cog):
             usernames = [each for each in links.split(", ")]
             await self._send_art_results(ctx, channel, results, message, usernames=usernames)
         except Exception as ex:
-            print(ex, flush=True)
+            LOGGER.error(ex, stack_info=True)
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
@@ -522,7 +522,7 @@ class CreationCommands(commands.Cog):
                 return
             await self._send_art_results(ctx, channel, results, message="", username=username, display_num=display_num)
         except Exception as ex:
-            print(ex, flush=True)
+            LOGGER.error(ex, stack_info=True)
             await channel.send(f"Something went wrong!")
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)

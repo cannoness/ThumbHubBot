@@ -7,7 +7,7 @@ from discord.ext.commands import Context, Greedy
 
 from Utilities.DARest import DARest
 from Utilities.DatabaseActions import DatabaseActions
-from thumbhubbot import CONFIG, ROLESET, ROLE
+from thumbhubbot import CONFIG, ROLESET, ROLE, LOGGER
 
 
 class AdminCommands(commands.Cog):
@@ -28,7 +28,7 @@ class AdminCommands(commands.Cog):
                 try:
                     await user.send(embed=embed)
                 except Exception as ex:
-                    print(ex)
+                    LOGGER.error(ex, stack_info=True)
                     continue
 
     @commands.command(name='send-announcement-embed')
@@ -97,7 +97,7 @@ class AdminCommands(commands.Cog):
                 synced = await ctx.bot.tree.sync(guild=ctx.guild)
 
             bcommands = [c.name for c in self.bot.tree.get_commands()]
-            print(f"registered commands: {', '.join(bcommands)}")
+            LOGGER.debug(f"registered commands: {', '.join(bcommands)}")
             await ctx.send(
                 f"Synced {len(synced)} commands {'globally' if spec is None else 'to the current guild.'}"
             )
@@ -108,7 +108,7 @@ class AdminCommands(commands.Cog):
         try:
             await ctx.bot.tree.sync()
         except discord.HTTPException as ex:
-            print(ex)
+            LOGGER.error(ex, stack_info=True)
             await ctx.send(f"Encountered exception {ex}. This has been recorded.")
             raise Exception(ex)
         else:

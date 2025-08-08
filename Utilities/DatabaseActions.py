@@ -4,6 +4,7 @@ from discord.ext import commands
 
 from Utilities.database.postgres import env
 from Utilities.database.postgres.models.utils import crud
+from thumbhubbot import LOGGER
 
 
 class DatabaseActions:
@@ -45,7 +46,7 @@ class DatabaseActions:
         try:
             return crud.store_da_name(discord_id, username)
         except Exception as ex:
-            print(ex, flush=True)
+            LOGGER.error(ex, stack_info=True)
             raise commands.errors.ObjectNotFound(f"Error while attempting to add user to the store {ex}")
 
     @classmethod

@@ -331,9 +331,14 @@ def diminish_coins_added(deviant_id):
 def fetch_da_usernames(num):
     # query = f"Select deviant_username from deviant_usernames where deviant_username is not null"
     with env.BotSessionLocal() as db:
-        da_usernames = db.scalars(select(users.Hubbers.deviant_username).where(
-            users.Hubbers.deviant_username is not None)).all()
-        random.shuffle(da_usernames)
+        da_usernames = db.scalars(
+            select(users.Hubbers.deviant_username)
+            .where(
+                users.Hubbers.deviant_username is not None
+            ).order_by(
+                sqrandom()
+            )
+        ).all()
         return da_usernames[:num]
 
 
@@ -374,9 +379,11 @@ def fetch_hubber_row_id(username: str | int):
     #     isinstance(username, str) else \
     #     f"Select id from deviant_usernames where id = {username} "
     with env.BotSessionLocal() as db:
-        result = db.scalars(select(users.Hubbers.id).where(
-            func.lower(users.Hubbers.deviant_username) == username.lower()
-        )).first()
+        result = db.scalars(
+            select(users.Hubbers.id).where(
+                func.lower(users.Hubbers.deviant_username) == username.lower()
+            )
+        ).first()
         if result is None:
             return username
         return result

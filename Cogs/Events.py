@@ -1,7 +1,7 @@
 from types import TracebackType
 from discord.ext import commands
 
-from thumbhubbot import CONFIG
+from thumbhubbot import CONFIG, LOGGER
 from Utilities.DatabaseActions import DatabaseActions
 
 
@@ -12,7 +12,7 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        print(f'{self.bot.user} has connected to Discord!')
+        LOGGER.info(f'{self.bot.user} has connected to Discord!')
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):

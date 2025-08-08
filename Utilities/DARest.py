@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from Utilities.DatabaseActions import DatabaseActions
 from Utilities.utilities import helpers
-from thumbhubbot import APIURL, CONFIG
+from thumbhubbot import APIURL, CONFIG, LOGGER
 
 
 class DARest:
@@ -26,7 +26,7 @@ class DARest:
             timeout=CONFIG.global_timeout
         )
         if response.status_code != 200:
-            print(response.content)
+            LOGGER.debug(response.content)
             raise Exception(f"CANNOT CONNECT: {response.content}")
         decoded_content = response.json()
         return decoded_content['access_token']
@@ -159,7 +159,9 @@ class DARest:
         self._validate_token()
         response = requests.get(
             f"{APIURL.api}gallery/all?username={username}&limit=24&access_token="
-            f"{self.access_token}&offset={offset}&display_num={display_num}", timeout=CONFIG.global_timeout)
+            f"{self.access_token}&offset={offset}&display_num={display_num}",
+            timeout=CONFIG.global_timeout
+        )
         decoded_content = json.loads(response.content.decode("UTF-8"))
         return decoded_content
 

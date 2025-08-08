@@ -3,7 +3,7 @@ import feedparser
 from dotenv import load_dotenv
 
 from Utilities.utilities import helpers
-from thumbhubbot import APIURL
+from thumbhubbot import APIURL, LOGGER
 from Utilities.DatabaseActions import DatabaseActions
 
 
@@ -19,7 +19,7 @@ class DARSS:
             address = f"{APIURL.random_rss}{user}+sort%3Atime+meta%3Aall"
             image_feed = feedparser.parse(address)
             if image_feed.status != 200:
-                print(image_feed.feed.summary, flush=True)
+                LOGGER.error(image_feed.feed.summary, stack_info=True)
                 raise Exception(f"URL currently not accessible.")
             results = helpers.format_rss_results_for_store(image_feed.entries)
             if len(results):
@@ -33,7 +33,7 @@ class DARSS:
     def _fetch_all_user_faves_helper(username, offset=0, mature="false"):
         response = feedparser.parse(f"{APIURL.fav_rss}{username}&offset={offset}&include_mature={mature}")
         if response.status != 200:
-            print(response.feed.summary, flush=True)
+            LOGGER.error(response.feed.summary, stack_info=True)
             raise Exception(f"Favs URL currently not accessible for this user.")
         return response.entries
 
