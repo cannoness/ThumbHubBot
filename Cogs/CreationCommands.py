@@ -373,7 +373,7 @@ class CreationCommands(commands.Cog):
                 results = self.da_rest.fetch_user_random(username)
                 return results, offset, display_num
 
-        return self.da_rest.fetch_user_gallery(username, offset, display_num), offset, display_num
+        return self.da_rest.fetch_hubber_creations(username, offset, display_num), offset, display_num
 
     @commands.command(name='why', cooldown_after_parsing=True)
     async def why_easter_egg(self, ctx):
@@ -417,9 +417,7 @@ class CreationCommands(commands.Cog):
                 no_cache=True if isinstance(username, int) else False
             )
 
-            if not results and username and parsed_args and (
-                    'pop' in parsed_args.keys() or 'old' in parsed_args.keys()
-            ):
+            if not results and username and parsed_args and ('pop' in parsed_args or 'old' in parsed_args):
                 await channel.send(f"{username} must be in store to use 'pop' and 'old'")
                 ctx.command.reset_cooldown(ctx)
                 return

@@ -1,6 +1,5 @@
 import datetime
 import math
-import random
 import time
 
 from sqlalchemy.dialects.postgresql import insert
@@ -57,31 +56,32 @@ def store_da_name(discord_id, username):
 
 def store_random_da_name(username):
     # query = f"INSERT INTO deviant_usernames (ping_me, deviant_username) VALUES (false, '{username}') "
-    store_random_hubber = insert(users.Hubbers).values(ping_me=False, deviant_username=username)
-    store_random_hubber.on_conflict_do_update(
-        constraint="discord_id", set_=dict(deviant_username=store_random_hubber.excluded.deviant_username)
-    )
-    _session_execute(store_random_hubber)
+    with env.BotSessionLocal() as db:
+        new_hubber_exists = db.scalars(select(users.Hubbers).filter_by(deviant_username=username)).first()
+        if not new_hubber_exists:
+            new_hubber = users.Hubbers(deviant_username=username)
+            db.add(new_hubber)
+            return db.commit()
 
 
 def do_not_ping_me(discord_id):
     # query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, false) " \
     #         f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
-    store_hubber = insert(users.Hubbers).values(discord_id=discord_id, ping_me=False)
-    store_hubber.on_conflict_do_update(
-        constraint="discord_id", set_=dict(ping_me=store_hubber.excluded.ping_me)
-    )
-    _session_execute(store_hubber)
+    with env.BotSessionLocal() as db:
+        hubber = db.scalars(select(users.Hubbers).filter_by(discord_id=discord_id, ping_me=True)).first()
+        if hubber:
+            hubber.ping_me = False
+            return db.commit()
 
 
 def ping_me(discord_id):
     # query = f"INSERT INTO deviant_usernames (discord_id, ping_me) VALUES ({discord_id}, true) " \
     #         f"ON CONFLICT (discord_id) DO UPDATE SET ping_me=excluded.ping_me"
-    store_hubber = insert(users.Hubbers).values(discord_id=discord_id, ping_me=True)
-    store_hubber.on_conflict_do_update(
-        constraint="discord_id", set_=dict(ping_me=store_hubber.excluded.ping_me)
-    )
-    _session_execute(store_hubber)
+    with env.BotSessionLocal() as db:
+        hubber = db.scalars(select(users.Hubbers).filter_by(discord_id=discord_id, ping_me=False)).first()
+        if hubber:
+            hubber.ping_me = True
+            return db.commit()
 
 
 def fetch_username(discord_id):
@@ -284,7 +284,8 @@ def delete_role(discord_ids: list[int]):
         rows = db.scalars(select(cache.RoleColorAssignment).filter(
             cache.RoleColorAssignment.discord_id.in_(discord_ids)
         )).all()
-        db.session.delete(rows)
+        db.delete(rows)
+        db.commit()
 
 
 def get_all_expiring_roles():

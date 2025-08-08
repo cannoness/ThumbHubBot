@@ -40,7 +40,7 @@ class DARest:
         if in_store and should_update:
             self.fetch_entire_user_gallery(username)
 
-    def fetch_user_gallery(self, username, offset=0, display_num=10):
+    def fetch_hubber_creations(self, username, offset=0, display_num=10):
         self._validate_token()
         self.check_and_update_gallery(username)
 
@@ -101,6 +101,7 @@ class DARest:
             results += response['results']
 
         self._add_user_gallery_to_cache(results, username)
+        print(results, flush=True)
         return helpers.format_api_image_results(results)
 
     def fetch_daily_deviations(self):
