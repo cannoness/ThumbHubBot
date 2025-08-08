@@ -226,7 +226,7 @@ class DatabaseActions:
         #             ON deviations.deviant_user_row = deviant_usernames.id order by random() limit {num} """
         # results = self.connection.execute(query).fetchall()
         # return results, self._generate_links(results, num)
-        creations, links = crud.get_n_random_creation_by_many_hubbers(num)
+        creations, links = crud.get_n_random_creation_by_many_hubbers(num + 5)  # buffer in case the user has none
         return self.convert_cache_to_result(creations), links
 
     def get_random_creations_by_hubber(self, username, limit=24):

@@ -471,7 +471,7 @@ def get_n_random_creation_by_many_hubbers(limit):
             )
             .distinct(creations.Creations.deviant_user_row)
         ).all()
-        return results, _generate_links(results, limit)
+        return results[:limit], _generate_links(results, limit)
 
 
 def fetch_n_random_hubber_ids(num):
