@@ -101,7 +101,6 @@ class DARest:
             results += response['results']
 
         self._add_user_gallery_to_cache(results, username)
-        print(results, flush=True)
         return helpers.format_api_image_results(results)
 
     def fetch_daily_deviations(self):
