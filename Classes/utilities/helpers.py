@@ -16,13 +16,11 @@ def format_rss_results_for_store(images):
             result["link"],
         "src_image":
             result["media_thumbnail"][-1]["url"]
-            if "medium" in result["media_content"][-1].keys() and "image" in result["media_content"][-1][
-                "medium"]
+            if "medium" in result["media_content"][-1].keys() and "image" in result["media_content"][-1]["medium"]
             else "None",
         "src_snippet":
             result["summary"][:1024].replace("'", "''").replace("<br />", nl)
-            if "medium" in result["media_content"][-1].keys() and "image" not in result["media_content"][-1][
-                "medium"]
+            if "medium" in result["media_content"][-1].keys() and "image" not in result["media_content"][-1]["medium"]
             else "None",
         "is_mature":
             False if "nonadult" in result["rating"] else True,
@@ -32,9 +30,7 @@ def format_rss_results_for_store(images):
             f"{result['title']}",
         "author":
             result["media_credit"][0]["content"]
-    }
-        for result in images if
-        (True if result["summary"] != "" and "media_content" in result.keys() else False)]
+    } for result in images if (True if result["summary"] != "" and "media_content" in result.keys() else False)]
 
 
 def format_api_image_results(results):
@@ -63,5 +59,4 @@ def format_api_image_results(results):
             f"{result['title']}",
         "author":
             result["author"]["username"]
-    }
-        for result in results]
+    } for result in results]
