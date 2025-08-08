@@ -123,6 +123,17 @@ def fetch_entire_user_gallery(deviant_row_id):
         )).all()
 
 
+def fetch_server_popular():
+    # query = f""" SELECT * from deviations where deviant_user_row = {deviant_row_id}
+    #     order by date_created desc """
+    with env.BotSessionLocal() as db:
+        return db.scalars(select(creations.Creations).order_by(
+            desc(creations.Creations.favs)
+        ).order_by(
+            desc(creations.Creations.comments)
+        )).all()
+
+
 def fetch_user_devs_by_tag(deviant_row_id, display_num, tags):
     # query = f""" SELECT * FROM deviations where deviant_user_row = {deviant_row_id} and
     #                 position('{tags}' in tags) > 0
@@ -391,7 +402,6 @@ def fetch_hubber_row_id(username: str | int):
 
 
 def initial_add_to_cache(results, row_id):
-
     with env.BotSessionLocal() as db:
         for result in results:
             clean_snippet, clean_title, formatted_dt, tags = format_cache_result(result)

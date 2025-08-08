@@ -60,7 +60,7 @@ def format_api_image_results(results):
         "published_time":
             result["published_time"],
         "title":
-            f"{result["title"]}",
+            f"{result['title']}",
         "author":
             result["author"]["username"]
     }
