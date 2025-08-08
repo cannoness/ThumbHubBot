@@ -183,9 +183,14 @@ def fetch_discord_id(username: str):
     #     f"Select discord_id from deviant_usernames where id = {username} " \
     #         f"and ping_me = true"
     with env.BotSessionLocal() as db:
-        selected_user = db.scalars(select(users.Hubbers).where(
-            func.lower(users.Hubbers.deviant_username) == username.lower()
-        )).first()
+        selected_user = db.scalars(
+            select(users.Hubbers)
+            .filter(
+                func.lower(users.Hubbers.deviant_username) == username.lower())
+            .filter_by(
+                ping_me=True
+            )
+        ).first()
     if selected_user is None:
         return None
     return selected_user.discord_id
