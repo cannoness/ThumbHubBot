@@ -207,11 +207,18 @@ class DatabaseActions:
         return crud.diminish_coins_added(deviant_id)
 
     @classmethod
-    def fetch_da_usernames(cls, num: int):
+    def fetch_n_random_usernames(cls, num: int):
         # query = f"Select deviant_username from deviant_usernames where deviant_username is not null"
         # query_results = ["".join(name_tuple) for name_tuple in self.connection.execute(query)]
         # return query_results[:num]
         return crud.fetch_da_usernames(num)
+
+    @classmethod
+    def fetch_n_random_hubber_ids(cls, num: int):
+        # query = f"Select deviant_username from deviant_usernames where deviant_username is not null"
+        # query_results = ["".join(name_tuple) for name_tuple in self.connection.execute(query)]
+        # return query_results[:num]
+        return crud.fetch_n_random_hubber_ids(num)
 
     def get_n_random_creations(self, num: int):
         # query = f"""SELECT title, is_mature, url, src_image, src_snippet , deviant_username as author
@@ -219,12 +226,12 @@ class DatabaseActions:
         #             ON deviations.deviant_user_row = deviant_usernames.id order by random() limit {num} """
         # results = self.connection.execute(query).fetchall()
         # return results, self._generate_links(results, num)
-        results, links = crud.get_n_random_creations(num)
-        return self.convert_cache_to_result(results), links
+        creations, links = crud.get_n_random_creation_by_many_hubbers(num)
+        return self.convert_cache_to_result(creations), links
 
-    def get_random_creations_by_hubber(self, username):
+    def get_random_creations_by_hubber(self, username, limit=24):
         deviant_user_row = crud.fetch_hubber_row_id(username)
-        random_images = crud.get_random_creations_by_hubber(deviant_user_row)
+        random_images = crud.get_random_creations_by_hubber(deviant_user_row, limit)
         return self.convert_cache_to_result(random_images)
 
     @classmethod
@@ -267,4 +274,3 @@ class DatabaseActions:
     @classmethod
     def hubber_has_new_creations(cls, username, decoded_results):
         return crud.hubber_has_new_creations(username, decoded_results)
-

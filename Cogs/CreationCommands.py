@@ -313,7 +313,7 @@ class CreationCommands(commands.Cog):
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
-            await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
+            await self.art(ctx, self.db_actions.fetch_n_random_usernames(1)[0], 'rnd', channel=channel)
 
     def _parse_args(self, *args) -> Union[defaultdict, None]:
         if len(args) == 0:
@@ -497,7 +497,7 @@ class CreationCommands(commands.Cog):
             await channel.send(f"An exception has been recorded, we are displaying a random user.")
             if channel.name == CONFIG.bot_channel:
                 raise Exception(ex)
-            await self.art(ctx, self.db_actions.fetch_da_usernames(1)[0], 'rnd', channel=channel)
+            await self.art(ctx, self.db_actions.fetch_n_random_usernames(1)[0], 'rnd', channel=channel)
 
     @commands.command(name='lit', cooldown_after_parsing=True)
     @commands.dynamic_cooldown(Private.custom_cooldown, type=commands.BucketType.user)

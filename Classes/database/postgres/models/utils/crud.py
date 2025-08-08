@@ -446,11 +446,38 @@ def update_da_cache(row_id):
         db.commit()
 
 
-def get_random_creations_by_hubber(deviant_user_row):
+def get_random_creations_by_hubber(deviant_user_row, limit):
     with env.BotSessionLocal() as db:
-        results = db.scalars(select(creations.Creations).filter_by(
-            deviant_user_row=deviant_user_row
-        ).order_by(
-            sqrandom()
-        )).all()
+        results = db.scalars(
+            select(creations.Creations)
+            .filter_by(deviant_user_row=deviant_user_row)
+            .order_by(sqrandom())
+            .limit(limit)
+        ).all()
         return results
+
+
+def get_n_random_creation_by_many_hubbers(limit):
+    with env.BotSessionLocal() as db:
+        subquery = select(
+            users.Hubbers.id
+        ).order_by(func.random()).limit(limit).subquery()
+        results = db.scalars(
+            select(creations.Creations)
+            .filter(
+                creations.Creations.deviant_user_row.in_(
+                    select(subquery)
+                )
+            )
+            .distinct(creations.Creations.deviant_user_row)
+        ).all()
+        return results, _generate_links(results, limit)
+
+
+def fetch_n_random_hubber_ids(num):
+    with env.BotSessionLocal() as db:
+        return db.scalars(
+            select(users.Hubbers.id)
+            .order_by(sqrandom())
+            .limit(num)
+        ).all()

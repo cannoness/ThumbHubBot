@@ -13,7 +13,7 @@ class DARSS:
         self.db_actions = DatabaseActions()
 
     def get_random_images(self, num):
-        random_users = self.db_actions.fetch_da_usernames(10)
+        random_users = self.db_actions.fetch_n_random_usernames(10)
         images = []
         for user in random_users:
             address = f"{APIURL.random_rss}{user}+sort%3Atime+meta%3Aall"
