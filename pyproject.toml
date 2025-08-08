@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thumbhubbot"
+version = "2025.7.31"
+requires-python = ">=3.12"
+authors = [
+  {name = "Abby Jacoby", email = "abby.jacoby@gmail.com"}
+]
+maintainers = [
+  {name = "Abby Jacoby", email = "abby.jacoby@gmail.com"}
+]
+description = "ThumbHub Bot - For spamming thumbs!"
+readme = "README.md"
+license = "BSD-3-Clause-Attribution"
+license-files = ["LICEN[CS]E.*"]
+keywords = ["discord bot", "thumbhub", "art sharing"]
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3.12"
+]
+dependencies = [
+  "discord>=2.3.2",
+  "requests>=2.32.4",
+  "sqlalchemy>=2.0.0",
+  "Pillow>=11.3.0",
+  "pydantic>=2.4.2"
+]
+
+[project.urls]
+Homepage = "https://a-blank-page-89dbd37d236c.herokuapp.com"
+Repository = "https://github.com/cannoness/ThumbHubBot.git"
+"Bug Tracker" = "https://github.com/cannoness/ThumbHubBot/issues"
+
+[dependency-groups]
+coverage = ["coverage[toml]"]
+test = ["pytest>7", {include-group = "coverage"}]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests"
+]

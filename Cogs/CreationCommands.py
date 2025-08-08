@@ -360,7 +360,7 @@ class CreationCommands(commands.Cog):
                     return old, offset, display_num
                 return helpers.shuffle_list_of_dicts(old), offset, display_num
             elif 'gallery' in parsed_args.keys():
-                gallery = self.da_rest.get_user_gallery(username, parsed_args['gallery'], offset, display_num)
+                gallery = self.da_rest.get_user_by_gallery(username, parsed_args['gallery'], offset, display_num)
                 if not wants_random:
                     return gallery, offset, display_num
                 return helpers.shuffle_list_of_dicts(gallery), offset, display_num

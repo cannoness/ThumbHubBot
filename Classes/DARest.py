@@ -33,6 +33,8 @@ class DARest:
 
     def check_and_update_gallery(self, username):
         in_store = self.db_actions.fetch_hubber_row_id(username)
+        if type(in_store) is str:
+            return
         one_result = self._gallery_fetch_helper(username, 0, 1)['results']
         should_update = self.db_actions.hubber_has_new_creations(username, one_result)
         if in_store and should_update:
@@ -168,7 +170,7 @@ class DARest:
     def get_user_favs_by_collection(self, username, collection, offset=0, limit=24, mature="false"):
         return self.get_favorite_collection(username, collection, offset, limit, mature)
 
-    def get_user_gallery(self, username, gallery_name, offset=0, limit=24):
+    def get_user_by_gallery(self, username, gallery_name, offset=0, limit=24):
         # TODO: get more than the preview images. check for subfolders
         self._validate_token()
         self.check_and_update_gallery(username)
