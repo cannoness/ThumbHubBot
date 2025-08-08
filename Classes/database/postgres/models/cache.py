@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import ForeignKey, Column
 from sqlalchemy.orm import mapped_column, Mapped
 
-from Utilities.database.postgres.env import BotBase
+from Classes.database.postgres.env import BotBase
 
 
 class Cache(BotBase):

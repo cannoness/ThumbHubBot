@@ -5,8 +5,8 @@ import os
 from collections import defaultdict
 from dotenv import load_dotenv
 
-from Utilities.DatabaseActions import DatabaseActions
-from Utilities.utilities import helpers
+from Classes.DatabaseActions import DatabaseActions
+from Classes.utilities import helpers
 from thumbhubbot import APIURL, CONFIG, LOGGER
 
 

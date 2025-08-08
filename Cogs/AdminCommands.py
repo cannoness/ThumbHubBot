@@ -5,8 +5,8 @@ from typing import Optional, Literal
 from discord.ext import commands
 from discord.ext.commands import Context, Greedy
 
-from Utilities.DARest import DARest
-from Utilities.DatabaseActions import DatabaseActions
+from Classes.DARest import DARest
+from Classes.DatabaseActions import DatabaseActions
 from thumbhubbot import CONFIG, ROLESET, ROLE, LOGGER
 
 

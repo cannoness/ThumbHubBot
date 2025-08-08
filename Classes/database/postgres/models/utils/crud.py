@@ -7,9 +7,9 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import func, desc, update, asc, select
 from sqlalchemy.sql.functions import now, random as sqrandom
 
-from Utilities.database.postgres import env
-from Utilities.database.postgres.env import bot_engine, BotBase
-from Utilities.database.postgres.models import users, hubcoins, diminishing_returns as dr, cache, creations
+from Classes.database.postgres import env
+from Classes.database.postgres.env import bot_engine, BotBase
+from Classes.database.postgres.models import users, hubcoins, diminishing_returns as dr, cache, creations
 
 
 def _generate_links(results, at_least):

@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, String, BIGINT, Integer, TEXT, ForeignKey
 from sqlalchemy.orm import relationship, Mapped
 
-from Utilities.database.postgres.env import BotBase
+from Classes.database.postgres.env import BotBase
 
 
 class Hubbers(BotBase):

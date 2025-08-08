@@ -2,7 +2,7 @@ from types import TracebackType
 from discord.ext import commands
 
 from thumbhubbot import CONFIG, LOGGER
-from Utilities.DatabaseActions import DatabaseActions
+from Classes.DatabaseActions import DatabaseActions
 
 
 class Events(commands.Cog):

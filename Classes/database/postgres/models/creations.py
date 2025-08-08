@@ -5,9 +5,9 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, BIGINT, TEXT, DateT
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 
-from Utilities.database.postgres.env import BotBase
-from Utilities.database.postgres.models.utils import enums
-from Utilities.database.postgres.models.users import Hubbers
+from Classes.database.postgres.env import BotBase
+from Classes.database.postgres.models.utils import enums
+from Classes.database.postgres.models.users import Hubbers
 
 
 class Creations(BotBase):  # TODO: Migrate to merge with uploads.

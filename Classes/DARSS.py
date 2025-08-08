@@ -2,9 +2,9 @@ import feedparser
 
 from dotenv import load_dotenv
 
-from Utilities.utilities import helpers
+from Classes.utilities import helpers
 from thumbhubbot import APIURL, LOGGER
-from Utilities.DatabaseActions import DatabaseActions
+from Classes.DatabaseActions import DatabaseActions
 
 
 class DARSS:

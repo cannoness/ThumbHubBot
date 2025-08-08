@@ -2,7 +2,7 @@ import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from Utilities.database.postgres.models.utils import enums
+from Classes.database.postgres.models.utils import enums
 
 
 class Hubber(BaseModel):

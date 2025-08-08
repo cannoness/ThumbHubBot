@@ -1,7 +1,7 @@
 
 from sqlalchemy import Column, ForeignKey, Integer,  BIGINT
 
-from Utilities.database.postgres.env import BotBase
+from Classes.database.postgres.env import BotBase
 
 
 class Hubcoins(BotBase):

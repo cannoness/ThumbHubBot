@@ -7,11 +7,11 @@ from io import BytesIO
 from typing import Union
 from discord.ext import commands
 
-from Utilities.DARest import DARest
-from Utilities.DARSS import DARSS
-from Utilities.DatabaseActions import DatabaseActions
-from Utilities.ImageUtils import Template
-from Utilities.utilities import helpers
+from Classes.DARest import DARest
+from Classes.DARSS import DARSS
+from Classes.DatabaseActions import DatabaseActions
+from Classes.ImageUtils import Template
+from Classes.utilities import helpers
 from thumbhubbot import COOLDOWN, MAXCOUNT, CONFIG, ROLESET, ROLE, APIURL, LOGGER
 
 RESPONSE_CHANNELS = [CONFIG.thumbhub_channel, CONFIG.nsfw_channel, CONFIG.the_peeps, CONFIG.bot_testing_range_channel]

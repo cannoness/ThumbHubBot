@@ -2,8 +2,8 @@ from typing import List
 
 from discord.ext import commands
 
-from Utilities.database.postgres import env
-from Utilities.database.postgres.models.utils import crud
+from Classes.database.postgres import env
+from Classes.database.postgres.models.utils import crud
 from thumbhubbot import LOGGER
 
 

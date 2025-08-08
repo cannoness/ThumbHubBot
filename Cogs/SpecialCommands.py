@@ -7,7 +7,7 @@ from discord.ext import commands, tasks
 from Cogs.CreationCommands import Private
 
 from thumbhubbot import CONFIG, LOGGER
-from Utilities.DatabaseActions import DatabaseActions
+from Classes.DatabaseActions import DatabaseActions
 from Settings import help_descriptions as help_desc
 
 
