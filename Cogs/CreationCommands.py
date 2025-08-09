@@ -76,12 +76,12 @@ class CreationCommands(commands.Cog):
     def _cooldown_count(ctx):
         roles = {role.name for role in ctx.author.roles}
 
-        if not ROLESET.privileged.isdisjoint(roles):
-            return COOLDOWN.priv
-        elif ROLE.vt in roles:
+        if ROLE.vt in roles:
             return COOLDOWN.vt
         elif ROLE.vip in roles:
             return COOLDOWN.vip
+        elif not ROLESET.privileged.isdisjoint(roles):
+            return COOLDOWN.priv
         else:
             return COOLDOWN.default
 

@@ -97,7 +97,7 @@ class Cooldown:
 
 class RoleSet:
     _administrative = {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value}
-    _privileged = {RoleEnum.VETERAN_THUMBERS.value, RoleEnum.THE_PEEPS.value}
+    _privileged = {RoleEnum.VETERAN_THUMBERS.value, RoleEnum.FREQUENT_THUMBERS.value, RoleEnum.THE_PEEPS.value}
     _whitelist = {RoleEnum.MODERATORS.value, RoleEnum.THE_HUB.value, RoleEnum.THE_PEEPS.value,
                   RoleEnum.BOT_SLEUTH.value}
 
