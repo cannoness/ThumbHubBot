@@ -1,4 +1,9 @@
+from io import BytesIO
 from random import shuffle
+
+import requests
+
+from thumbhubbot import CONFIG, LOGGER
 
 
 def shuffle_list_of_dicts(input_list):
@@ -60,3 +65,18 @@ def format_api_image_results(results):
         "author":
             result["author"]["username"]
     } for result in results]
+
+
+def fetch_image(result):
+    fetch_url = None
+    if "media_content" in result and len(result["media_content"]):
+        fetch_url = result['media_content'][-1]['url']
+    elif 'src_image' in result and result['src_image'] != "None":
+        fetch_url = result['src_image']
+    if fetch_url:
+        image_stream = requests.get(fetch_url, timeout=CONFIG.global_timeout, stream=True)
+        if not image_stream.ok:
+            LOGGER.info(f"Missing response data for {result}!")
+            return None
+        result = BytesIO(image_stream.content)
+    return result
